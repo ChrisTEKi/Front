@@ -1,0 +1,169 @@
+{% extends 'base.html.twig' %}
+{% block title %}Espace Fournisseur — GoBuy{% endblock %}
+
+{% block body %}
+<div data-supplier-dashboard class="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+
+    <div class="flex flex-col justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
+        <div>
+            <span class="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-slate-800">Espace Fournisseur</span>
+            <h1 class="mt-2 text-xl font-black text-slate-950">Bonjour, [Votre boutique]</h1>
+            <p class="text-xs text-slate-500">Gérez vos stocks, vos commandes reçues et suivez les performances de vente.</p>
+        </div>
+        <button type="button" data-open-modal="add-product" class="flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-slate-800">{{ ux_icon('tabler:plus', {class:'h-4 w-4 text-[#00E5A3]'}) }}<span>Ajouter un produit</span></button>
+    </div>
+
+    <div data-supplier-tabs class="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-2 text-xs font-semibold">
+        {% for t in [{id:'dashboard', l:"Vue d'ensemble"}, {id:'products', l:'Mes produits (0)'}, {id:'orders', l:'Commandes reçues (0)'}, {id:'finances', l:'Finances & Versements', icon:'tabler:currency-dollar'}, {id:'profile', l:'Profil boutique'}] %}
+            <button type="button" data-supplier-tab="{{ t.id }}" class="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">
+                {% if t.icon is defined %}{{ ux_icon(t.icon, {class:'h-3.5 w-3.5'}) }}{% endif %}<span>{{ t.l }}</span>
+            </button>
+        {% endfor %}
+    </div>
+
+    {# ---- DASHBOARD ---- #}
+    <div data-supplier-panel="dashboard" class="hidden space-y-6">
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-xs font-medium text-slate-500">Mes produits</span><div class="mt-1 text-2xl font-black text-slate-950">{{ myProducts|length }}</div></div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-xs font-medium text-slate-500">Commandes reçues</span><div class="mt-1 text-2xl font-black text-slate-950">{{ myOrders|length }}</div></div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-xs font-medium text-slate-500">En préparation</span><div class="mt-1 text-2xl font-black text-amber-600">0</div></div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-xs font-medium text-slate-500">Livrées</span><div class="mt-1 text-2xl font-black text-slate-950">0</div></div>
+        </div>
+
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+            <div class="flex flex-col justify-between gap-3 border-b border-slate-100 pb-2 sm:flex-row sm:items-center">
+                <div>
+                    <div class="flex items-center gap-2"><span class="rounded-lg bg-slate-100 p-1.5 text-slate-900">{{ ux_icon('tabler:trending-up', {class:'h-4 w-4'}) }}</span>
+                        <h3 class="text-sm font-black text-slate-950">Évolution des ventes (7 derniers jours)</h3></div>
+                    <p class="mt-1 text-[11px] text-slate-500">Chiffre d'affaires et volume des commandes enregistrées en temps réel</p>
+                </div>
+                <div class="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 text-xs">
+                    <button type="button" data-chart-metric="sales" class="rounded-lg bg-white px-3 py-1 text-[11px] font-black text-slate-950 shadow-xs">Chiffre d'affaires (Ar)</button>
+                    <button type="button" data-chart-metric="orders" class="rounded-lg px-3 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-950">Commandes</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 rounded-2xl border border-slate-200/80 bg-slate-50 p-3.5 text-xs">
+                <div><span class="block text-[11px] text-slate-500">Total sur 7 jours</span><span class="font-mono text-sm font-black text-slate-950">0 Ar</span></div>
+                <div><span class="block text-[11px] text-slate-500">Moyenne quotidienne</span><span class="font-mono text-sm font-bold text-slate-950">0 Ar</span></div>
+                <div><span class="block text-[11px] text-slate-500">Pic d'activité</span><span class="block truncate font-mono text-sm font-bold text-slate-950">—</span></div>
+            </div>
+            <div class="flex h-56 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 text-center">
+                {{ ux_icon('tabler:chart-line', {class:'h-8 w-8 text-slate-300'}) }}
+                <p class="text-xs font-semibold text-slate-500">Aucune donnée de vente pour le moment</p>
+                <p class="max-w-xs text-[11px] text-slate-400">Le graphique s'activera automatiquement dès votre première commande.</p>
+            </div>
+        </div>
+
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+            <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">Commandes récentes</h3><button type="button" data-supplier-tab="orders" class="text-xs font-semibold text-slate-700 hover:text-slate-950 hover:underline">Voir tout</button></div>
+            <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucune commande reçue pour le moment.</div>
+        </div>
+    </div>
+
+    {# ---- PRODUCTS ---- #}
+    <div data-supplier-panel="products" class="hidden">
+        <div class="rounded-3xl border border-slate-200 bg-white p-10 text-center text-xs text-slate-400">
+            {{ ux_icon('tabler:package', {class:'mx-auto mb-2 h-10 w-10 text-slate-300'}) }}
+            Aucun produit dans votre catalogue pour le moment. Cliquez sur « Ajouter un produit » pour commencer.
+        </div>
+    </div>
+
+    {# ---- ORDERS ---- #}
+    <div data-supplier-panel="orders" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <h3 class="text-sm font-bold text-slate-900">Gestion des commandes clients</h3>
+        <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucune commande reçue pour le moment.</div>
+    </div>
+
+    {# ---- PROFILE ---- #}
+    <div data-supplier-panel="profile" class="hidden space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div class="relative flex h-36 items-center justify-center overflow-hidden rounded-2xl bg-slate-800">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+            <div class="absolute bottom-4 left-4 flex items-center gap-3">
+                <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white p-1 shadow-lg"><span class="flex h-full w-full items-center justify-center rounded-xl bg-slate-100 text-slate-400">{{ ux_icon('tabler:building-store', {class:'h-6 w-6'}) }}</span></div>
+                <div class="text-white"><div class="flex items-center gap-1.5"><h3 class="text-base font-bold">Votre boutique</h3></div><p class="text-[11px] text-slate-300">Complétez votre profil pour être vérifié</p></div>
+            </div>
+        </div>
+        <div class="space-y-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs">
+            <div class="flex items-center gap-2 text-slate-700">{{ ux_icon('tabler:phone', {class:'h-4 w-4 text-emerald-600'}) }}<span>Téléphone non renseigné</span></div>
+            <div class="flex items-center gap-2 text-slate-700">{{ ux_icon('tabler:mail', {class:'h-4 w-4 text-emerald-600'}) }}<span>E-mail non renseigné</span></div>
+            <div class="flex items-center gap-2 text-slate-700">{{ ux_icon('tabler:map-pin', {class:'h-4 w-4 text-emerald-600'}) }}<span>Adresse non renseignée</span></div>
+        </div>
+        <p class="text-xs leading-relaxed text-slate-600">Aucune description de boutique renseignée pour le moment.</p>
+        <div class="flex items-center justify-around rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 text-center">
+            <div><span class="text-[11px] text-slate-500">Produits au catalogue</span><p class="text-base font-bold text-slate-900">{{ myProducts|length }}</p></div>
+            <div class="h-8 w-px bg-emerald-200"></div>
+            <div><span class="text-[11px] text-slate-500">Commandes honorées</span><p class="text-base font-bold text-slate-900">0</p></div>
+            <div class="h-8 w-px bg-emerald-200"></div>
+            <div><span class="text-[11px] text-slate-500">Note moyenne</span><p class="text-base font-bold text-emerald-700">—</p></div>
+        </div>
+    </div>
+
+    {# ---- FINANCES ---- #}
+    <div data-supplier-panel="finances" class="hidden space-y-6">
+        <div data-plan-banner data-plan="standard" class="flex flex-col justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 text-slate-800 shadow-xs sm:flex-row sm:items-center">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span data-plan-badge class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-slate-700">Formule Standard</span>
+                    <span data-plan-rent class="text-xs text-slate-400">Loyer : 0 Ar / mois</span>
+                </div>
+                <h3 data-plan-title class="text-lg font-bold">Passez en Boutique Pro pour booster vos marges et vos ventes</h3>
+                <p data-plan-desc class="max-w-xl text-xs opacity-80">Économisez 20 000 Ar par tranche de 1 000 000 Ar de vente et obtenez le badge Vendeur Officiel.</p>
+            </div>
+            <button type="button" data-plan-toggle class="shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700">Activer la Boutique Pro (49k)</button>
+        </div>
+        <div data-plan-msg class="hidden items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-semibold text-emerald-800">{{ ux_icon('tabler:circle-check', {class:'h-4 w-4 text-emerald-600'}) }}<span data-plan-msg-text></span></div>
+
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Solde Net Disponible</span><div class="font-mono text-xl font-black text-emerald-600">0 Ar</div><span class="text-[10px] font-medium text-emerald-700">Aucune vente enregistrée</span></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Prochain Virement</span><div class="text-sm font-bold text-slate-900">—</div><span class="text-[10px] text-slate-400">Cycle bi-hebdomadaire</span></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Taux Commission Actuel</span><div data-commission-rate class="font-mono text-xl font-black text-slate-900">8%</div><span class="text-[10px] text-slate-400">Selon rayon &amp; formule</span></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Total Déjà Reversé</span><div class="font-mono text-xl font-black text-slate-900">0 Ar</div><span class="text-[10px] text-slate-400">Aucun historique</span></div>
+        </div>
+
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+            <div><h3 class="text-sm font-bold text-slate-900">Coordonnées de Versement Mobile Money / Banque</h3><p class="text-xs text-slate-500">L'argent de vos ventes est viré directement sur ce compte chaque mardi et vendredi matin.</p></div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div><label class="mb-1 block text-[11px] font-bold text-slate-700">Moyen de paiement *</label>
+                    <select class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold">
+                        <option>MVola (Telma Madagascar)</option><option>Orange Money Madagascar</option><option>Airtel Money Madagascar</option><option>Virement Bancaire (BNI / BMOI / SGM)</option>
+                    </select></div>
+                <div class="sm:col-span-2"><label class="mb-1 block text-[11px] font-bold text-slate-700">Numéro Mobile Money ou RIB Bancaire *</label>
+                    <div class="flex items-center gap-2"><input type="text" placeholder="034 XX XXX XX ou FR76..." class="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs font-semibold">
+                        <button type="button" data-save-payout class="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-slate-800">Enregistrer</button></div></div>
+            </div>
+            <div data-payout-saved class="hidden flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">{{ ux_icon('tabler:circle-check', {class:'h-4 w-4 text-emerald-600'}) }}<span>Vos coordonnées de reversement ont bien été mises à jour !</span></div>
+        </div>
+
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+            <h3 class="text-sm font-bold text-slate-900">Historique de vos reversements perçus</h3>
+            <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucun reversement effectué pour le moment.</div>
+        </div>
+    </div>
+</div>
+
+{# Add product modal #}
+<div data-modal="add-product" class="pointer-events-none fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs">
+    <div class="pointer-events-auto max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 class="text-sm font-bold text-slate-900">Ajouter un produit</h3>
+            <button type="button" data-modal-close class="rounded-full p-1 text-slate-400 hover:bg-slate-100">{{ ux_icon('tabler:x', {class:'h-5 w-5'}) }}</button>
+        </div>
+        <form class="space-y-3 text-xs">
+            <div class="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 text-center">
+                {{ ux_icon('tabler:photo', {class:'mb-1 h-8 w-8 text-slate-400'}) }}
+                <span class="font-semibold text-slate-700">Ajouter des images</span><span class="text-[10px] text-slate-400">JPG, PNG (max 5 Mo)</span>
+                <input type="text" placeholder="URL de l'image (Unsplash ou hébergé)" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[11px]">
+            </div>
+            <div><label class="mb-1 block font-semibold text-slate-700">Nom du produit *</label><input type="text" required placeholder="Ex: T-shirt homme premium" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></div>
+            <div><label class="mb-1 block font-semibold text-slate-700">Description *</label><textarea rows="2" required placeholder="Décrivez votre produit, matières, fonctionnalités..." class="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></textarea></div>
+            <div><label class="mb-1 block font-semibold text-slate-700">Catégorie *</label>
+                <select class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-medium">{% for c in categories %}<option>{{ c.name }}</option>{% endfor %}</select></div>
+            <div class="grid grid-cols-2 gap-2">
+                <div><label class="mb-1 block font-semibold text-slate-700">Prix (Ar) *</label><input type="number" required placeholder="Ex: 25000" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-bold"></div>
+                <div><label class="mb-1 block font-semibold text-slate-700">Stock initial *</label><input type="number" required placeholder="Ex: 10" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></div>
+            </div>
+            <button type="submit" class="mt-2 w-full rounded-2xl bg-emerald-600 py-3 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition-all hover:bg-emerald-700">Ajouter au catalogue</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

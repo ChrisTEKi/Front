@@ -1,0 +1,29 @@
+<section aria-label="Nos rayons spécialisés" class="space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h3 class="text-base font-black tracking-tight text-black sm:text-xl">Nos Rayons Spécialisés</h3>
+            <p class="text-xs font-medium text-neutral-500">Chaque rayon dispose de sa propre boutique exclusive et de vendeurs vérifiés</p>
+        </div>
+        <a href="{{ path('app_categories') }}" class="flex items-center gap-0.5 text-xs font-bold text-neutral-900 hover:text-gobuy-green">
+            <span>Tous les rayons</span>{{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4' }) }}
+        </a>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-7">
+        {% for cat in categories %}
+            <a href="{{ path('app_department', {slug: cat.slug}) }}"
+               class="group relative flex flex-col justify-between space-y-3 rounded-2xl border border-neutral-200/50 bg-soft-gray p-4 transition-all duration-150 hover:border-black hover:bg-neutral-100">
+                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-xl shadow-2xs transition-transform group-hover:scale-110">
+                    {{ ux_icon(cat.icon, { class: 'h-5 w-5 text-black' }) }}
+                </span>
+                <div>
+                    <h4 class="line-clamp-1 text-xs font-black text-black transition-colors group-hover:text-gobuy-green">{{ cat.name }}</h4>
+                    <p class="mt-0.5 text-[10px] font-medium text-neutral-500">Livraison 20–40 min</p>
+                </div>
+                <span class="flex items-center gap-1 text-[10px] font-bold text-gobuy-green transition-transform group-hover:translate-x-1">
+                    <span>Explorer</span>{{ ux_icon('tabler:arrow-right', { class: 'h-3 w-3' }) }}
+                </span>
+            </a>
+        {% endfor %}
+    </div>
+</section>

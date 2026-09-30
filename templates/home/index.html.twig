@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}GoBuy — Livraison express à Madagascar{% endblock %}
+
+{% block body %}
+    <div class="w-full space-y-10 p-3 sm:p-6 lg:p-8 xl:p-12 2xl:px-16">
+        {{ include('home/_hero.html.twig') }}
+        {{ include('home/_flash_sales.html.twig') }}
+        {{ include('home/_rayons_specialises.html.twig') }}
+        {{ include('home/_fastest_delivery.html.twig') }}
+        {{ include('home/_condition_filter.html.twig') }}
+        {{ include('home/_catalog_grid.html.twig') }}
+        {{ include('home/_trust_badges.html.twig') }}
+    </div>
+{% endblock %}

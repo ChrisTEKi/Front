@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+{% block title %}Catégories — GoBuy{% endblock %}
+{% block body %}
+<div class="w-full space-y-6 p-4 sm:p-6 lg:p-10 xl:p-12 2xl:px-16">
+    <div>
+        <h2 class="text-xl font-bold text-slate-900">Catégories</h2>
+        <p class="text-xs text-slate-500">Chaque rayon dispose d'une page dédiée avec son propre catalogue exclusif</p>
+    </div>
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {% for cat in categories %}
+            <a href="{{ path('app_department', {slug: cat.slug}) }}" class="group relative flex flex-col justify-between space-y-4 overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 transition-all hover:border-emerald-500 hover:shadow-lg">
+                <div class="flex items-start justify-between">
+                    <span class="w-fit rounded-2xl bg-slate-50 p-3.5 text-emerald-600 transition-all group-hover:scale-110 group-hover:bg-emerald-50">{{ ux_icon(cat.icon, { class: 'h-4 w-4' }) }}</span>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-400">{{ productCounts[cat.id]|default(0) }} produits</span>
+                </div>
+                <div class="space-y-1.5">
+                    <h3 class="text-base font-bold text-slate-900 transition-colors group-hover:text-emerald-700">{{ cat.name }}</h3>
+                    <p class="line-clamp-2 text-xs leading-relaxed text-slate-500">{{ cat.description }}</p>
+                </div>
+                <div class="flex items-center justify-between border-t border-slate-100 pt-2 text-xs font-bold text-emerald-600 group-hover:text-emerald-700">
+                    <span>Voir la page du rayon</span>
+                    {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 transition-transform group-hover:translate-x-1' }) }}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

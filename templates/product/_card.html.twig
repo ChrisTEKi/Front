@@ -1,0 +1,68 @@
+{# Product card (Uber Eats style). Expects `product` shaped like the mockup's Product interface. #}
+{% set discount = (product.originalPrice is defined and product.originalPrice and product.originalPrice > product.price) ? (((product.originalPrice - product.price) / product.originalPrice) * 100)|round : 0 %}
+{% set conditionLabels = {comme_neuf: 'Comme neuf', tres_bon_etat: 'Très bon état', bon_etat: 'Bon état'} %}
+<div id="product-card-{{ product.id }}" class="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200/80 bg-white transition-all duration-200 hover:border-black hover:shadow-lg">
+    <a href="{{ path('app_product', {id: product.id}) }}" class="absolute inset-0 z-0" aria-label="{{ product.name }}"></a>
+
+    <div class="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden bg-soft-gray p-3 sm:aspect-square sm:p-4">
+        <img src="{{ product.images[0] }}" alt="{{ product.name }}" loading="lazy"
+             class="h-full w-full object-contain object-center mix-blend-multiply transition-transform duration-300 group-hover:scale-105">
+
+        <div class="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1">
+            {% if discount > 0 %}
+                <span class="inline-flex items-center rounded-md bg-gobuy-green px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-white shadow-xs">-{{ discount }}%</span>
+            {% endif %}
+            {% if product.flashDeal|default(false) %}
+                <span class="inline-flex items-center gap-1 rounded-md bg-black px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gobuy-green shadow-xs">
+                    {{ ux_icon('tabler:bolt-filled', { class: 'h-2.5 w-2.5' }) }}<span>Flash</span>
+                </span>
+            {% endif %}
+            {% if product.condition is defined and product.condition and product.condition != 'neuf' %}
+                <span class="inline-flex items-center rounded-md border border-neutral-200/60 bg-white/95 px-2 py-0.5 text-[9px] font-bold text-neutral-800 shadow-2xs">{{ conditionLabels[product.condition]|default('Neuf') }}</span>
+            {% endif %}
+        </div>
+
+        <button type="button" data-favorite-toggle="{{ product.id }}" title="Ajouter aux favoris" aria-label="Favoris"
+                class="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-400 shadow-xs transition-all duration-150 hover:scale-110 hover:bg-white hover:text-red-500">
+            {{ ux_icon('tabler:heart', { class: 'h-4 w-4' }) }}
+        </button>
+
+        {% if product.stock <= 5 and product.stock > 0 %}
+            <span class="absolute bottom-2 left-2.5 rounded-md bg-neutral-900/90 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-white">Plus que {{ product.stock }}</span>
+        {% endif %}
+    </div>
+
+    <div class="pointer-events-none relative z-10 flex flex-1 flex-col justify-between space-y-2 p-3.5">
+        <div>
+            <div class="flex items-center justify-between text-[11px] font-medium text-neutral-500">
+                <span class="max-w-[140px] truncate font-bold text-neutral-700">{{ product.supplierName }}</span>
+                <span class="font-mono text-[10px] uppercase tracking-wider text-neutral-400">{{ product.brand }}</span>
+            </div>
+            <h3 class="mt-1 line-clamp-2 text-xs font-bold leading-snug text-black transition-colors group-hover:text-gobuy-green sm:text-sm">{{ product.name }}</h3>
+            <div class="mt-1.5 flex items-center gap-1.5 text-xs text-neutral-600">
+                <span class="flex items-center font-bold text-black">{{ ux_icon('tabler:star-filled', { class: 'mr-0.5 h-3.5 w-3.5 text-gobuy-green' }) }}{{ product.rating|number_format(1) }}</span>
+                <span class="text-[11px] text-neutral-400">({{ product.reviewsCount }})</span>
+                <span class="text-neutral-300">•</span>
+                <span class="flex items-center gap-1 text-[11px] text-neutral-500">{{ ux_icon('tabler:clock', { class: 'h-3 w-3 text-neutral-400' }) }}20–35 min</span>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-neutral-100 pt-1 text-[11px] text-neutral-500">
+            <span class="flex items-center gap-1">{{ ux_icon('tabler:bike', { class: 'h-3 w-3 text-gobuy-green' }) }}<span class="text-neutral-600">Livraison 2 500 Ar</span></span>
+            <span class="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-gobuy-green">0 Ar avec Pass</span>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 border-t border-neutral-100 pt-2">
+            <div>
+                <div class="text-base font-black leading-none tracking-tight text-black sm:text-lg">{{ product.price|number_format(0, ',', ' ') }} <span class="text-xs font-bold">Ar</span></div>
+                {% if product.originalPrice is defined and product.originalPrice %}
+                    <div class="mt-0.5 font-mono text-[10px] text-neutral-400 line-through">{{ product.originalPrice|number_format(0, ',', ' ') }} Ar</div>
+                {% endif %}
+            </div>
+            <button type="button" data-add-to-cart="{{ product.id }}" title="Ajouter au panier" aria-label="Ajouter"
+                    class="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black text-white shadow-xs transition-all duration-150 hover:bg-gobuy-green active:scale-90 sm:h-9 sm:w-9">
+                {{ ux_icon('tabler:plus', { class: 'h-4 w-4 sm:h-5 sm:w-5' }) }}
+            </button>
+        </div>
+    </div>
+</div>

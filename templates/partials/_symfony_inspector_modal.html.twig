@@ -1,0 +1,167 @@
+{# Symfony Inspector — technical architecture showcase (Server icon in footer).
+   Exact port of SymfonyInspectorModal.tsx: 4 tabs (overview, SQL schema, API endpoints, env config). #}
+<div data-modal="symfony-inspector" class="pointer-events-none fixed inset-0 z-[60] hidden items-center justify-center overflow-y-auto bg-slate-950/75 p-3 backdrop-blur-xs sm:p-4">
+    <div data-inspector class="pointer-events-auto my-auto flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 text-slate-100 shadow-2xl">
+
+        <div class="flex items-center justify-between border-b border-slate-800 bg-slate-950 p-4 sm:p-5">
+            <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">{{ ux_icon('tabler:server', {class:'h-5 w-5'}) }}</span>
+                <div>
+                    <div class="flex items-center gap-2"><h2 class="text-sm font-bold text-white">Architecture Full-Stack Symfony + PostgreSQL</h2>
+                        <span class="rounded-full bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-300">Symfony 8.2 • PHP 8.4+ • Sept 2026</span></div>
+                    <p class="mt-0.5 text-xs text-slate-400">Spécifications techniques backend, base de données relationnelle et architecture Symfony 8 &amp; PHP 8.4</p>
+                </div>
+            </div>
+            <button type="button" data-modal-close class="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white">{{ ux_icon('tabler:x', {class:'h-5 w-5'}) }}</button>
+        </div>
+
+        <div class="flex items-center gap-2 border-b border-slate-800 bg-slate-950 px-5 py-2.5 text-xs font-semibold">
+            {% for t in [{id:'architecture', l:"Vue d'ensemble (Symfony 8)"}, {id:'entities', l:'Schéma SQL PostgreSQL'}, {id:'endpoints', l:'Endpoints API REST'}, {id:'env', l:'Configuration & Sécurité'}] %}
+                <button type="button" data-inspector-tab="{{ t.id }}" class="rounded-xl px-3 py-1.5 text-slate-400 transition-colors hover:text-slate-200">{{ t.l }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="flex-1 space-y-4 overflow-y-auto p-5 text-xs">
+
+            <div data-inspector-panel="architecture" class="hidden space-y-4">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="space-y-2 rounded-2xl border border-slate-700/60 bg-slate-800/60 p-4">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Backend Symfony & PHP</span>
+                        <p class="text-sm font-semibold text-white">Symfony 8.2 + PHP 8.4 / 8.5</p>
+                        <ul class="list-inside list-disc space-y-1 text-[11px] text-slate-300">
+                            <li>PHP 8.4 Property Hooks &amp; Asymmetric Visibility (public private(set))</li>
+                            <li>Doctrine ORM 3.3+ avec types natifs UUID v7 &amp; JSONB PostgreSQL</li>
+                            <li>Symfony Security Bundle avec JWT, WebAuthn &amp; Scheb 2FA</li>
+                            <li>Symfony AssetMapper + Stimulus 4.0 (sans Node en production)</li>
+                            <li>Symfony Notifier / SMS Gateway (MVola, Airtel, Orange Money SMS)</li>
+                            <li>Routeurs dédiés par rayon (/rayons/{slug}) avec contrôleur CategoryController</li>
+                        </ul>
+                    </div>
+                    <div class="space-y-2 rounded-2xl border border-slate-700/60 bg-slate-800/60 p-4">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Base de données</span>
+                        <p class="text-sm font-semibold text-white">PostgreSQL 16+ JSONB</p>
+                        <ul class="list-inside list-disc space-y-1 text-[11px] text-slate-300">
+                            <li>Tables relationnelles normalisées avec contraintes de clés étrangères</li>
+                            <li>Champs JSONB pour adresses, tracking et metadata dynamique</li>
+                            <li>Transactions ACID pour la validation des paiements Mobile Money</li>
+                            <li>Indexation B-tree sur email, téléphone, et numéro de commande</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="space-y-2 rounded-2xl border border-slate-700/60 bg-slate-800/40 p-4">
+                    <h4 class="text-xs font-bold text-white">Flux de travail implémentés :</h4>
+                    <div class="grid grid-cols-1 gap-3 text-[11px] text-slate-300 sm:grid-cols-2">
+                        <div class="rounded-xl border border-slate-800 bg-slate-900 p-3"><strong class="mb-1 block text-emerald-400">1. Inscription Client &amp; 2FA</strong>Vérification obligatoire par email (OTP à 6 chiffres) avant première connexion. Vérification SMS facultative à l'inscription mais imposée avant la validation d'une première commande.</div>
+                        <div class="rounded-xl border border-slate-800 bg-slate-900 p-3"><strong class="mb-1 block text-amber-400">2. Inscription Fournisseur &amp; Approbation Admin</strong>Double vérification email + téléphone. Le compte reste en statut <code>is_approved = false</code> jusqu'à ce qu'un Administrateur valide le dossier dans son tableau de bord.</div>
+                        <div class="rounded-xl border border-slate-800 bg-slate-900 p-3"><strong class="mb-1 block text-blue-400">3. Paiement Mobile Money Validé</strong>Vérification temps réel du préfixe opérateur malgache (Mvola: 034/038, Airtel: 033, Orange: 032/037) avec simulation du code de validation OTP avant débit.</div>
+                        <div class="rounded-xl border border-slate-800 bg-slate-900 p-3"><strong class="mb-1 block text-purple-400">4. Automatisations Tableaux CSV</strong>Génération et téléchargement instantané des fichiers tableurs pour les listes de Clients, Fournisseurs, Admins et Commandes.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div data-inspector-panel="entities" class="hidden space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-400">DDL SQL PostgreSQL conforme Symfony Doctrine</span>
+                    <button type="button" data-copy-schema class="flex items-center gap-1.5 rounded-xl bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 transition-colors hover:bg-slate-700">{{ ux_icon('tabler:copy', {class:'h-3.5 w-3.5'}) }}<span>Copier le schéma</span></button>
+                </div>
+                <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 font-mono text-[11px] leading-relaxed text-emerald-400" data-schema-sql>-- Schéma PostgreSQL GoBuy (Septembre 2026)
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(180) UNIQUE NOT NULL,
+    roles JSONB NOT NULL DEFAULT '["ROLE_CLIENT"]',
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(25) NULL,
+    is_email_verified BOOLEAN DEFAULT FALSE,
+    is_phone_verified BOOLEAN DEFAULT FALSE,
+    two_factor_enabled BOOLEAN DEFAULT FALSE,
+    two_factor_method VARCHAR(20) DEFAULT 'email',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE supplier_profiles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    company_name VARCHAR(150) NOT NULL,
+    address TEXT NOT NULL,
+    description TEXT,
+    is_approved BOOLEAN DEFAULT FALSE,
+    approved_at TIMESTAMP WITH TIME ZONE NULL,
+    rating NUMERIC(3, 2) DEFAULT 5.0,
+    total_sales INT DEFAULT 0
+);
+
+CREATE TABLE categories (
+    id VARCHAR(50) PRIMARY KEY,
+    name_fr VARCHAR(100) NOT NULL,
+    name_en VARCHAR(100) NOT NULL,
+    name_es VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    icon_name VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category_id VARCHAR(50) REFERENCES categories(id),
+    supplier_id UUID REFERENCES supplier_profiles(id),
+    name VARCHAR(200) NOT NULL,
+    brand VARCHAR(100),
+    price INT NOT NULL, -- en Ariary (Ar)
+    original_price INT NULL,
+    stock INT NOT NULL DEFAULT 0,
+    description TEXT,
+    images JSONB NOT NULL DEFAULT '[]',
+    is_featured BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_number VARCHAR(30) UNIQUE NOT NULL,
+    client_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    total_amount INT NOT NULL,
+    payment_method VARCHAR(30) NOT NULL,
+    mobile_money_carrier VARCHAR(20) NULL,
+    mobile_money_phone VARCHAR(25) NULL,
+    delivery_status VARCHAR(30) DEFAULT 'pending',
+    shipping_address JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);</pre>
+            </div>
+
+            <div data-inspector-panel="endpoints" class="hidden space-y-2">
+                {% for ep in [
+                    {m:'POST', c:'text-emerald-400', p:'/api/v1/auth/register', d:'Création compte client (déclenche OTP mail)'},
+                    {m:'POST', c:'text-emerald-400', p:'/api/v1/auth/verify-email', d:'Validation code email à 6 chiffres'},
+                    {m:'POST', c:'text-emerald-400', p:'/api/v1/auth/verify-sms', d:'Validation SMS (requis avant 1ère commande)'},
+                    {m:'GET', c:'text-blue-400', p:'/api/v1/admin/export/clients.csv', d:'Téléchargement tableau CSV clients'},
+                    {m:'GET', c:'text-blue-400', p:'/api/v1/admin/export/fournisseurs.csv', d:'Téléchargement tableau CSV fournisseurs'},
+                    {m:'PATCH', c:'text-amber-400', p:'/api/v1/admin/suppliers/:id/approve', d:"Validation du fournisseur par l'admin"},
+                    {m:'DELETE', c:'text-red-400', p:'/api/v1/users/account', d:'Suppression définitive du compte client'}
+                ] %}
+                    <div class="flex items-center justify-between rounded-xl border border-slate-700/60 bg-slate-800/40 p-3 font-mono text-[11px]">
+                        <div><span class="mr-2 font-bold {{ ep.c }}">{{ ep.m }}</span><span class="text-white">{{ ep.p }}</span></div>
+                        <span class="text-[10px] text-slate-400">{{ ep.d }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div data-inspector-panel="env" class="hidden space-y-3">
+                <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 font-mono text-[11px] leading-relaxed text-slate-300"># .env.local (Symfony 8.2 & PHP 8.4+)
+APP_ENV=prod
+APP_SECRET=a5f973347c61bf6b9b008d6d812456e7
+DATABASE_URL="postgresql://marketoo_usr:secure_pass@127.0.0.1:5432/marketoo_db?serverVersion=16&charset=utf8"
+
+# JWT & 2FA Scheb Bundle
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+JWT_PASSPHRASE=marketoo_strong_jwt_passphrase
+
+# Mailer & SMS
+MAILER_DSN=smtp://smtp.marketoo.mg:587?encryption=tls&auth_mode=login
+MVOLA_API_KEY=mvola_live_key_9921
+AIRTEL_MONEY_CLIENT_ID=airtel_mg_api_client
+ORANGE_MONEY_TOKEN=orange_money_token_prod</pre>
+            </div>
+        </div>
+    </div>
+</div>

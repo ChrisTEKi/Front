@@ -1,0 +1,7 @@
+{% extends 'base.html.twig' %}
+{% block title %}Connexion — GoBuy{% endblock %}
+{% block body %}
+<div class="flex justify-center px-3 py-10 sm:py-16">
+    {{ include('partials/_auth_form.html.twig', {initialMode: mode}) }}
+</div>
+{% endblock %}

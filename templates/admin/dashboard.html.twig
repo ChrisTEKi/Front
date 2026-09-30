@@ -1,0 +1,159 @@
+{% extends 'base.html.twig' %}
+{% block title %}Espace Administrateur — GoBuy{% endblock %}
+
+{% block body %}
+<div data-admin-dashboard class="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+
+    <div class="flex flex-col justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
+        <div>
+            <div class="flex items-center gap-2"><span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-800">Supervision Générale</span><span class="text-xs text-slate-400">Septembre 2026</span></div>
+            <h1 class="mt-1 text-xl font-bold text-slate-900">Tableau de bord Administrateur</h1>
+            <p class="text-xs text-slate-500">Validation des comptes fournisseurs, surveillance des transactions et exports automatisés en tableaux.</p>
+        </div>
+        <button type="button" data-export="clients" class="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700">{{ ux_icon('tabler:download', {class:'h-3.5 w-3.5'}) }}<span>Export Tableaux CSV</span></button>
+    </div>
+
+    <div data-export-notice class="hidden items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800"><span data-export-notice-icon>{{ ux_icon('tabler:circle-check', {class:'h-4 w-4 shrink-0 text-emerald-600'}) }}</span><span data-export-notice-text></span></div>
+
+    <div data-admin-tabs class="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-2 text-xs font-semibold">
+        {% for t in [
+            {id:'overview', l:"Vue d'ensemble"},
+            {id:'vendor_applications', l:'Candidatures Vendeurs'},
+            {id:'vendor_payouts', l:'Reversements & Commissions'},
+            {id:'suppliers_approval', l:'Validation Fournisseurs'},
+            {id:'users_table', l:'Base Utilisateurs (' ~ users|length ~ ')'},
+            {id:'orders_table', l:'Commandes (' ~ orders|length ~ ')'},
+            {id:'exports', l:'Exports CSV'}
+        ] %}
+            <button type="button" data-admin-tab="{{ t.id }}" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ t.l }}</button>
+        {% endfor %}
+    </div>
+
+    {# ---- OVERVIEW ---- #}
+    <div data-admin-panel="overview" class="hidden space-y-6">
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Clients inscrits</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ users|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">{{ ux_icon('tabler:users', {class:'h-5 w-5'}) }}</span></div>
+            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Fournisseurs actifs</span><div class="mt-1 text-2xl font-bold text-slate-900">0</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">{{ ux_icon('tabler:building-store', {class:'h-5 w-5'}) }}</span></div>
+            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Produits au catalogue</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ products|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">{{ ux_icon('tabler:package', {class:'h-5 w-5'}) }}</span></div>
+            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Commandes totales</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ orders|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">{{ ux_icon('tabler:file-spreadsheet', {class:'h-5 w-5'}) }}</span></div>
+        </div>
+
+        {% if pendingSuppliers is not empty %}
+            <div class="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white">{{ ux_icon('tabler:alert-circle', {class:'h-5 w-5'}) }}</span>
+                    <div><h3 class="text-xs font-bold text-amber-900">{{ pendingSuppliers|length }} nouveau(x) dossier(s) fournisseur en attente</h3><p class="text-[11px] text-amber-700">L'approbation admin est obligatoire pour qu'ils puissent mettre en vente leurs produits.</p></div></div>
+                <button type="button" data-admin-tab="suppliers_approval" class="rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700">Examiner les dossiers</button>
+            </div>
+        {% endif %}
+
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+            <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">Commandes récentes</h3><button type="button" data-admin-tab="orders_table" class="text-xs text-indigo-600 hover:underline">Voir tout</button></div>
+            {% if orders is empty %}
+                <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucune commande enregistrée pour le moment.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ---- VENDOR APPLICATIONS ---- #}
+    <div data-admin-panel="vendor_applications" class="hidden space-y-4">
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+            <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:building-store', {class:'h-4 w-4 text-emerald-600'}) }}Candidatures d'adhésion Vendeurs & Boutiques</h3>
+                    <p class="text-xs text-slate-500">Dossiers déposés depuis la page "Devenir Vendeur" détaillant les règles, commissions et formules.</p></div>
+                <span class="rounded-xl bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{{ vendorApplications|length }} candidature(s)</span>
+            </div>
+            {% if vendorApplications is empty %}
+                <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucune candidature de vendeur pour le moment.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ---- VENDOR PAYOUTS ---- #}
+    <div data-admin-panel="vendor_payouts" class="hidden space-y-6">
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Ventes Totales Vendeurs</span><div class="font-mono text-lg font-black text-slate-900">0 Ar</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Commissions GoBuy</span><div class="font-mono text-lg font-black text-emerald-600">+0 Ar</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Loyers Boutiques Pro</span><div class="font-mono text-lg font-black text-indigo-600">+0 Ar</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Net à reverser en attente</span><div class="font-mono text-lg font-black text-rose-600">0 Ar</div></div>
+        </div>
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+            <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:currency-dollar', {class:'h-4 w-4 text-emerald-600'}) }}Tableau des reversements bi-hebdomadaires</h3>
+                <p class="text-xs text-slate-500">Reversements effectués après déduction des commissions et loyers boutique.</p></div>
+            {% if vendorPayouts is empty %}
+                <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucun reversement à afficher pour le moment.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ---- SUPPLIERS APPROVAL ---- #}
+    <div data-admin-panel="suppliers_approval" class="hidden space-y-4">
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+            <h3 class="text-sm font-bold text-slate-900">Dossiers Fournisseurs à approuver par l'Administrateur</h3>
+            <p class="text-xs text-slate-500">Chaque fournisseur doit obligatoirement avoir son e-mail et son téléphone vérifiés, puis être validé par un administrateur avant de pouvoir accéder à l'espace vendeur.</p>
+            <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">{% if pendingSuppliers is empty %}✓ Tous les dossiers fournisseurs sont traités ! Aucun fournisseur en attente.{% endif %}</div>
+        </div>
+    </div>
+
+    {# ---- USERS TABLE ---- #}
+    <div data-admin-panel="users_table" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <h3 class="text-sm font-bold text-slate-900">Annuaire des utilisateurs inscrits</h3>
+            <div class="flex items-center gap-2">
+                <select class="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold">
+                    <option value="all">Tous les rôles</option><option value="client">Clients</option><option value="supplier">Fournisseurs</option><option value="admin">Administrateurs</option><option value="courier">Livreurs</option>
+                </select>
+                <input type="text" placeholder="Filtrer nom ou email..." class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-xs">
+                <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                    <th class="px-3 py-2.5">Utilisateur</th><th class="px-3 py-2.5">Rôle</th><th class="px-3 py-2.5">E-mail Vérifié</th><th class="px-3 py-2.5">Téléphone</th><th class="px-3 py-2.5">2FA</th><th class="px-3 py-2.5">Date</th>
+                </tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% if users is empty %}<tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucun utilisateur inscrit pour le moment.</td></tr>{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ---- EXPORTS ---- #}
+    <div data-admin-panel="exports" class="hidden space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div>
+            <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">Générateur Automatique de Tableaux</span>
+            <h3 class="mt-1.5 text-base font-bold text-slate-900">Export automatisé en fichiers tableurs (CSV / Excel)</h3>
+            <p class="text-xs text-slate-500">Téléchargez instantanément les listes complètes des clients, fournisseurs, administrateurs et commandes enregistrés dans la base PostgreSQL sous forme de fichiers tableurs formatés.</p>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {% for exp in [
+                {type:'clients', icon:'tabler:users', iconWrap:'bg-blue-100 text-blue-700', btn:'border-blue-200 text-blue-700 hover:bg-blue-50', title:'Tableau des Clients inscrits', desc:'Contient ID, Nom complet, E-mail, Téléphone, Statut vérification, Sécurité 2FA et date.', file:'gobuy_clients.csv'},
+                {type:'fournisseurs', icon:'tabler:building-store', iconWrap:'bg-emerald-100 text-emerald-700', btn:'border-emerald-200 text-emerald-700 hover:bg-emerald-50', title:'Tableau des Fournisseurs & Vendeurs', desc:"Contient Raison sociale, Gérant, Téléphone, E-mail, Statut d'approbation Admin et volume de ventes.", file:'gobuy_fournisseurs.csv'},
+                {type:'admins', icon:'tabler:shield-check', iconWrap:'bg-indigo-100 text-indigo-700', btn:'border-indigo-200 text-indigo-700 hover:bg-indigo-50', title:'Tableau des Administrateurs', desc:"Liste des comptes superviseurs, niveau de privilèges, politiques 2FA et date d'octroi.", file:'gobuy_admins.csv'},
+                {type:'commandes', icon:'tabler:file-spreadsheet', iconWrap:'bg-amber-100 text-amber-700', btn:'border-amber-200 text-amber-700 hover:bg-amber-50', title:'Tableau des Commandes & Transactions', desc:'Numéros de commande, Clients, Totaux (Ar), Mobile Money vérifiés et statut d\'acheminement.', file:'gobuy_commandes.csv'}
+            ] %}
+                <div class="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="flex items-start gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ exp.iconWrap }}">{{ ux_icon(exp.icon, {class:'h-5 w-5'}) }}</span>
+                        <div><h4 class="text-xs font-bold text-slate-900">{{ exp.title }}</h4><p class="mt-0.5 text-[11px] text-slate-500">{{ exp.desc }}</p></div></div>
+                    <button type="button" data-export="{{ exp.type }}" data-export-file="{{ exp.file }}" class="flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-3 py-2.5 text-xs font-semibold transition-colors {{ exp.btn }}">
+                        {{ ux_icon('tabler:download', {class:'h-3.5 w-3.5'}) }}<span>Télécharger <code>{{ exp.file }}</code></span></button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# ---- ORDERS TABLE ---- #}
+    <div data-admin-panel="orders_table" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <h3 class="text-sm font-bold text-slate-900">Historique global des commandes</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-xs">
+                <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                    <th class="px-3 py-2.5">N° Commande</th><th class="px-3 py-2.5">Client</th><th class="px-3 py-2.5">Montant</th><th class="px-3 py-2.5">Paiement</th><th class="px-3 py-2.5">Statut</th><th class="px-3 py-2.5">Date</th>
+                </tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% if orders is empty %}<tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucune commande enregistrée pour le moment.</td></tr>{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

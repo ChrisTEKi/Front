@@ -1,0 +1,252 @@
+{# ============================================================
+   Company info modal — EXACT port of CompanyInfoModal.tsx.
+   Only 5 sections have a nav tab (about, recruitment, returns,
+   promotions, contact) — legal/cgv/cgu/delivery_zones/faq/claims
+   exist as content but are reachable only by direct deep-link
+   (footer buttons with data-info-section), exactly like the source.
+============================================================ #}
+<div data-modal="company-info" class="pointer-events-none fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-slate-950/60 p-2 backdrop-blur-xs sm:p-4">
+    <div data-info class="pointer-events-auto my-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+
+        <div class="flex items-center justify-between border-b border-slate-100 p-4">
+            <div class="flex items-center gap-2">
+                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">{{ ux_icon('tabler:building', { class: 'h-4 w-4' }) }}</span>
+                <h2 class="text-sm font-bold text-slate-900">Centre d'information GoBuy</h2>
+            </div>
+            <button type="button" data-modal-close class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">{{ ux_icon('tabler:x', { class: 'h-5 w-5' }) }}</button>
+        </div>
+
+        {# Tab navigation — exactly 5 tabs, as in the source #}
+        <div class="scrollbar-none flex items-center gap-1.5 overflow-x-auto border-b border-slate-200 bg-slate-100/70 px-4 py-2 text-xs font-semibold">
+            {% for t in [
+                {id: 'about', label: 'À propos', icon: 'tabler:building'},
+                {id: 'recruitment', label: 'Recrutement', icon: 'tabler:briefcase'},
+                {id: 'returns', label: 'Retours & Remboursements', icon: 'tabler:refresh'},
+                {id: 'promotions', label: 'Promotions', icon: 'tabler:tag'},
+                {id: 'contact', label: 'Contact & Support', icon: 'tabler:phone-call'}
+            ] %}
+                <button type="button" data-info-tab="{{ t.id }}" class="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-slate-600 transition-all hover:bg-slate-200">
+                    {{ ux_icon(t.icon, { class: 'h-3.5 w-3.5' }) }}<span>{{ t.label }}</span>
+                </button>
+            {% endfor %}
+        </div>
+
+        <div class="flex-1 space-y-4 overflow-y-auto p-5 text-xs">
+
+            {# ---- ABOUT ---- #}
+            <div data-info-panel="about" class="hidden space-y-4">
+                <div class="space-y-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-emerald-950">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">{{ ux_icon('tabler:sparkles', {class:'h-3 w-3'}) }} Notre Mission</span>
+                    <h4 class="text-sm font-bold text-emerald-900">Le pont numérique entre les producteurs, artisans et consommateurs malgaches</h4>
+                    <p class="text-[11px] leading-relaxed text-emerald-800">Fondée avec l'ambition de moderniser le commerce à Madagascar, <strong>GoBuy</strong> permet à chacun de commander des produits vérifiés en toute sécurité, payables instantanément via Mobile Money (Mvola, Airtel Money, Orange Money) ou en espèces à la livraison.</p>
+                </div>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="space-y-1.5 rounded-2xl border border-slate-100 bg-slate-50 p-3.5">
+                        <div class="flex items-center gap-2 text-xs font-bold text-slate-900">{{ ux_icon('tabler:shield-check', {class:'h-4 w-4 text-emerald-600'}) }}<span>Fournisseurs Certifiés</span></div>
+                        <p class="text-[11px] text-slate-600">Chaque vendeur est vérifié manuellement par nos équipes administratives pour garantir l'authenticité et la qualité des articles.</p>
+                    </div>
+                    <div class="space-y-1.5 rounded-2xl border border-slate-100 bg-slate-50 p-3.5">
+                        <div class="flex items-center gap-2 text-xs font-bold text-slate-900">{{ ux_icon('tabler:clock', {class:'h-4 w-4 text-emerald-600'}) }}<span>Livraison Express 24h/48h</span></div>
+                        <p class="text-[11px] text-slate-600">Réseau de livreurs dédiés couvrant les 6 arrondissements d'Antananarivo ainsi que les principales provinces (Tamatave, Majunga, Diego, Antsirabe).</p>
+                    </div>
+                </div>
+                <div class="space-y-1 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-[11px] text-slate-600">
+                    <p><strong>Siège social :</strong> Immeuble GoBuy Tower, Boulevard d'Ankorondrano, Antananarivo 101, Madagascar.</p>
+                    <p><strong>NIF / STAT :</strong> 4001298834 / 47190 11 2024 0 10234</p>
+                </div>
+            </div>
+
+            {# ---- RECRUITMENT ---- #}
+            <div data-info-panel="recruitment" class="hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div><h4 class="text-sm font-bold text-slate-900">Rejoignez l'équipe GoBuy</h4><p class="text-[11px] text-slate-500">Nous recrutons activement pour accompagner notre croissance à Madagascar !</p></div>
+                    <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">4 postes ouverts</span>
+                </div>
+                <div class="space-y-2.5">
+                    {% for job in [
+                        {title: 'Livreur Moto Express (Antananarivo & Périphérie)', type: 'CDI / Temps plein', desc: 'Livraison des colis clients, encaissement Mobile Money et espèces, bon sens relationnel.'},
+                        {title: 'Développeur Full-Stack PHP / Symfony & React', type: 'CDI', desc: "Maintenance de l'API Symfony 7.3, passerelles de paiement Mvola/Airtel/Orange et application React."},
+                        {title: 'Chargé(e) de Relation Client & Modération Vendeurs', type: 'CDD évolutif', desc: 'Assistance téléphonique et WhatsApp pour les acheteurs, validation des dossiers fournisseurs.'}
+                    ] %}
+                        <div class="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 sm:flex-row sm:items-center">
+                            <div><div class="flex items-center gap-2"><span class="text-xs font-bold text-slate-900">{{ job.title }}</span><span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{{ job.type }}</span></div>
+                                <p class="mt-0.5 text-[11px] text-slate-500">{{ job.desc }}</p></div>
+                            <button type="button" data-job-select="{{ job.title }}" class="shrink-0 self-start rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 sm:self-center">Postuler</button>
+                        </div>
+                    {% endfor %}
+                </div>
+                <form data-job-form class="hidden space-y-3 rounded-2xl border-2 border-emerald-500/30 bg-white p-4">
+                    <div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-900">Candidature pour : <span data-job-title></span></span><button type="button" data-job-cancel class="text-xs text-slate-400 hover:text-slate-600">Annuler</button></div>
+                    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                        <div><label class="mb-1 block text-[10px] font-bold text-slate-600">Votre nom complet</label><input type="text" required placeholder="Ex: Haja Rasolofo" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"></div>
+                        <div><label class="mb-1 block text-[10px] font-bold text-slate-600">Téléphone de contact</label><input type="tel" required placeholder="034 XX XXX XX" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"></div>
+                    </div>
+                    <div><label class="mb-1 block text-[10px] font-bold text-slate-600">Quelques mots sur votre expérience</label><textarea required rows="2" placeholder="Parlez-nous de vos motivations et de vos compétences clés..." class="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"></textarea></div>
+                    <button type="submit" class="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700">{{ ux_icon('tabler:send', {class:'h-3.5 w-3.5'}) }}<span>Envoyer ma candidature</span></button>
+                    <div data-job-sent class="hidden flex items-center gap-2 rounded-xl bg-emerald-500 p-3 text-xs font-semibold text-white">{{ ux_icon('tabler:check', {class:'h-4 w-4'}) }}<span>Candidature transmise avec succès ! Nos RH vous recontacteront sous 48h.</span></div>
+                </form>
+            </div>
+
+            {# ---- RETURNS ---- #}
+            <div data-info-panel="returns" class="hidden space-y-4">
+                <div class="space-y-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800">{{ ux_icon('tabler:refresh', {class:'h-3 w-3'}) }} Politique Sérénité 7 Jours</span>
+                    <h4 class="text-sm font-bold text-amber-900">Retour simplifié et remboursement garanti sous 48h</h4>
+                    <p class="text-[11px] leading-relaxed text-amber-800">Un article ne correspond pas à vos attentes, présente un défaut ou une erreur de taille ? Vous disposez de <strong>7 jours calendaires</strong> à compter de la réception pour demander un retour sans frais additionnels.</p>
+                </div>
+                <div class="space-y-2.5">
+                    <h5 class="text-xs font-bold text-slate-900">Comment procéder au retour ?</h5>
+                    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                        <div class="space-y-1 rounded-2xl border border-slate-100 bg-slate-50 p-3"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">1</span><strong class="block text-[11px] text-slate-800">Signalement</strong><p class="text-[10px] text-slate-500">Contactez le support avec votre numéro de commande (#MK...) et une photo.</p></div>
+                        <div class="space-y-1 rounded-2xl border border-slate-100 bg-slate-50 p-3"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">2</span><strong class="block text-[11px] text-slate-800">Collecte coursier</strong><p class="text-[10px] text-slate-500">Un livreur GoBuy passe récupérer l'article dans son emballage d'origine.</p></div>
+                        <div class="space-y-1 rounded-2xl border border-slate-100 bg-slate-50 p-3"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">3</span><strong class="block text-[11px] text-slate-800">Remboursement</strong><p class="text-[10px] text-slate-500">Recrédit immédiat sur votre compte Mvola, Orange Money ou Airtel Money.</p></div>
+                    </div>
+                </div>
+            </div>
+
+            {# ---- PROMOTIONS ---- #}
+            <div data-info-panel="promotions" class="hidden space-y-4">
+                <div><h4 class="text-sm font-bold text-slate-900">Codes Promos & Réductions Actives</h4><p class="text-[11px] text-slate-500">Bénéficiez de réductions exclusives lors de vos achats à Madagascar</p></div>
+                <div class="space-y-3">
+                    {% for promo in [
+                        {code: 'MADA10', discount: '-10 000 Ar', condition: "Dès 100 000 Ar d'achat sur tout le catalogue", expiry: 'Valable jusqu\'au 31 décembre'},
+                        {code: 'MVOLAFREE', discount: 'Livraison Offerte', condition: 'Pour tout paiement effectué avec Mvola Telma', expiry: 'Offre permanente'},
+                        {code: 'FIRSTSHOP', discount: '-5%', condition: 'Sur votre toute première commande après inscription', expiry: 'Réservé aux nouveaux clients'}
+                    ] %}
+                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-emerald-500/40 bg-slate-50 p-3.5">
+                            <div><div class="flex items-center gap-2"><span class="rounded-lg bg-emerald-600 px-2.5 py-1 font-mono text-xs font-bold text-white">{{ promo.code }}</span><span class="text-xs font-bold text-emerald-700">{{ promo.discount }}</span></div>
+                                <p class="mt-1 text-[11px] text-slate-600">{{ promo.condition }}</p><span class="text-[10px] text-slate-400">{{ promo.expiry }}</span></div>
+                            <button type="button" data-copy-code="{{ promo.code }}" class="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-100">
+                                {{ ux_icon('tabler:copy', {class:'h-3.5 w-3.5'}) }}<span>Copier</span></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# ---- CONTACT ---- #}
+            <div data-info-panel="contact" class="hidden space-y-4">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="space-y-2 rounded-2xl border border-slate-100 bg-slate-50 p-3.5">
+                        <div class="flex items-center gap-2 text-xs font-bold text-slate-900">{{ ux_icon('tabler:phone-call', {class:'h-4 w-4 text-emerald-600'}) }}<span>Ligne Directe & WhatsApp</span></div>
+                        <p class="text-sm font-bold text-emerald-700">+261 34 00 123 45</p><p class="text-[10px] text-slate-500">Disponible du lundi au samedi de 8h à 18h30</p>
+                    </div>
+                    <div class="space-y-2 rounded-2xl border border-slate-100 bg-slate-50 p-3.5">
+                        <div class="flex items-center gap-2 text-xs font-bold text-slate-900">{{ ux_icon('tabler:mail', {class:'h-4 w-4 text-emerald-600'}) }}<span>Support par Email</span></div>
+                        <p class="text-sm font-bold text-emerald-700">support@marketoo.mg</p><p class="text-[10px] text-slate-500">Réponse garantie sous 2 heures ouvrées</p>
+                    </div>
+                </div>
+                <form data-contact-form class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <h5 class="text-xs font-bold text-slate-900">Envoyez-nous un message rapide</h5>
+                    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                        <div><label class="mb-1 block text-[10px] font-bold text-slate-600">Votre Nom</label><input type="text" required placeholder="Nom & Prénom" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"></div>
+                        <div><label class="mb-1 block text-[10px] font-bold text-slate-600">E-mail ou Téléphone</label><input type="text" required placeholder="contact@exemple.mg ou 034..." class="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"></div>
+                    </div>
+                    <div><label class="mb-1 block text-[10px] font-bold text-slate-600">Votre demande</label><textarea required rows="3" placeholder="Expliquez-nous votre situation, commande ou question..." class="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"></textarea></div>
+                    <button type="submit" class="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700">{{ ux_icon('tabler:send', {class:'h-3.5 w-3.5'}) }}<span>Transmettre au service client</span></button>
+                    <div data-contact-sent class="hidden flex items-center gap-2 rounded-xl bg-emerald-500 p-3 text-xs font-semibold text-white">{{ ux_icon('tabler:check', {class:'h-4 w-4'}) }}<span>Votre message a été transmis à notre équipe d'assistance !</span></div>
+                </form>
+            </div>
+
+            {# ---- LEGAL (mentions légales) — deep-link only, no tab ---- #}
+            <div data-info-panel="legal" class="hidden space-y-4 text-xs leading-relaxed text-slate-600">
+                <div class="space-y-1.5 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-amber-950">
+                    <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">Société Éditrice Officielle</span>
+                    <h4 class="text-base font-bold text-amber-900">GoBuy SARL</h4>
+                    <p class="text-xs text-amber-800">Société à Responsabilité Limitée au capital de 20 000 000 Ariary.</p>
+                </div>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="space-y-1 rounded-2xl border border-slate-200/80 bg-slate-50 p-3.5"><span class="text-[10px] font-bold uppercase text-slate-400">Siège Social</span>
+                        <p class="font-semibold text-slate-800">Immeuble Le Colisée, 3ème étage</p><p class="text-slate-500">Rue Ravoninahitriniarivo, Ankorondrano</p><p class="text-slate-500">101 Antananarivo, Madagascar</p></div>
+                    <div class="space-y-1 rounded-2xl border border-slate-200/80 bg-slate-50 p-3.5"><span class="text-[10px] font-bold uppercase text-slate-400">Immatriculation & Registre</span>
+                        <p class="text-slate-700"><strong>RCS :</strong> Antananarivo 2024 B 00982</p><p class="text-slate-700"><strong>NIF :</strong> 400 982 314 0</p><p class="text-slate-700"><strong>STAT :</strong> 51221 11 2024 0 10293</p></div>
+                </div>
+                <div class="space-y-1.5 rounded-2xl border border-slate-200/80 bg-slate-50 p-3.5">
+                    <span class="text-[10px] font-bold uppercase text-slate-400">Direction de la Publication</span>
+                    <p class="text-slate-700">Directeur de publication : Direction Générale GoBuy SARL.<br>Contact juridique : <strong>legal@gobuy.mg</strong></p>
+                    <p class="border-t border-slate-200 pt-1 text-[11px] text-slate-500">Plateforme déclarée conformément aux dispositions légales en vigueur en République de Madagascar relatives au commerce électronique et à la protection des données personnelles.</p>
+                </div>
+            </div>
+
+            {# ---- CGV — deep-link only ---- #}
+            <div data-info-panel="cgv" class="hidden space-y-3.5 text-xs leading-relaxed text-slate-600">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5"><h4 class="text-sm font-bold text-slate-900">Conditions Générales de Vente (CGV)</h4><p class="mt-0.5 text-[11px] text-slate-500">Dernière mise à jour : 01 Septembre 2026</p></div>
+                <div class="scrollbar-thin max-h-[340px] space-y-3 overflow-y-auto pr-2">
+                    <div class="space-y-1"><h5 class="font-bold text-slate-900">Article 1 - Objet & Champ d'application</h5><p class="text-[11px] text-slate-500">Les présentes CGV régissent l'ensemble des ventes conclues entre les vendeurs tiers de la marketplace GoBuy (opérée par GoBuy SARL) et les acheteurs finaux situés à Madagascar.</p></div>
+                    <div class="space-y-1"><h5 class="font-bold text-slate-900">Article 2 - Prix & Devises</h5><p class="text-[11px] text-slate-500">Tous les prix sont exprimés en <strong>Ariary malgache (Ar)</strong> toutes taxes comprises (TTC). Les frais de livraison sont calculés selon la zone géographique et indiqués avant la validation définitive de la commande.</p></div>
+                    <div class="space-y-1"><h5 class="font-bold text-slate-900">Article 3 - Modalités de Règlement</h5><p class="text-[11px] text-slate-500">Le règlement s'effectue au choix : par Mobile Money (MVola, Orange Money, Airtel Money), par carte bancaire sécurisée (VISA, Mastercard) ou en espèces à la livraison. Les paiements par tranches sont soumis à validation préalable.</p></div>
+                    <div class="space-y-1"><h5 class="font-bold text-slate-900">Article 4 - Livraison & Réception</h5><p class="text-[11px] text-slate-500">Les livraisons sont assurées sous 24h à 48h à Antananarivo et sous 3 à 5 jours ouvrés en province via transporteurs partenaires agréés.</p></div>
+                </div>
+            </div>
+
+            {# ---- CGU — deep-link only ---- #}
+            <div data-info-panel="cgu" class="hidden space-y-3.5 text-xs leading-relaxed text-slate-600">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5"><h4 class="text-sm font-bold text-slate-900">Conditions Générales d'Utilisation (CGU)</h4><p class="mt-0.5 text-[11px] text-slate-500">Règles d'accès et d'utilisation de la plateforme GoBuy</p></div>
+                <div class="scrollbar-thin max-h-[340px] space-y-3 overflow-y-auto pr-2">
+                    <div class="space-y-1"><h5 class="font-bold text-slate-900">1. Accès au service</h5><p class="text-[11px] text-slate-500">L'accès à la marketplace est ouvert à toute personne physique ou morale majeure résidant ou exerçant une activité commerciale à Madagascar.</p></div>
+                    <div class="space-y-1"><h5 class="font-bold text-slate-900">2. Sécurité du compte & Authentification</h5><p class="text-[11px] text-slate-500">L'utilisateur est seul responsable de la confidentialité de ses identifiants et de l'activation éventuelle de la double authentification (2FA).</p></div>
+                    <div class="space-y-1"><h5 class="font-bold text-slate-900">3. Propriété Intellectuelle</h5><p class="text-[11px] text-slate-500">Les logos, marques, textes et visuels diffusés sur la plateforme sont la propriété exclusive de GoBuy SARL ou de leurs titulaires respectifs.</p></div>
+                </div>
+            </div>
+
+            {# ---- DELIVERY ZONES — deep-link only ---- #}
+            <div data-info-panel="delivery_zones" class="hidden space-y-4 text-xs leading-relaxed text-slate-600">
+                <div class="space-y-1 rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-emerald-950">
+                    <h4 class="text-sm font-bold text-emerald-900">Zones de Livraison Couvertes à Madagascar</h4>
+                    <p class="text-xs text-emerald-800">Service express en 24h sur Antananarivo et expédition sécurisée vers toutes les régions.</p>
+                </div>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">Antananarivo & Grand Tana</span>
+                        <ul class="space-y-1 font-medium text-slate-700">
+                            <li>• 1er au 6ème Arrondissement (Livraison Express 24h : 5 000 Ar)</li>
+                            <li>• Périphérie : Ivato, Talatamaty, Ambohimanarina, Tanjombato, By-pass (8 000 Ar)</li>
+                            <li>• Livraison Gratuite dès 100 000 Ar de commande</li>
+                        </ul>
+                    </div>
+                    <div class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+                        <span class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700">Provinces & Grandes Villes</span>
+                        <ul class="space-y-1 font-medium text-slate-700">
+                            <li>• Toamasina (Tamatave) : 48h - 12 000 Ar</li>
+                            <li>• Mahajanga (Majunga) : 48h/72h - 15 000 Ar</li>
+                            <li>• Antsirabe & Fianarantsoa : 48h - 12 000 Ar</li>
+                            <li>• Antsiranana (Diego) & Toliara : 3-5 jours</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="text-[11px] text-slate-400">Suivi géolocalisé en temps réel disponible avec chaque numéro de commande.</p>
+            </div>
+
+            {# ---- FAQ — deep-link only ---- #}
+            <div data-info-panel="faq" class="hidden space-y-3 text-xs leading-relaxed text-slate-600">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5"><h4 class="text-sm font-bold text-slate-900">Foire Aux Questions (FAQ)</h4><p class="text-[11px] text-slate-500">Les réponses rapides à vos questions courantes</p></div>
+                <div class="max-h-[340px] space-y-2.5 overflow-y-auto pr-1">
+                    <div class="space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3"><p class="font-bold text-slate-900">Comment puis-je suivre l'acheminement de mon colis ?</p><p class="text-[11px] text-slate-500">Rendez-vous dans la rubrique "Suivi de Commande" ou cliquez sur le lien reçu par SMS/WhatsApp. Entrez simplement votre référence de commande (ex: #MK-2026-101).</p></div>
+                    <div class="space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3"><p class="font-bold text-slate-900">Quels sont les opérateurs Mobile Money supportés ?</p><p class="text-[11px] text-slate-500">Nous acceptons nativement MVola (Telma), Orange Money et Airtel Money, sans frais de transfert supplémentaires pour l'acheteur.</p></div>
+                    <div class="space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3"><p class="font-bold text-slate-900">Puis-je tester ou vérifier le produit avant de payer ?</p><p class="text-[11px] text-slate-500">Oui, avec l'option de paiement à la livraison, vous pouvez vérifier l'état général du colis en présence de notre coursier avant de remettre les fonds.</p></div>
+                </div>
+            </div>
+
+            {# ---- CLAIMS — deep-link only ---- #}
+            <div data-info-panel="claims" class="hidden space-y-4 text-xs leading-relaxed text-slate-600">
+                <div class="space-y-1 rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-rose-950">
+                    <h4 class="text-sm font-bold text-rose-900">Formulaire Officiel de Réclamation</h4>
+                    <p class="text-xs text-rose-800">Un problème avec votre colis, un produit défectueux ou un retard inhabituel ? Notre cellule médiation traite votre dossier en priorité sous 24h.</p>
+                </div>
+                <form data-claim-form class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div><label class="mb-1 block text-[10px] font-bold text-slate-700">Numéro de Commande *</label><input type="text" required placeholder="Ex: #MK-2026-101" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"></div>
+                        <div><label class="mb-1 block text-[10px] font-bold text-slate-700">Motif de la réclamation *</label>
+                            <select class="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none">
+                                <option value="damaged">Article endommagé ou non conforme</option><option value="delay">Retard important de livraison</option>
+                                <option value="missing">Article manquant dans le colis</option><option value="refund">Demande de remboursement</option><option value="other">Autre motif</option>
+                            </select></div>
+                    </div>
+                    <div><label class="mb-1 block text-[10px] font-bold text-slate-700">Votre Téléphone / Email de contact *</label><input type="text" required placeholder="034 XX XXX XX ou email@exemple.mg" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"></div>
+                    <div><label class="mb-1 block text-[10px] font-bold text-slate-700">Détails du problème rencontré *</label><textarea required rows="3" placeholder="Décrivez précisément la situation pour accélérer le traitement..." class="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"></textarea></div>
+                    <button type="submit" class="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-rose-700">Déposer ma réclamation</button>
+                    <div data-claim-sent class="hidden flex items-center gap-2 rounded-2xl bg-emerald-500 p-4 text-xs font-semibold text-white">{{ ux_icon('tabler:check', {class:'h-5 w-5 shrink-0'}) }}<span data-claim-ref>Votre réclamation a bien été transmise à notre service qualité.</span></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
