@@ -33,7 +33,7 @@
     <div data-admin-panel="overview" class="hidden space-y-6">
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Clients inscrits</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ users|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">{{ ux_icon('tabler:users', {class:'h-5 w-5'}) }}</span></div>
-            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Fournisseurs actifs</span><div class="mt-1 text-2xl font-bold text-slate-900">0</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">{{ ux_icon('tabler:building-store', {class:'h-5 w-5'}) }}</span></div>
+            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Fournisseurs actifs</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ approvedSuppliers }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">{{ ux_icon('tabler:building-store', {class:'h-5 w-5'}) }}</span></div>
             <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Produits au catalogue</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ products|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">{{ ux_icon('tabler:package', {class:'h-5 w-5'}) }}</span></div>
             <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Commandes totales</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ orders|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">{{ ux_icon('tabler:file-spreadsheet', {class:'h-5 w-5'}) }}</span></div>
         </div>
@@ -50,6 +50,15 @@
             <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">Commandes récentes</h3><button type="button" data-admin-tab="orders_table" class="text-xs text-indigo-600 hover:underline">Voir tout</button></div>
             {% if orders is empty %}
                 <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucune commande enregistrée pour le moment.</div>
+            {% else %}
+                <div class="divide-y divide-slate-100">
+                    {% for order in orders|slice(0, 5) %}
+                        <div class="flex flex-wrap items-center justify-between gap-2 py-3 text-xs">
+                            <div><p class="font-bold text-slate-900">{{ order.orderNumber }}</p><p class="text-slate-500">{{ order.customer ? order.customer.fullName : 'Client inconnu' }}</p></div>
+                            <div class="text-right"><p class="font-mono font-bold text-slate-900">{{ order.totalAmount|number_format(0, ',', ' ') }} Ar</p><p class="text-slate-500">{{ order.createdAt|date('d/m/Y') }} · {{ order.status }}</p></div>
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         </div>
     </div>
@@ -64,6 +73,15 @@
             </div>
             {% if vendorApplications is empty %}
                 <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucune candidature de vendeur pour le moment.</div>
+            {% else %}
+                <div class="divide-y divide-slate-100">
+                    {% for application in vendorApplications %}
+                        <div class="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
+                            <div><p class="font-bold text-slate-900">{{ application.companyName }}</p><p class="text-slate-500">{{ application.contactName }} · {{ application.email }} · {{ application.phone }}</p></div>
+                            <div class="text-right"><p class="font-semibold text-slate-800">{{ application.type|capitalize }} · {{ application.status|capitalize }}</p><p class="text-slate-500">{{ application.createdAt|date('d/m/Y') }}</p></div>
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         </div>
     </div>
@@ -71,16 +89,25 @@
     {# ---- VENDOR PAYOUTS ---- #}
     <div data-admin-panel="vendor_payouts" class="hidden space-y-6">
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Ventes Totales Vendeurs</span><div class="font-mono text-lg font-black text-slate-900">0 Ar</div></div>
-            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Commissions GoBuy</span><div class="font-mono text-lg font-black text-emerald-600">+0 Ar</div></div>
-            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Loyers Boutiques Pro</span><div class="font-mono text-lg font-black text-indigo-600">+0 Ar</div></div>
-            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Net à reverser en attente</span><div class="font-mono text-lg font-black text-rose-600">0 Ar</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Ventes Totales Vendeurs</span><div class="font-mono text-lg font-black text-slate-900">{{ payoutTotals.grossSales|number_format(0, ',', ' ') }} Ar</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Commissions GoBuy</span><div class="font-mono text-lg font-black text-emerald-600">+{{ payoutTotals.commissionAmount|number_format(0, ',', ' ') }} Ar</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Loyers Boutiques Pro</span><div class="font-mono text-lg font-black text-indigo-600">+{{ payoutTotals.planFee|number_format(0, ',', ' ') }} Ar</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Net à reverser en attente</span><div class="font-mono text-lg font-black text-rose-600">{{ payoutTotals.pendingNetAmount|number_format(0, ',', ' ') }} Ar</div></div>
         </div>
         <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
             <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:currency-dollar', {class:'h-4 w-4 text-emerald-600'}) }}Tableau des reversements bi-hebdomadaires</h3>
                 <p class="text-xs text-slate-500">Reversements effectués après déduction des commissions et loyers boutique.</p></div>
             {% if vendorPayouts is empty %}
                 <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucun reversement à afficher pour le moment.</div>
+            {% else %}
+                <div class="divide-y divide-slate-100">
+                    {% for payout in vendorPayouts %}
+                        <div class="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
+                            <div><p class="font-bold text-slate-900">{{ payout.vendor.companyName }}</p><p class="text-slate-500">{{ payout.periodStart|date('d/m/Y') }} – {{ payout.periodEnd|date('d/m/Y') }} · {{ payout.status|capitalize }}</p></div>
+                            <div class="text-right"><p class="font-mono font-bold text-slate-900">{{ payout.netAmount|number_format(0, ',', ' ') }} Ar net</p><p class="text-slate-500">{{ payout.grossSales|number_format(0, ',', ' ') }} Ar de ventes</p></div>
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         </div>
     </div>
@@ -90,7 +117,18 @@
         <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
             <h3 class="text-sm font-bold text-slate-900">Dossiers Fournisseurs à approuver par l'Administrateur</h3>
             <p class="text-xs text-slate-500">Chaque fournisseur doit obligatoirement avoir son e-mail et son téléphone vérifiés, puis être validé par un administrateur avant de pouvoir accéder à l'espace vendeur.</p>
-            <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">{% if pendingSuppliers is empty %}✓ Tous les dossiers fournisseurs sont traités ! Aucun fournisseur en attente.{% endif %}</div>
+            {% if pendingSuppliers is empty %}
+                <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Tous les dossiers fournisseurs sont traités ! Aucun fournisseur en attente.</div>
+            {% else %}
+                <div class="divide-y divide-slate-100 rounded-2xl border border-slate-200 px-4">
+                    {% for supplier in pendingSuppliers %}
+                        <div class="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
+                            <div><p class="font-bold text-slate-900">{{ supplier.companyName }}</p><p class="text-slate-500">{{ supplier.contactName }} · {{ supplier.email }} · {{ supplier.phone }}</p></div>
+                            <p class="text-slate-500">Dossier reçu le {{ supplier.createdAt|date('d/m/Y') }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
     </div>
 
@@ -111,7 +149,20 @@
                     <th class="px-3 py-2.5">Utilisateur</th><th class="px-3 py-2.5">Rôle</th><th class="px-3 py-2.5">E-mail Vérifié</th><th class="px-3 py-2.5">Téléphone</th><th class="px-3 py-2.5">2FA</th><th class="px-3 py-2.5">Date</th>
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
-                    {% if users is empty %}<tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucun utilisateur inscrit pour le moment.</td></tr>{% endif %}
+                    {% if users is empty %}
+                        <tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucun utilisateur inscrit pour le moment.</td></tr>
+                    {% else %}
+                        {% for user in users %}
+                            <tr class="text-slate-700">
+                                <td class="px-3 py-3"><p class="font-semibold text-slate-900">{{ user.fullName }}</p><p class="text-slate-500">{{ user.email }}</p></td>
+                                <td class="px-3 py-3">{{ user.roles|join(', ') }}</td>
+                                <td class="px-3 py-3">{{ user.emailVerified ? 'Oui' : 'Non' }}</td>
+                                <td class="px-3 py-3">{{ user.phone ?? '—' }}<br><span class="text-slate-500">{{ user.phoneVerified ? 'Vérifié' : 'Non vérifié' }}</span></td>
+                                <td class="px-3 py-3">{{ user.twoFactorEnabled ? 'Activée' : 'Désactivée' }}</td>
+                                <td class="px-3 py-3">{{ user.createdAt|date('d/m/Y') }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
                 </tbody>
             </table>
         </div>
@@ -150,7 +201,20 @@
                     <th class="px-3 py-2.5">N° Commande</th><th class="px-3 py-2.5">Client</th><th class="px-3 py-2.5">Montant</th><th class="px-3 py-2.5">Paiement</th><th class="px-3 py-2.5">Statut</th><th class="px-3 py-2.5">Date</th>
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
-                    {% if orders is empty %}<tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucune commande enregistrée pour le moment.</td></tr>{% endif %}
+                    {% if orders is empty %}
+                        <tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucune commande enregistrée pour le moment.</td></tr>
+                    {% else %}
+                        {% for order in orders %}
+                            <tr class="text-slate-700">
+                                <td class="px-3 py-3 font-mono font-semibold">{{ order.orderNumber }}</td>
+                                <td class="px-3 py-3">{{ order.customer ? order.customer.fullName : 'Client inconnu' }}</td>
+                                <td class="px-3 py-3 font-mono">{{ order.totalAmount|number_format(0, ',', ' ') }} Ar</td>
+                                <td class="px-3 py-3">{{ order.paymentMethod }}</td>
+                                <td class="px-3 py-3">{{ order.status|capitalize }}</td>
+                                <td class="px-3 py-3">{{ order.createdAt|date('d/m/Y') }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
                 </tbody>
             </table>
         </div>
