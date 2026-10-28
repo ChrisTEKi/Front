@@ -1,0 +1,87 @@
+{% extends 'supplier/_layout.html.twig' %}
+{% import 'macros/forms.html.twig' as f %}
+{% block title %}{{ '%1% — Espace fournisseur — GoBuy'|trans({'%1%': (isNew ? 'Nouveau produit'|trans : 'Modifier le produit'|trans)}) }}{% endblock %}
+
+{% block supplier_content %}
+<div class="mx-auto max-w-5xl space-y-5">
+    <a href="{{ path('app_supplier_products') }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-black">{{ ux_icon('tabler:arrow-left', {class: 'h-4 w-4'}) }}{{ 'Retour à mes produits'|trans }}</a>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate', class: 'grid gap-6 lg:grid-cols-3', enctype: 'multipart/form-data'}}) }}
+        {% if form.vars.errors|length %}
+            <div role="alert" class="lg:col-span-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                {% for error in form.vars.errors %}<p>{{ error.message }}</p>{% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="space-y-5 lg:col-span-2" data-controller="category-select" data-category-select-map-value="{{ category_map()|json_encode }}">
+            <section class="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+                <h2 class="text-sm font-black text-slate-950">{{ isNew ? 'Nouveau produit'|trans : 'Informations du produit'|trans }}</h2>
+                {{ f.field(form.name) }}
+                <div class="grid gap-4 sm:grid-cols-3">
+                    {{ f.field(form.brand) }}
+                    {{ f.field(form.model) }}
+                    {{ f.field(form.sku) }}
+                </div>
+                {{ f.field(form.description) }}
+            </section>
+
+            <section class="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+                <h2 class="text-sm font-black text-slate-950">{{ 'Classement'|trans }}</h2>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ f.field(form.categorySlug) }}
+                    {{ f.field(form.subcategory) }}
+                </div>
+                {{ f.field(form.condition) }}
+            </section>
+
+            <section class="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+                <h2 class="text-sm font-black text-slate-950">{{ 'Prix & stock'|trans }}</h2>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ f.field(form.price) }}
+                    {{ f.field(form.originalPrice, 'Renseignez un prix plus élevé pour afficher une remise sur la fiche.'|trans) }}
+                    {{ f.field(form.stock) }}
+                    {{ f.field(form.warrantyMonths) }}
+                </div>
+            </section>
+        </div>
+
+        <aside class="space-y-5">
+            <section class="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs">
+                <h2 class="text-sm font-black text-slate-950">{{ 'Photos'|trans }} <span class="text-xs font-medium text-slate-400">{{ '(%1% max)'|trans({'%1%': (maxImages)}) }}</span></h2>
+                {% if form.removeImages|length > 0 %}
+                    <div>
+                        <p class="mb-2 text-[11px] text-slate-500">{{ 'Cochez une photo pour la retirer à l\'enregistrement.'|trans }}</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            {% for choice in form.removeImages %}
+                                <label class="group relative block cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-soft-gray has-checked:border-red-400 has-checked:ring-2 has-checked:ring-red-200">
+                                    <img src="{{ choice.vars.value }}" alt="{{ 'Photo du produit'|trans }}" loading="lazy" decoding="async" class="aspect-square w-full object-contain p-1 group-has-checked:opacity-40">
+                                    <span class="absolute right-1 top-1 rounded-md bg-white/90 p-0.5">{{ form_widget(choice, {attr: {class: 'h-4 w-4 rounded border-slate-300 text-red-600'}}) }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                <div>
+                    {{ form_label(form.images, null, {label_attr: {class: 'mb-1 block text-xs font-semibold text-slate-700'}}) }}
+                    {{ form_widget(form.images, {attr: {class: 'block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-slate-800'}}) }}
+                    <p class="mt-1 text-[10px] text-slate-400">{{ 'JPG, PNG ou WebP · 5 Mo maximum par photo. La première photo est la photo principale.'|trans }}</p>
+                    {{ f.errors(form.images) }}
+                </div>
+            </section>
+
+            <section class="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs">
+                <h2 class="text-sm font-black text-slate-950">{{ 'Visibilité'|trans }}</h2>
+                <div class="space-y-2">
+                    {% for option in form.status %}
+                        <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 has-checked:border-emerald-500 has-checked:bg-emerald-50 has-checked:text-emerald-900">
+                            {{ form_widget(option, {attr: {class: 'h-4 w-4 border-slate-300 text-emerald-600'}}) }}<span>{{ option.vars.label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {{ f.errors(form.status) }}
+                <button type="submit" class="w-full rounded-2xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-700">{{ isNew ? 'Enregistrer le produit'|trans : 'Enregistrer les modifications'|trans }}</button>
+            </section>
+        </aside>
+    {{ form_end(form) }}
+</div>
+{% endblock %}

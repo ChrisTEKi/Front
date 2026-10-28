@@ -1,0 +1,138 @@
+{% extends 'supplier/_layout.html.twig' %}
+{% block title %}{{ 'Vue d\'ensemble — Espace fournisseur — GoBuy'|trans }}{% endblock %}
+
+{% macro delta(value) %}
+    {% if value is not null %}
+        <span class="rounded-full px-1.5 py-0.5 text-[10px] font-bold {{ value >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600' }}">{{ value >= 0 ? '+' : '' }}{{ value|number_format(1, ',', ' ') }}%</span>
+    {% endif %}
+{% endmacro %}
+
+{% block supplier_content %}
+{% import _self as m %}
+{% set k = stats.kpis %}
+<div class="space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-sm font-black text-slate-950">{{ 'Performance des ventes'|trans }}</h2>
+        <div class="flex gap-1 rounded-xl bg-slate-100 p-1 text-xs font-bold" role="group" aria-label="{{ 'Période'|trans }}">
+            {% for p in periods %}
+                <a href="{{ path('app_supplier_dashboard', {jours: p}) }}" {{ stats.days == p ? 'aria-current="true"' : '' }}
+                   class="rounded-lg px-3 py-1.5 {{ stats.days == p ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-500 hover:text-slate-800' }}">{{ '%1% jours'|trans({'%1%': (p)}) }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <p class="text-xs font-medium text-slate-500">{{ 'Chiffre d\'affaires'|trans }}</p>
+            <p class="mt-1 text-xl font-black text-slate-950">{{ k.gross|ar }}</p>
+            <div class="mt-1.5">{{ m.delta(k.grossDelta) }} <span class="text-[10px] text-slate-400">{{ 'vs période précédente'|trans }}</span></div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <p class="text-xs font-medium text-slate-500">{{ 'Net après commission'|trans }}</p>
+            <p class="mt-1 text-xl font-black text-emerald-700">{{ k.net|ar }}</p>
+            <p class="mt-1.5 text-[10px] text-slate-400">{{ 'Commission GoBuy : %1%'|trans({'%1%': (k.commission|ar)}) }}</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <p class="text-xs font-medium text-slate-500">{{ 'Commandes'|trans }}</p>
+            <p class="mt-1 text-xl font-black text-slate-950">{{ k.orders }}</p>
+            <div class="mt-1.5">{{ m.delta(k.ordersDelta) }} <span class="text-[10px] text-slate-400">{{ '%count% article vendu|%count% articles vendus'|trans({'%count%': k.units}) }}</span></div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <p class="text-xs font-medium text-slate-500">{{ 'Panier moyen'|trans }}</p>
+            <p class="mt-1 text-xl font-black text-slate-950">{{ k.average|ar }}</p>
+            <p class="mt-1.5 text-[10px] text-slate-400">{{ 'Par commande'|trans }}</p>
+        </div>
+    </div>
+
+    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6" data-controller="sales-chart" data-sales-chart-points-value="{{ stats.series|json_encode }}">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-sm font-bold text-slate-950">{{ 'Évolution quotidienne'|trans }}</h3>
+                {% if stats.peak %}<p class="text-[11px] text-slate-500">{{ 'Meilleur jour : %1% (%2%)'|trans({'%1%': (stats.peak.label), '%2%': (stats.peak.revenue|ar)}) }}</p>{% endif %}
+            </div>
+            <div class="flex gap-1 rounded-xl bg-slate-100 p-1 text-xs font-bold">
+                <button type="button" data-sales-chart-target="tab" data-sales-chart-metric-param="revenue" data-action="sales-chart#select" class="rounded-lg px-3 py-1.5">{{ 'Chiffre d\'affaires'|trans }}</button>
+                <button type="button" data-sales-chart-target="tab" data-sales-chart-metric-param="orders" data-action="sales-chart#select" class="rounded-lg px-3 py-1.5">{{ 'Commandes'|trans }}</button>
+            </div>
+        </div>
+        <div class="h-56" data-sales-chart-target="canvas"></div>
+        <div data-sales-chart-target="empty" class="hidden rounded-2xl bg-slate-50 p-10 text-center text-xs text-slate-400">{{ 'Aucune vente sur cette période.'|trans }}</div>
+    </section>
+
+    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+        <h3 class="mb-4 text-sm font-bold text-slate-950">{{ 'Suivi des commandes'|trans }}</h3>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            {% for status in ['pending', 'preparing', 'shipped', 'delivered', 'cancelled'] %}
+                <a href="{{ path('app_supplier_orders', {statut: status}) }}" class="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition-colors hover:border-slate-300">
+                    <p class="text-2xl font-black text-slate-950">{{ stats.statusCounts[status] }}</p>
+                    <p class="text-[11px] font-semibold text-slate-500">{{ {pending: 'À traiter'|trans, preparing: 'En préparation'|trans, shipped: 'Expédiées'|trans, delivered: 'Livrées'|trans, cancelled: 'Annulées'|trans}[status] }}</p>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+            <h3 class="mb-4 text-sm font-bold text-slate-950">{{ 'Produits les plus vendus'|trans }}</h3>
+            {% if stats.topProducts is empty %}
+                <p class="rounded-2xl bg-slate-50 p-6 text-center text-xs text-slate-400">{{ 'Pas encore de ventes sur la période.'|trans }}</p>
+            {% else %}
+                <ol class="space-y-3">
+                    {% for p in stats.topProducts %}
+                        <li class="flex items-center justify-between gap-3 text-xs">
+                            <span class="flex min-w-0 items-center gap-3"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-600">{{ loop.index }}</span><span class="truncate font-semibold text-slate-800">{{ p.name }}</span></span>
+                            <span class="shrink-0 text-right"><span class="block font-bold text-slate-950">{{ p.revenue|ar }}</span><span class="text-[10px] text-slate-400">{{ '%count% vendu|%count% vendus'|trans({'%count%': p.units}) }}</span></span>
+                        </li>
+                    {% endfor %}
+                </ol>
+            {% endif %}
+        </section>
+
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+            <h3 class="mb-4 text-sm font-bold text-slate-950">{{ 'Ventes par rayon'|trans }}</h3>
+            {% if stats.byCategory is empty %}
+                <p class="rounded-2xl bg-slate-50 p-6 text-center text-xs text-slate-400">{{ 'Pas encore de ventes sur la période.'|trans }}</p>
+            {% else %}
+                <ul class="space-y-3">
+                    {% for c in stats.byCategory %}
+                        <li class="text-xs">
+                            <div class="mb-1 flex justify-between"><span class="font-semibold text-slate-800">{{ category_name(c.slug) }}</span><span class="font-bold text-slate-950">{{ c.revenue|ar }} · {{ c.share }}%</span></div>
+                            <div class="h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-600" style="width: {{ c.share }}%"></div></div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+            <div class="mb-4 flex items-center justify-between"><h3 class="text-sm font-bold text-slate-950">{{ 'Mon catalogue'|trans }}</h3><a href="{{ path('app_supplier_products') }}" class="text-xs font-bold text-emerald-700 hover:underline">{{ 'Gérer'|trans }}</a></div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="rounded-2xl bg-emerald-50 p-4"><p class="text-xl font-black text-emerald-800">{{ productCounts.active }}</p><p class="text-[11px] font-semibold text-emerald-700">{{ 'En ligne'|trans }}</p></div>
+                <div class="rounded-2xl bg-amber-50 p-4"><p class="text-xl font-black text-amber-800">{{ productCounts.draft }}</p><p class="text-[11px] font-semibold text-amber-700">{{ 'Brouillons'|trans }}</p></div>
+                <div class="rounded-2xl bg-slate-100 p-4"><p class="text-xl font-black text-slate-700">{{ productCounts.archived }}</p><p class="text-[11px] font-semibold text-slate-500">{{ 'Archivés'|trans }}</p></div>
+            </div>
+            {% if supplier.canSell %}
+                <a href="{{ path('app_supplier_product_new') }}" class="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-slate-950 py-3 text-xs font-bold text-white hover:bg-slate-800">{{ ux_icon('tabler:plus', {class: 'h-4 w-4'}) }}{{ 'Ajouter un produit'|trans }}</a>
+            {% endif %}
+        </section>
+
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
+            <h3 class="mb-4 text-sm font-bold text-slate-950">{{ 'Stock à surveiller'|trans }}</h3>
+            {% if lowStock is empty %}
+                <p class="rounded-2xl bg-slate-50 p-6 text-center text-xs text-slate-400">{{ 'Aucun produit en stock bas.'|trans }}</p>
+            {% else %}
+                <ul class="divide-y divide-slate-100">
+                    {% for product in lowStock %}
+                        <li class="flex items-center justify-between gap-3 py-2.5 text-xs">
+                            <a href="{{ path('app_supplier_product_edit', {id: product.id}) }}" class="truncate font-semibold text-slate-800 hover:underline">{{ product.name }}</a>
+                            <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold {{ product.stock == 0 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700' }}">{{ product.stock == 0 ? 'Rupture'|trans : '%count% restant|%count% restants'|trans({'%count%': product.stock}) }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

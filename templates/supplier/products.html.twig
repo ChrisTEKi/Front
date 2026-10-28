@@ -1,0 +1,83 @@
+{% extends 'supplier/_layout.html.twig' %}
+{% import 'macros/forms.html.twig' as f %}
+{% block title %}{{ 'Mes produits — Espace fournisseur — GoBuy'|trans }}{% endblock %}
+
+{% block supplier_content %}
+<section class="space-y-5">
+    <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <div class="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1 text-xs font-bold" role="group" aria-label="{{ 'Filtrer par statut'|trans }}">
+            <a href="{{ path('app_supplier_products', {q: term ?: null}) }}" class="rounded-lg px-3 py-1.5 {{ currentStatus is null ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-500' }}">{{ 'Tous (%1%)'|trans({'%1%': (counts.active + counts.draft + counts.archived)}) }}</a>
+            {% for status in ['active', 'draft', 'archived'] %}
+                <a href="{{ path('app_supplier_products', {statut: status, q: term ?: null}) }}" class="rounded-lg px-3 py-1.5 {{ currentStatus and currentStatus.value == status ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-500' }}">{{ {active: 'En ligne'|trans, draft: 'Brouillons'|trans, archived: 'Archivés'|trans}[status] }} ({{ counts[status] }})</a>
+            {% endfor %}
+        </div>
+        <div class="flex items-center gap-2">
+            <form method="get" class="relative" role="search">
+                {% if currentStatus %}<input type="hidden" name="statut" value="{{ currentStatus.value }}">{% endif %}
+                <input type="search" name="q" value="{{ term }}" placeholder="{{ 'Nom, marque, modèle, SKU…'|trans }}" aria-label="{{ 'Rechercher un produit'|trans }}" class="w-56 rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-3 text-xs focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+            </form>
+            {% if supplier.canSell %}
+                <a href="{{ path('app_supplier_product_new') }}" class="flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-950 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800">{{ ux_icon('tabler:plus', {class: 'h-4 w-4'}) }}{{ 'Ajouter'|trans }}</a>
+            {% else %}
+                <span class="shrink-0 cursor-not-allowed rounded-xl bg-slate-200 px-4 py-2 text-xs font-bold text-slate-500" title="{{ 'Disponible dès la validation de votre dossier'|trans }}">{{ 'Ajouter'|trans }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if products is empty %}
+        <div class="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+            <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">{{ ux_icon('tabler:package', {class: 'h-7 w-7'}) }}</span>
+            <p class="mt-3 text-sm font-bold text-slate-800">{{ term or currentStatus ? 'Aucun produit ne correspond à votre recherche.'|trans : 'Vous n\'avez pas encore de produit.'|trans }}</p>
+            {% if supplier.canSell and not term and not currentStatus %}
+                <p class="mt-1 text-xs text-slate-500">{{ 'Publiez votre premier produit pour apparaître dans le catalogue.'|trans }}</p>
+                <a href="{{ path('app_supplier_product_new') }}" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-700">{{ ux_icon('tabler:plus', {class: 'h-4 w-4'}) }}{{ 'Ajouter mon premier produit'|trans }}</a>
+            {% elseif not supplier.canSell %}
+                <p class="mt-1 text-xs text-slate-500">{{ 'La publication de produits est ouverte dès la validation de votre dossier par notre équipe.'|trans }}</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xs">
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left text-xs">
+                    <thead><tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase text-slate-400">
+                        <th class="px-4 py-3">{{ 'Produit'|trans }}</th><th class="px-4 py-3">{{ 'Rayon'|trans }}</th><th class="px-4 py-3 text-right">{{ 'Prix'|trans }}</th><th class="px-4 py-3 text-right">Stock</th><th class="px-4 py-3">{{ 'Statut'|trans }}</th><th class="px-4 py-3 text-right">{{ 'Actions'|trans }}</th>
+                    </tr></thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for product in products %}
+                            <tr class="align-middle">
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <img src="{{ product.images[0] }}" alt="" loading="lazy" decoding="async" width="48" height="48" class="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-soft-gray object-contain p-1">
+                                        <div class="min-w-0"><a href="{{ path('app_supplier_product_edit', {id: product.id}) }}" class="block truncate font-bold text-slate-900 hover:underline">{{ product.name }}</a>
+                                            <span class="text-[11px] text-slate-500">{{ product.brand }}{{ product.model ? ' · ' ~ product.model : '' }}{{ product.sku ? ' · ' ~ product.sku : '' }}</span></div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-slate-600">{{ category_name(product.categorySlug) }}</td>
+                                <td class="whitespace-nowrap px-4 py-3 text-right font-bold text-slate-900">{{ product.price|ar }}{% if product.discountPercent > 0 %}<span class="ml-1 rounded bg-emerald-50 px-1 text-[10px] text-emerald-700">-{{ product.discountPercent }}%</span>{% endif %}</td>
+                                <td class="px-4 py-3 text-right font-bold {{ product.stock == 0 ? 'text-red-600' : (product.stock <= 5 ? 'text-amber-600' : 'text-slate-700') }}">{{ product.stock }}</td>
+                                <td class="px-4 py-3"><span class="rounded-full border px-2 py-0.5 text-[10px] font-bold {{ product.status.badgeClasses }}">{{ product.status.label|trans }}</span></td>
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        {% if supplier.canSell %}
+                                            <a href="{{ path('app_supplier_product_edit', {id: product.id}) }}" class="rounded-lg border border-slate-200 px-2.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50">{{ 'Modifier'|trans }}</a>
+                                            <form method="post" action="{{ path('app_supplier_product_status', {id: product.id}) }}">
+                                                {{ f.csrf() }}
+                                                <input type="hidden" name="status" value="{{ product.status.value == 'active' ? 'archived' : 'active' }}">
+                                                <button type="submit" class="rounded-lg border border-slate-200 px-2.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50">{{ product.status.value == 'active' ? 'Archiver'|trans : 'Publier'|trans }}</button>
+                                            </form>
+                                            <form method="post" action="{{ path('app_supplier_product_delete', {id: product.id}) }}" data-turbo-confirm="Supprimer définitivement « {{ product.name }} » ?">
+                                                {{ f.csrf() }}
+                                                <button type="submit" class="rounded-lg border border-red-200 px-2.5 py-1.5 font-semibold text-red-600 hover:bg-red-50" aria-label="Supprimer {{ product.name }}">{{ ux_icon('tabler:trash', {class: 'h-3.5 w-3.5'}) }}</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/forms.html.twig' as f %}
+{% block title %}{{ 'Candidature partenaire — GoBuy'|trans }}{% endblock %}
+
+{% block body %}
+<div class="mx-auto w-full max-w-2xl space-y-6 p-4 pb-20 sm:p-8">
+    <a href="{{ path('app_become_vendor') }}" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-black">{{ ux_icon('tabler:arrow-left', {class: 'h-4 w-4'}) }}{{ 'Retour à la présentation'|trans }}</a>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate', 'data-controller': 'wizard', 'data-action': 'keydown.enter->wizard#enter', class: 'overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xs'}}) }}
+        <div class="border-b border-slate-100 p-5 sm:p-6">
+            <h1 class="text-lg font-black text-slate-950">{{ 'Devenir partenaire GoBuy'|trans }}</h1>
+            <p class="mt-1 text-xs text-slate-500">{{ 'Créez votre compte et présentez votre activité. Notre équipe valide votre dossier sous 48h ouvrées ; vous pourrez ensuite publier vos produits.'|trans }}</p>
+            <ol class="mt-4 flex items-center gap-4 text-[11px] font-bold">
+                {% for label in ['Mon compte'|trans, 'Ma boutique'|trans, 'Mon activité'|trans] %}
+                    <li data-wizard-target="dot" class="flex items-center gap-1.5 text-slate-400"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-slate-500">{{ loop.index }}</span>{{ label }}</li>
+                {% endfor %}
+            </ol>
+        </div>
+
+        {% if form.vars.errors|length %}
+            <div role="alert" class="m-5 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{% for error in form.vars.errors %}<p>{{ error.message }}</p>{% endfor %}</div>
+        {% endif %}
+
+        <div class="p-5 sm:p-6">
+            <div data-wizard-target="step" class="space-y-4">
+                {{ f.field(form.fullName) }}
+                {{ f.field(form.contactRole) }}
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ f.field(form.email) }}
+                    {{ f.field(form.phone) }}
+                </div>
+                {{ f.repeated(form.plainPassword) }}
+            </div>
+
+            <div data-wizard-target="step" class="hidden space-y-4">
+                {{ f.field(form.shopName) }}
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ f.field(form.city) }}
+                    {{ f.field(form.mainCategory) }}
+                </div>
+                {{ f.field(form.address) }}
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ f.field(form.activityType) }}
+                    {{ f.field(form.taxId) }}
+                </div>
+                {{ f.field(form.description) }}
+                {{ f.choices(form.plan, 'sm:grid-cols-2') }}
+            </div>
+
+            <div data-wizard-target="step" class="hidden space-y-4" data-controller="reveal">
+                {{ f.choices(form.productTypes, 'grid-cols-2 sm:grid-cols-3') }}
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ f.field(form.skuRange) }}
+                    {{ f.field(form.prepTime) }}
+                </div>
+                {{ f.choices(form.salesPoints) }}
+                {{ f.checkbox(form.ownDelivery) }}
+                {{ f.field(form.stockTool) }}
+
+                <div class="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+                    <label class="flex items-start gap-2 text-xs font-semibold text-amber-900">
+                        {{ form_widget(form.hasDamage, {attr: {class: 'mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600', 'data-reveal-target': 'trigger', 'data-action': 'reveal#sync'}}) }}
+                        <span>{{ form.hasDamage.vars.label }}</span>
+                    </label>
+                    <div data-reveal-target="content" class="hidden">{{ f.choices(form.damageProofs, 'sm:grid-cols-3') }}</div>
+                </div>
+
+                {{ f.field(form.expectations) }}
+                {{ f.checkbox(form.agreeTerms) }}
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 p-4 sm:px-6">
+            <button type="button" data-wizard-target="prev" data-action="wizard#previous" class="hidden rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100">{{ 'Précédent'|trans }}</button>
+            <span class="flex-1"></span>
+            <button type="button" data-wizard-target="next" data-action="wizard#next" class="rounded-xl bg-slate-950 px-6 py-2.5 text-xs font-bold text-white hover:bg-slate-800">{{ 'Continuer'|trans }}</button>
+            <button type="submit" data-wizard-target="submit" class="hidden rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-700">{{ 'Envoyer ma candidature'|trans }}</button>
+        </div>
+    {{ form_end(form) }}
+</div>
+{% endblock %}
