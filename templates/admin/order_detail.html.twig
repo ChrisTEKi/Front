@@ -1,0 +1,122 @@
+{% extends 'base.html.twig' %}
+{% block title %}Commande {{ order.order_number }} — Administration GoBuy{% endblock %}
+
+{% block body %}
+<div class="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+    <a href="{{ path('app_admin_dashboard', {tab: 'orders_table'}) }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900">
+        {{ ux_icon('tabler:arrow-left', {class:'h-4 w-4'}) }}<span>Retour aux commandes</span>
+    </a>
+
+    {% for message in app.flashes('success') %}
+        <div role="status" class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">{{ message }}</div>
+    {% endfor %}
+    {% for message in app.flashes('warning') %}
+        <div role="alert" class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{{ message }}</div>
+    {% endfor %}
+
+    <header class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+            <p class="text-xs font-semibold uppercase text-slate-500">Détail de commande</p>
+            <h1 class="mt-1 text-xl font-bold text-slate-900">{{ order.order_number }}</h1>
+            <p class="mt-1 text-xs text-slate-500">Créée le {{ order.created_at|date('d/m/Y à H:i') }}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <span class="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">{{ order.status|capitalize }}</span>
+            <span class="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">Paiement {{ order.payment_status|capitalize }}</span>
+        </div>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div class="space-y-6">
+            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-bold text-slate-900">Articles commandés</h2></div>
+                {% if items is empty %}
+                    <p class="p-5 text-xs text-slate-500">Aucune ligne article n’est associée à cette commande.</p>
+                {% else %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase text-slate-500">
+                                <tr><th class="px-4 py-3">Article</th><th class="px-4 py-3">Fournisseur</th><th class="px-4 py-3">Prix unitaire</th><th class="px-4 py-3">Quantité</th><th class="px-4 py-3 text-right">Total</th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for item in items %}
+                                    <tr>
+                                        <td class="px-4 py-3 font-semibold text-slate-900">{{ item.product_name }}</td>
+                                        <td class="px-4 py-3 text-slate-600">{{ item.supplier_name ?: '—' }}</td>
+                                        <td class="px-4 py-3">{{ item.unit_price|number_format(0, ',', ' ') }} Ar</td>
+                                        <td class="px-4 py-3">{{ item.quantity }}</td>
+                                        <td class="px-4 py-3 text-right font-semibold">{{ item.line_total|number_format(0, ',', ' ') }} Ar</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+                <dl class="ml-auto max-w-xs space-y-2 border-t border-slate-200 p-4 text-xs">
+                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Sous-total</dt><dd>{{ order.subtotal|number_format(0, ',', ' ') }} Ar</dd></div>
+                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Livraison</dt><dd>{{ order.shipping_fee|number_format(0, ',', ' ') }} Ar</dd></div>
+                    <div class="flex justify-between gap-4 border-t border-slate-200 pt-2 font-bold"><dt>Total</dt><dd>{{ order.total|number_format(0, ',', ' ') }} Ar</dd></div>
+                </dl>
+            </section>
+
+            <section class="grid gap-4 sm:grid-cols-2">
+                <div class="rounded-xl border border-slate-200 bg-white p-4">
+                    <h2 class="text-xs font-bold uppercase text-slate-500">Client</h2>
+                    <p class="mt-3 text-sm font-semibold text-slate-900">{{ (order.first_name ~ ' ' ~ order.last_name)|trim ?: 'Client inconnu' }}</p>
+                    <p class="mt-1 text-xs text-slate-600">{{ order.client_email ?: '—' }}</p>
+                    <p class="mt-1 text-xs text-slate-600">{{ order.client_phone ?: '—' }}</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4">
+                    <h2 class="text-xs font-bold uppercase text-slate-500">Adresse de livraison</h2>
+                    <p class="mt-3 text-sm font-semibold text-slate-900">{{ order.recipient_name }}</p>
+                    <p class="mt-1 text-xs text-slate-600">{{ order.line1 }}, {{ order.city }}</p>
+                    <p class="mt-1 text-xs text-slate-600">{{ order.shipping_phone }}</p>
+                    <p class="mt-1 text-[11px] text-slate-500">{{ order.address_label }}</p>
+                </div>
+            </section>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-4">
+                <h2 class="text-xs font-bold uppercase text-slate-500">Historique</h2>
+                {% if history is empty %}
+                    <p class="mt-3 text-xs text-slate-500">Aucun événement enregistré.</p>
+                {% else %}
+                    <ol class="mt-3 divide-y divide-slate-100">
+                        {% for event in history %}
+                            <li class="flex flex-wrap justify-between gap-2 py-3 text-xs">
+                                <span><strong class="text-slate-900">{{ event.status|capitalize }}</strong>{% if event.note %}<span class="text-slate-600"> · {{ event.note }}</span>{% endif %}</span>
+                                <time class="text-slate-500">{{ event.created_at|date('d/m/Y H:i') }}</time>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+            </section>
+        </div>
+
+        <aside class="h-fit rounded-xl border border-slate-200 bg-white p-4">
+            <h2 class="text-sm font-bold text-slate-900">Mettre à jour</h2>
+            <form method="post" action="{{ path('app_admin_order_update', {id: order.id}) }}" class="mt-4 space-y-4">
+                <input type="hidden" name="_token" value="{{ csrf_token('order-update-' ~ order.id) }}">
+                <label class="block space-y-1.5 text-xs font-semibold text-slate-700">
+                    <span>État de la commande</span>
+                    <select name="status" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                        {% for value, label in orderStatuses %}<option value="{{ value }}" {{ order.status == value ? 'selected' : '' }}>{{ label }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="block space-y-1.5 text-xs font-semibold text-slate-700">
+                    <span>État du paiement</span>
+                    <select name="payment_status" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                        {% for value, label in paymentStatuses %}<option value="{{ value }}" {{ order.payment_status == value ? 'selected' : '' }}>{{ label }}</option>{% endfor %}
+                    </select>
+                </label>
+                <div class="border-t border-slate-100 pt-3 text-xs text-slate-600">
+                    <p><strong>Paiement :</strong> {{ order.payment_method|replace({'_': ' '})|capitalize }}</p>
+                    {% if order.mobile_money_operator %}<p class="mt-1">{{ order.mobile_money_operator }} · {{ order.mobile_money_phone ?: '—' }}</p>{% endif %}
+                    {% if order.confirmed_at %}<p class="mt-1">Confirmée le {{ order.confirmed_at|date('d/m/Y H:i') }}</p>{% endif %}
+                    <p class="mt-3 rounded-lg bg-amber-50 p-2 text-[11px] text-amber-800">L’état du paiement est une mise à jour administrative ; aucun débit ni remboursement n’est exécuté ici.</p>
+                </div>
+                <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-slate-700">{{ ux_icon('tabler:device-floppy', {class:'h-4 w-4'}) }}Enregistrer les statuts</button>
+            </form>
+        </aside>
+    </div>
+</div>
+{% endblock %}

@@ -35,6 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminDashboard();
 });
 
+document.addEventListener('turbo:load', initAdminDashboard);
+
 /* ----------------------------- Toast ----------------------------- */
 function showToast(message) {
     let host = document.getElementById('gb-toast-host');
@@ -283,8 +285,9 @@ function initAuth() {
 
         root.querySelectorAll('[data-auth-form]').forEach((form) => {
             form.addEventListener('submit', (e) => {
-                e.preventDefault();
                 const kind = form.getAttribute('data-auth-form');
+                if (kind === 'login') return;
+                e.preventDefault();
                 const email = form.querySelector('input[name="email"]')?.value || 'votre adresse';
                 const phone = form.querySelector('input[name="phone"]')?.value || '';
                 if (kind === 'register') {
@@ -499,7 +502,8 @@ function initSupplierDashboard() {
 /* -------------------------------- Admin dashboard ------------------------------- */
 function initAdminDashboard() {
     const root = document.querySelector('[data-admin-dashboard]');
-    if (!root) return;
+    if (!root || root.dataset.adminDashboardInitialized === 'true') return;
+    root.dataset.adminDashboardInitialized = 'true';
     const tabs = root.querySelectorAll('[data-admin-tab]');
     const panels = root.querySelectorAll('[data-admin-panel]');
     const switchTo = (id) => {
@@ -512,15 +516,36 @@ function initAdminDashboard() {
         });
     };
     tabs.forEach((t) => t.addEventListener('click', () => switchTo(t.getAttribute('data-admin-tab'))));
-    switchTo('overview');
+    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+    switchTo([...panels].some((panel) => panel.getAttribute('data-admin-panel') === requestedTab)
+        ? requestedTab
+        : 'overview');
+
+    const userSearch = root.querySelector('[data-user-search]');
+    const userRoleFilter = root.querySelector('[data-user-role-filter]');
+    const userRows = [...root.querySelectorAll('[data-user-row]')];
+    const noUserResults = root.querySelector('[data-user-no-results]');
+    const filterUsers = () => {
+        const searchTerm = userSearch?.value.trim().toLocaleLowerCase() || '';
+        const selectedRole = userRoleFilter?.value || 'all';
+        let visibleRows = 0;
+
+        for (const row of userRows) {
+            const matchesRole = selectedRole === 'all' || row.dataset.userRole === selectedRole;
+            const matchesSearch = row.dataset.userSearchText.includes(searchTerm);
+            const isVisible = matchesRole && matchesSearch;
+            row.classList.toggle('hidden', !isVisible);
+            visibleRows += Number(isVisible);
+        }
+
+        noUserResults?.classList.toggle('hidden', visibleRows > 0);
+    };
+    userSearch?.addEventListener('input', filterUsers);
+    userRoleFilter?.addEventListener('change', filterUsers);
 
     root.querySelectorAll('[data-export]').forEach((btn) => {
         btn.addEventListener('click', () => {
-            const notice = root.querySelector('[data-export-notice]');
-            const file = btn.getAttribute('data-export-file') || (btn.getAttribute('data-export') + '.csv');
-            notice.querySelector('[data-export-notice-text]').textContent = 'Fichier ' + file + ' généré et téléchargé avec succès !';
-            notice.classList.remove('hidden'); notice.classList.add('flex');
-            window.setTimeout(() => { notice.classList.add('hidden'); notice.classList.remove('flex'); }, 4000);
+            window.location.assign(btn.getAttribute('data-export-url'));
         });
     });
 }

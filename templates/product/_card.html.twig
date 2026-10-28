@@ -5,8 +5,12 @@
     <a href="{{ path('app_product', {id: product.id}) }}" class="absolute inset-0 z-0" aria-label="{{ product.name }}"></a>
 
     <div class="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden bg-soft-gray p-3 sm:aspect-square sm:p-4">
-        <img src="{{ product.images[0] }}" alt="{{ product.name }}" loading="lazy"
-             class="h-full w-full object-contain object-center mix-blend-multiply transition-transform duration-300 group-hover:scale-105">
+        {% if product.images|default([]) is not empty %}
+            <img src="{{ asset(product.images[0]) }}" alt="{{ product.name }}" loading="lazy"
+                 class="h-full w-full object-contain object-center mix-blend-multiply transition-transform duration-300 group-hover:scale-105">
+        {% else %}
+            {{ ux_icon('tabler:photo', {class: 'h-10 w-10 text-neutral-300'}) }}
+        {% endif %}
 
         <div class="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1">
             {% if discount > 0 %}

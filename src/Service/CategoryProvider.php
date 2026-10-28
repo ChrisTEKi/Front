@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use Doctrine\DBAL\Connection;
+
 /**
  * Category taxonomy ("rayons"). This is site structure (navigation), NOT catalog data:
  * it mirrors initialCategories from the mockup. It will be replaced by a Doctrine
@@ -9,8 +11,49 @@ namespace App\Service;
  */
 final class CategoryProvider
 {
+    public function __construct(private readonly Connection $connection)
+    {
+    }
+
     /** @return list<array<string,mixed>> */
     public function all(): array
+    {
+        $defaults = $this->defaultCategories();
+        $defaultsBySlug = array_column($defaults, null, 'slug');
+        $rows = $this->connection->fetchAllAssociative(
+            'SELECT id, slug, name, description, icon FROM category ORDER BY "position", name'
+        );
+
+        if ([] === $rows) {
+            return $defaults;
+        }
+
+        return array_map(static function (array $row) use ($defaultsBySlug): array {
+            $fallback = $defaultsBySlug[$row['slug']] ?? [
+                'id' => $row['id'],
+                'slug' => $row['slug'],
+                'name' => $row['name'],
+                'nameEn' => $row['name'],
+                'nameEs' => $row['name'],
+                'icon' => 'tabler:category',
+                'color' => 'bg-slate-50 text-slate-600',
+                'bannerImage' => null,
+                'description' => '',
+                'subcategories' => [],
+            ];
+
+            return array_replace($fallback, [
+                'id' => $row['id'],
+                'slug' => $row['slug'],
+                'name' => $row['name'],
+                'description' => $row['description'] ?? $fallback['description'],
+                'icon' => $row['icon'] ?: $fallback['icon'],
+            ]);
+        }, $rows);
+    }
+
+    /** @return list<array<string,mixed>> */
+    private function defaultCategories(): array
     {
         return [
             [

@@ -4,16 +4,27 @@
 {% block body %}
 <div data-admin-dashboard class="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
 
+    {% for message in app.flashes('success') %}
+        <div role="status" class="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">{{ message }}</div>
+    {% endfor %}
+    {% for message in app.flashes('warning') %}
+        <div role="alert" class="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{{ message }}</div>
+    {% endfor %}
+
     <div class="flex flex-col justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
         <div>
             <div class="flex items-center gap-2"><span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-800">Supervision Générale</span><span class="text-xs text-slate-400">Septembre 2026</span></div>
             <h1 class="mt-1 text-xl font-bold text-slate-900">Tableau de bord Administrateur</h1>
             <p class="text-xs text-slate-500">Validation des comptes fournisseurs, surveillance des transactions et exports automatisés en tableaux.</p>
         </div>
-        <button type="button" data-export="clients" class="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700">{{ ux_icon('tabler:download', {class:'h-3.5 w-3.5'}) }}<span>Export Tableaux CSV</span></button>
+        <div class="flex items-center gap-2">
+            <a href="{{ path('app_logout') }}" class="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50">{{ ux_icon('tabler:logout', {class:'h-3.5 w-3.5'}) }}<span>Déconnexion</span></a>
+            <a href="{{ path('app_admin_export') }}" class="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700">{{ ux_icon('tabler:download', {class:'h-3.5 w-3.5'}) }}<span>Télécharger le classeur Excel</span></a>
+            <a href="{{ path('app_admin_product_new') }}" class="flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-700">{{ ux_icon('tabler:plus', {class:'h-3.5 w-3.5'}) }}<span>Nouveau produit</span></a>
+        </div>
     </div>
 
-    <div data-export-notice class="hidden items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800"><span data-export-notice-icon>{{ ux_icon('tabler:circle-check', {class:'h-4 w-4 shrink-0 text-emerald-600'}) }}</span><span data-export-notice-text></span></div>
+    <div data-export-notice class="hidden items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800"><span data-export-notice-text></span></div>
 
     <div data-admin-tabs class="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-2 text-xs font-semibold">
         {% for t in [
@@ -23,14 +34,15 @@
             {id:'suppliers_approval', l:'Validation Fournisseurs'},
             {id:'users_table', l:'Base Utilisateurs (' ~ users|length ~ ')'},
             {id:'orders_table', l:'Commandes (' ~ orders|length ~ ')'},
-            {id:'exports', l:'Exports CSV'}
+            {id:'products_table', l:'Produits (' ~ products|length ~ ')'},
+            {id:'exports', l:'Exports'}
         ] %}
             <button type="button" data-admin-tab="{{ t.id }}" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ t.l }}</button>
         {% endfor %}
     </div>
 
     {# ---- OVERVIEW ---- #}
-    <div data-admin-panel="overview" class="hidden space-y-6">
+    <div data-admin-panel="overview" class="space-y-6">
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Clients inscrits</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ users|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">{{ ux_icon('tabler:users', {class:'h-5 w-5'}) }}</span></div>
             <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Fournisseurs actifs</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ approvedSuppliers }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">{{ ux_icon('tabler:building-store', {class:'h-5 w-5'}) }}</span></div>
@@ -54,8 +66,8 @@
                 <div class="divide-y divide-slate-100">
                     {% for order in orders|slice(0, 5) %}
                         <div class="flex flex-wrap items-center justify-between gap-2 py-3 text-xs">
-                            <div><p class="font-bold text-slate-900">{{ order.orderNumber }}</p><p class="text-slate-500">{{ order.customer ? order.customer.fullName : 'Client inconnu' }}</p></div>
-                            <div class="text-right"><p class="font-mono font-bold text-slate-900">{{ order.totalAmount|number_format(0, ',', ' ') }} Ar</p><p class="text-slate-500">{{ order.createdAt|date('d/m/Y') }} · {{ order.status }}</p></div>
+                            <div><a href="{{ path('app_admin_order_show', {id: order.id}) }}" class="font-bold text-slate-900 hover:underline">{{ order.order_number }}</a><p class="text-slate-500">{{ order.customer_name ?: 'Client inconnu' }}</p></div>
+                            <div class="text-right"><p class="font-mono font-bold text-slate-900">{{ order.total_amount|number_format(0, ',', ' ') }} Ar</p><p class="text-slate-500">{{ order.created_at|date('d/m/Y') }} · {{ order.status|capitalize }} · Paiement {{ order.payment_status|capitalize }}</p></div>
                         </div>
                     {% endfor %}
                 </div>
@@ -77,8 +89,8 @@
                 <div class="divide-y divide-slate-100">
                     {% for application in vendorApplications %}
                         <div class="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
-                            <div><p class="font-bold text-slate-900">{{ application.companyName }}</p><p class="text-slate-500">{{ application.contactName }} · {{ application.email }} · {{ application.phone }}</p></div>
-                            <div class="text-right"><p class="font-semibold text-slate-800">{{ application.type|capitalize }} · {{ application.status|capitalize }}</p><p class="text-slate-500">{{ application.createdAt|date('d/m/Y') }}</p></div>
+                            <div><p class="font-bold text-slate-900">{{ application.company_name }}</p><p class="text-slate-500">{{ application.contact_name }} · {{ application.email }} · {{ application.phone ?? '—' }}</p></div>
+                            <div class="text-right"><p class="font-semibold text-slate-800">{{ application.type|capitalize }} · {{ application.status|capitalize }}</p><p class="text-slate-500">{{ application.created_at|date('d/m/Y') }}</p></div>
                         </div>
                     {% endfor %}
                 </div>
@@ -123,8 +135,24 @@
                 <div class="divide-y divide-slate-100 rounded-2xl border border-slate-200 px-4">
                     {% for supplier in pendingSuppliers %}
                         <div class="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
-                            <div><p class="font-bold text-slate-900">{{ supplier.companyName }}</p><p class="text-slate-500">{{ supplier.contactName }} · {{ supplier.email }} · {{ supplier.phone }}</p></div>
-                            <p class="text-slate-500">Dossier reçu le {{ supplier.createdAt|date('d/m/Y') }}</p>
+                            <div>
+                                <p class="font-bold text-slate-900">{{ supplier.company_name }}</p>
+                                <p class="text-slate-500">{{ supplier.contact_name }} · {{ supplier.email }} · {{ supplier.phone ?? '—' }}</p>
+                                <p class="mt-1 text-[11px] {{ supplier.email_verified and supplier.phone_verified ? 'text-emerald-700' : 'text-amber-700' }}">
+                                    E-mail {{ supplier.email_verified ? 'vérifié' : 'non vérifié' }} · Téléphone {{ supplier.phone_verified ? 'vérifié' : 'non vérifié' }}
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-slate-500">Dossier reçu le {{ supplier.created_at|date('d/m/Y') }}</p>
+                                <form method="post" action="{{ path('app_admin_supplier_review', {id: supplier.id, action: 'approve'}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('supplier-review-' ~ supplier.id ~ '-approve') }}">
+                                    <button type="submit" {% if not supplier.email_verified or not supplier.phone_verified %}disabled title="L’e-mail et le téléphone doivent être vérifiés."{% endif %} class="rounded-lg bg-emerald-600 px-3 py-1.5 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">Valider</button>
+                                </form>
+                                <form method="post" action="{{ path('app_admin_supplier_review', {id: supplier.id, action: 'reject'}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('supplier-review-' ~ supplier.id ~ '-reject') }}">
+                                    <button type="submit" class="rounded-lg border border-rose-200 bg-white px-3 py-1.5 font-semibold text-rose-700 transition-colors hover:bg-rose-50">Rejeter</button>
+                                </form>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
@@ -137,10 +165,10 @@
         <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <h3 class="text-sm font-bold text-slate-900">Annuaire des utilisateurs inscrits</h3>
             <div class="flex items-center gap-2">
-                <select class="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold">
+                <select data-user-role-filter class="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold">
                     <option value="all">Tous les rôles</option><option value="client">Clients</option><option value="supplier">Fournisseurs</option><option value="admin">Administrateurs</option><option value="courier">Livreurs</option>
                 </select>
-                <input type="text" placeholder="Filtrer nom ou email..." class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
+                <input type="search" data-user-search placeholder="Filtrer nom ou email..." aria-label="Filtrer les utilisateurs par nom ou e-mail" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -153,13 +181,61 @@
                         <tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucun utilisateur inscrit pour le moment.</td></tr>
                     {% else %}
                         {% for user in users %}
-                            <tr class="text-slate-700">
-                                <td class="px-3 py-3"><p class="font-semibold text-slate-900">{{ user.fullName }}</p><p class="text-slate-500">{{ user.email }}</p></td>
+                            <tr data-user-row data-user-role="{{ user.account_type }}" data-user-search-text="{{ (user.full_name ~ ' ' ~ user.email)|lower }}" class="text-slate-700">
+                                <td class="px-3 py-3"><p class="font-semibold text-slate-900">{{ user.full_name }}</p><p class="text-slate-500">{{ user.email }}</p></td>
                                 <td class="px-3 py-3">{{ user.roles|join(', ') }}</td>
-                                <td class="px-3 py-3">{{ user.emailVerified ? 'Oui' : 'Non' }}</td>
-                                <td class="px-3 py-3">{{ user.phone ?? '—' }}<br><span class="text-slate-500">{{ user.phoneVerified ? 'Vérifié' : 'Non vérifié' }}</span></td>
-                                <td class="px-3 py-3">{{ user.twoFactorEnabled ? 'Activée' : 'Désactivée' }}</td>
-                                <td class="px-3 py-3">{{ user.createdAt|date('d/m/Y') }}</td>
+                                <td class="px-3 py-3">{{ user.email_verified ? 'Oui' : 'Non' }}</td>
+                                <td class="px-3 py-3">{{ user.phone ?? '—' }}<br><span class="text-slate-500">{{ user.phone_verified ? 'Vérifié' : 'Non vérifié' }}</span></td>
+                                <td class="px-3 py-3">{{ user.two_factor_enabled ? 'Activée' : 'Désactivée' }}</td>
+                                <td class="px-3 py-3">{{ user.created_at|date('d/m/Y') }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                    {% if users is not empty %}
+                        <tr data-user-no-results class="hidden"><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucun utilisateur ne correspond à ces filtres.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ---- PRODUCTS ---- #}
+    <div data-admin-panel="products_table" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-sm font-bold text-slate-900">Catalogue produits</h3>
+                <p class="text-xs text-slate-500">{{ products|length }} produit(s) enregistrés</p>
+            </div>
+            <a href="{{ path('app_admin_product_new') }}" class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700">{{ ux_icon('tabler:plus', {class:'h-3.5 w-3.5'}) }}Nouveau produit</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-xs">
+                <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                    <th class="px-3 py-2.5">Produit</th><th class="px-3 py-2.5">Catégorie</th><th class="px-3 py-2.5">Fournisseur</th><th class="px-3 py-2.5">Prix</th><th class="px-3 py-2.5">Stock</th><th class="px-3 py-2.5">Statut</th><th class="px-3 py-2.5">Actions</th>
+                </tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% if products is empty %}
+                        <tr><td colspan="7" class="px-3 py-8 text-center text-slate-400">Aucun produit enregistré.</td></tr>
+                    {% else %}
+                        {% for product in products %}
+                            <tr class="text-slate-700">
+                                <td class="px-3 py-3"><p class="font-semibold text-slate-900">{{ product.name }}</p><p class="text-slate-500">{{ product.slug }}</p></td>
+                                <td class="px-3 py-3">{{ product.category_name }}</td>
+                                <td class="px-3 py-3">{{ product.supplier_name }}</td>
+                                <td class="px-3 py-3">{{ product.price|number_format(0, ',', ' ') }} Ar</td>
+                                <td class="px-3 py-3">{{ product.stock }}</td>
+                                <td class="px-3 py-3">{{ product.status|capitalize }}</td>
+                                <td class="px-3 py-3">
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ path('app_admin_product_edit', {id: product.id}) }}" class="text-indigo-700 hover:underline">Modifier</a>
+                                        {% if product.status != 'archived' %}
+                                            <form method="post" action="{{ path('app_admin_product_archive', {id: product.id}) }}" onsubmit="return confirm('Archiver ce produit ?')">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('product-archive-' ~ product.id) }}">
+                                                <button type="submit" class="text-rose-700 hover:underline">Archiver</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
                             </tr>
                         {% endfor %}
                     {% endif %}
@@ -171,24 +247,42 @@
     {# ---- EXPORTS ---- #}
     <div data-admin-panel="exports" class="hidden space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
         <div>
-            <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">Générateur Automatique de Tableaux</span>
-            <h3 class="mt-1.5 text-base font-bold text-slate-900">Export automatisé en fichiers tableurs (CSV / Excel)</h3>
-            <p class="text-xs text-slate-500">Téléchargez instantanément les listes complètes des clients, fournisseurs, administrateurs et commandes enregistrés dans la base PostgreSQL sous forme de fichiers tableurs formatés.</p>
+            <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700">Exports GoBuy</span>
+            <h3 class="mt-1.5 text-base font-bold text-slate-900">Téléchargement séparé ou en un seul fichier</h3>
+            <p class="text-xs text-slate-500">Tu peux exporter chaque tableau individuellement au format CSV, ou récupérer l’ensemble dans un unique classeur Excel.</p>
         </div>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {% for exp in [
-                {type:'clients', icon:'tabler:users', iconWrap:'bg-blue-100 text-blue-700', btn:'border-blue-200 text-blue-700 hover:bg-blue-50', title:'Tableau des Clients inscrits', desc:'Contient ID, Nom complet, E-mail, Téléphone, Statut vérification, Sécurité 2FA et date.', file:'gobuy_clients.csv'},
-                {type:'fournisseurs', icon:'tabler:building-store', iconWrap:'bg-emerald-100 text-emerald-700', btn:'border-emerald-200 text-emerald-700 hover:bg-emerald-50', title:'Tableau des Fournisseurs & Vendeurs', desc:"Contient Raison sociale, Gérant, Téléphone, E-mail, Statut d'approbation Admin et volume de ventes.", file:'gobuy_fournisseurs.csv'},
-                {type:'admins', icon:'tabler:shield-check', iconWrap:'bg-indigo-100 text-indigo-700', btn:'border-indigo-200 text-indigo-700 hover:bg-indigo-50', title:'Tableau des Administrateurs', desc:"Liste des comptes superviseurs, niveau de privilèges, politiques 2FA et date d'octroi.", file:'gobuy_admins.csv'},
-                {type:'commandes', icon:'tabler:file-spreadsheet', iconWrap:'bg-amber-100 text-amber-700', btn:'border-amber-200 text-amber-700 hover:bg-amber-50', title:'Tableau des Commandes & Transactions', desc:'Numéros de commande, Clients, Totaux (Ar), Mobile Money vérifiés et statut d\'acheminement.', file:'gobuy_commandes.csv'}
-            ] %}
-                <div class="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="flex items-start gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ exp.iconWrap }}">{{ ux_icon(exp.icon, {class:'h-5 w-5'}) }}</span>
-                        <div><h4 class="text-xs font-bold text-slate-900">{{ exp.title }}</h4><p class="mt-0.5 text-[11px] text-slate-500">{{ exp.desc }}</p></div></div>
-                    <button type="button" data-export="{{ exp.type }}" data-export-file="{{ exp.file }}" class="flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-3 py-2.5 text-xs font-semibold transition-colors {{ exp.btn }}">
-                        {{ ux_icon('tabler:download', {class:'h-3.5 w-3.5'}) }}<span>Télécharger <code>{{ exp.file }}</code></span></button>
+
+        <div class="space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Export séparé par catégorie</h4>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {% for exp in [
+                    {type:'clients', icon:'tabler:users', iconWrap:'bg-blue-100 text-blue-700', title:'Clients', desc:'Identité, coordonnées, rôles et vérification des comptes.'},
+                    {type:'fournisseurs', icon:'tabler:building-store', iconWrap:'bg-emerald-100 text-emerald-700', title:'Fournisseurs', desc:'Boutique, contact, coordonnées et statut de validation.'},
+                    {type:'administrateurs', icon:'tabler:shield-check', iconWrap:'bg-indigo-100 text-indigo-700', title:'Administrateurs', desc:'Comptes administrateurs, rôles et état de la 2FA.'},
+                    {type:'commandes', icon:'tabler:file-spreadsheet', iconWrap:'bg-amber-100 text-amber-700', title:'Commandes', desc:'Numéro, client, montant, paiement et statuts.'},
+                    {type:'produits', icon:'tabler:package', iconWrap:'bg-rose-100 text-rose-700', title:'Produits', desc:'Produit, catégorie, fournisseur, prix, stock et statut.'}
+                ] %}
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ exp.iconWrap }}">{{ ux_icon(exp.icon, {class:'h-5 w-5'}) }}</span>
+                                <div><h4 class="text-xs font-bold text-slate-900">{{ exp.title }}</h4><p class="mt-0.5 text-[11px] text-slate-500">{{ exp.desc }}</p></div>
+                            </div>
+                            <a href="{{ path('app_admin_export_csv', {type: exp.type}) }}" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 transition-colors hover:bg-slate-100">{{ ux_icon('tabler:download', {class:'h-3.5 w-3.5'}) }}CSV</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wide text-emerald-800">Export unique</h4>
+                    <p class="text-xs text-emerald-700">Un seul classeur Excel avec un onglet par catégorie.</p>
                 </div>
-            {% endfor %}
+                <a href="{{ path('app_admin_export') }}" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700">{{ ux_icon('tabler:download', {class:'h-4 w-4'}) }}<span>Télécharger gobuy_export.xlsx</span></a>
+            </div>
         </div>
     </div>
 
@@ -198,20 +292,22 @@
         <div class="overflow-x-auto">
             <table class="w-full border-collapse text-left text-xs">
                 <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
-                    <th class="px-3 py-2.5">N° Commande</th><th class="px-3 py-2.5">Client</th><th class="px-3 py-2.5">Montant</th><th class="px-3 py-2.5">Paiement</th><th class="px-3 py-2.5">Statut</th><th class="px-3 py-2.5">Date</th>
+                    <th class="px-3 py-2.5">N° Commande</th><th class="px-3 py-2.5">Client</th><th class="px-3 py-2.5">Montant</th><th class="px-3 py-2.5">Paiement</th><th class="px-3 py-2.5">État paiement</th><th class="px-3 py-2.5">État commande</th><th class="px-3 py-2.5">Date</th><th class="px-3 py-2.5"></th>
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
                     {% if orders is empty %}
-                        <tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucune commande enregistrée pour le moment.</td></tr>
+                        <tr><td colspan="8" class="px-3 py-8 text-center text-slate-400">Aucune commande enregistrée pour le moment.</td></tr>
                     {% else %}
                         {% for order in orders %}
                             <tr class="text-slate-700">
-                                <td class="px-3 py-3 font-mono font-semibold">{{ order.orderNumber }}</td>
-                                <td class="px-3 py-3">{{ order.customer ? order.customer.fullName : 'Client inconnu' }}</td>
-                                <td class="px-3 py-3 font-mono">{{ order.totalAmount|number_format(0, ',', ' ') }} Ar</td>
-                                <td class="px-3 py-3">{{ order.paymentMethod }}</td>
+                                <td class="px-3 py-3 font-mono font-semibold"><a href="{{ path('app_admin_order_show', {id: order.id}) }}" class="hover:underline">{{ order.order_number }}</a></td>
+                                <td class="px-3 py-3">{{ order.customer_name ?: 'Client inconnu' }}</td>
+                                <td class="px-3 py-3 font-mono">{{ order.total_amount|number_format(0, ',', ' ') }} Ar</td>
+                                <td class="px-3 py-3">{{ order.payment_method }}</td>
+                                <td class="px-3 py-3">{{ order.payment_status|capitalize }}</td>
                                 <td class="px-3 py-3">{{ order.status|capitalize }}</td>
-                                <td class="px-3 py-3">{{ order.createdAt|date('d/m/Y') }}</td>
+                                <td class="px-3 py-3">{{ order.created_at|date('d/m/Y') }}</td>
+                                <td class="px-3 py-3"><a href="{{ path('app_admin_order_show', {id: order.id}) }}" class="whitespace-nowrap font-semibold text-indigo-700 hover:underline">Détails</a></td>
                             </tr>
                         {% endfor %}
                     {% endif %}
