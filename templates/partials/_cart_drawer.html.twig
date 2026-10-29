@@ -1,0 +1,62 @@
+{# Cart drawer (slides from the right). `cartItems` is empty until a cart backend exists. #}
+{% set cartItems = cartItems|default([]) %}
+{% set cartSubtotal = 0 %}
+{% for item in cartItems %}{% set cartSubtotal = cartSubtotal + (item.product.price * item.quantity) %}{% endfor %}
+{% set cartShipping = cartItems|length > 0 ? 10000 : 0 %}
+{% set cartTotal = cartSubtotal + cartShipping %}
+<div id="cart-drawer" class="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+    <div data-drawer-overlay data-drawer-close class="absolute inset-0 bg-slate-950/50 opacity-0 backdrop-blur-xs transition-opacity duration-200"></div>
+    <div data-drawer-panel data-drawer-closed="translate-x-full" class="absolute right-0 top-0 flex h-full w-full max-w-md translate-x-full flex-col justify-between bg-white shadow-2xl transition-transform duration-200">
+
+        <div class="flex items-center justify-between border-b border-slate-100 p-4 sm:p-5">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Mon panier</h2>
+                <p class="text-xs text-slate-500">{{ cartItems|length }} articles</p>
+            </div>
+            <button type="button" data-drawer-close class="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">{{ ux_icon('tabler:x', { class: 'h-5 w-5' }) }}</button>
+        </div>
+
+        <div class="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+            {% if cartItems is empty %}
+                <div class="flex h-full flex-col items-center justify-center p-6 text-center">
+                    <div class="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">{{ ux_icon('tabler:shopping-bag', { class: 'h-8 w-8' }) }}</div>
+                    <h3 class="text-sm font-semibold text-slate-800">Votre panier est vide</h3>
+                    <p class="mt-1 max-w-xs text-xs text-slate-500">Explorez notre catalogue et ajoutez vos articles préférés en toute simplicité.</p>
+                </div>
+            {% else %}
+                {% for item in cartItems %}
+                    <div class="relative flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-3 transition-colors hover:bg-slate-50">
+                        <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white"><img src="{{ item.product.images[0] }}" alt="{{ item.product.name }}" class="h-full w-full object-cover"></div>
+                        <div class="min-w-0 flex-1 pr-6">
+                            <h4 class="truncate text-xs font-semibold text-slate-800">{{ item.product.name }}</h4>
+                            <div class="mt-0.5 text-xs font-bold text-emerald-700">{{ item.product.price|number_format(0, ',', ' ') }} Ar</div>
+                            <div class="mt-2 flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white w-fit">
+                                <button type="button" class="flex h-6 w-6 items-center justify-center text-slate-500 hover:bg-slate-100">{{ ux_icon('tabler:minus', { class: 'h-3 w-3' }) }}</button>
+                                <span class="w-6 text-center text-xs font-semibold text-slate-800">{{ item.quantity }}</span>
+                                <button type="button" class="flex h-6 w-6 items-center justify-center text-slate-500 hover:bg-slate-100">{{ ux_icon('tabler:plus', { class: 'h-3 w-3' }) }}</button>
+                            </div>
+                        </div>
+                        <button type="button" title="Supprimer l'article" class="absolute right-2 top-2 p-1.5 text-slate-400 transition-colors hover:text-red-500">{{ ux_icon('tabler:x', { class: 'h-4 w-4' }) }}</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        {% if cartItems is not empty %}
+            <div class="space-y-3 border-t border-slate-200 bg-white p-4 sm:p-5">
+                <div class="space-y-1.5 text-xs">
+                    <div class="flex justify-between text-slate-500"><span>Sous-total</span><span class="font-mono font-semibold text-slate-800">{{ cartSubtotal|number_format(0, ',', ' ') }} Ar</span></div>
+                    <div class="flex justify-between text-slate-500"><span>Livraison</span><span class="font-mono font-semibold text-slate-800">{{ cartShipping|number_format(0, ',', ' ') }} Ar</span></div>
+                    <div class="flex justify-between border-t border-slate-100 pt-2 text-sm font-black text-slate-950"><span>Total</span><span class="font-mono text-base">{{ cartTotal|number_format(0, ',', ' ') }} Ar</span></div>
+                </div>
+                <div class="flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 p-2.5 text-xs">
+                    <span class="flex items-center gap-1.5 text-[11px] font-medium text-neutral-800"><span class="h-2 w-2 rounded-full bg-gobuy-green"></span>Éligible en <strong>3x</strong> ou <strong>4x sans frais</strong></span>
+                    <span class="rounded border border-neutral-200 bg-white px-2 py-0.5 font-mono text-[10px] font-bold text-neutral-900">dès {{ (cartTotal / 4)|round|number_format(0, ',', ' ') }} Ar/m</span>
+                </div>
+                <a href="{{ path('app_checkout') }}" class="flex w-full items-center justify-center gap-2 rounded-full bg-black px-6 py-4 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-all hover:bg-neutral-800">
+                    <span>Passer la commande</span>{{ ux_icon('tabler:arrow-right', { class: 'h-4 w-4 text-gobuy-green' }) }}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,40 @@
+<div data-modal="how-it-works" class="pointer-events-none fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs">
+    <div class="pointer-events-auto flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+        <div class="relative flex items-center justify-between bg-black p-6 text-white">
+            <div class="space-y-1">
+                <span class="rounded-full border border-gobuy-green/30 bg-neutral-900 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-gobuy-green">Guide GoBuy</span>
+                <h3 class="text-xl font-black tracking-tight sm:text-2xl">Comment ça marche ?</h3>
+                <p class="text-xs font-medium text-neutral-300">Livraison rapide, commerces locaux vérifiés et paiement sécurisé Mobile Money à Madagascar.</p>
+            </div>
+            <button type="button" data-modal-close class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20">{{ ux_icon('tabler:x', { class: 'h-5 w-5' }) }}</button>
+        </div>
+        <div class="space-y-6 overflow-y-auto p-6 text-xs text-slate-800 sm:text-sm">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {% for step in [
+                    {t: '1. Choisissez vos articles & boutiques', d: 'Parcourez tous nos rayons : épicerie, mode, high-tech, électroménager, jouets et produits locaux de commerces partenaires.'},
+                    {t: '2. Livraison Express ou À emporter', d: 'Sélectionnez votre mode de retrait ou votre adresse de livraison. Recevez vos courses et commandes en 20 à 45 minutes chrono.'},
+                    {t: '3. Paiement Mobile Money sécurisé', d: 'Réglez par MVola, Orange Money, Airtel Money ou en espèces à la livraison. Vos transactions sont protégées de bout en bout.'},
+                    {t: '4. Suivi direct & Garantie GoBuy', d: 'Suivez votre coursier en temps réel et profitez de garanties claires sur tous vos articles high-tech et équipements.'}
+                ] %}
+                    <div class="space-y-2 rounded-2xl border border-neutral-200/80 bg-neutral-50 p-4">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-black text-sm font-black text-gobuy-green">{{ loop.index }}</div>
+                        <h4 class="text-sm font-black text-black">{{ step.t }}</h4>
+                        <p class="text-xs leading-relaxed text-neutral-600">{{ step.d }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="space-y-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                <h4 class="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-black">{{ ux_icon('tabler:shield-check', { class: 'h-4 w-4 text-gobuy-green' }) }}Ce qui est toujours inclus sur GoBuy :</h4>
+                <div class="grid grid-cols-1 gap-2 text-xs text-neutral-700 sm:grid-cols-2">
+                    {% for p in ['Livraison express suivie en temps réel', 'Fournisseurs et boutiques vérifiées', 'Validation instantanée MVola / Orange Money', 'Support client et assistance locale'] %}
+                        <div class="flex items-center gap-2">{{ ux_icon('tabler:circle-check', { class: 'h-4 w-4 shrink-0 text-gobuy-green' }) }}<span>{{ p }}</span></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center justify-between gap-4 border-t border-neutral-200 bg-neutral-50 p-4">
+            <button type="button" data-modal-close class="px-4 py-2 text-xs font-bold text-neutral-600 hover:text-black">Fermer</button>
+            <a href="{{ path('app_home') }}#catalog-section" data-modal-close class="rounded-full bg-black px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-neutral-800">Commencer mes achats</a>
+        </div>
+    </div>
+</div>

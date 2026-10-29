@@ -1,0 +1,24 @@
+<div class="space-y-2.5 pt-2">
+    <div class="flex items-center justify-between text-xs">
+        <span class="flex items-center gap-1.5 font-black uppercase tracking-wider text-black">
+            {{ ux_icon('tabler:tag', { class: 'h-3.5 w-3.5 text-neutral-700' }) }} Filtrer par état &amp; offres
+        </span>
+        <button type="button" data-chip-reset="condition" class="hidden text-xs font-bold text-neutral-900 hover:underline">Réinitialiser le filtre</button>
+    </div>
+
+    <div data-chip-group="condition" class="flex items-center gap-2 overflow-x-auto pb-1">
+        <button type="button" data-chip-value="all" class="shrink-0 rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-xs transition-all">Tous les articles</button>
+        <button type="button" data-chip-value="flash" class="flex shrink-0 items-center gap-1.5 rounded-full bg-soft-gray px-4 py-2 text-xs font-black text-neutral-900 transition-all hover:bg-neutral-200">
+            {{ ux_icon('tabler:bolt-filled', { class: 'h-3 w-3 text-gobuy-green' }) }}<span>Ventes Flash</span>
+        </button>
+        <button type="button" data-chip-value="comme_neuf" class="flex shrink-0 items-center gap-1.5 rounded-full bg-soft-gray px-4 py-2 text-xs font-bold text-neutral-800 transition-all hover:bg-neutral-200">
+            <span class="h-2 w-2 rounded-full bg-gobuy-green"></span><span>Comme neuf</span>
+        </button>
+        <button type="button" data-chip-value="tres_bon_etat" class="flex shrink-0 items-center gap-1.5 rounded-full bg-soft-gray px-4 py-2 text-xs font-bold text-neutral-800 transition-all hover:bg-neutral-200">
+            <span class="h-2 w-2 rounded-full bg-blue-500"></span><span>Très bon état</span>
+        </button>
+        <button type="button" data-chip-value="neuf" class="flex shrink-0 items-center gap-1.5 rounded-full bg-soft-gray px-4 py-2 text-xs font-bold text-neutral-800 transition-all hover:bg-neutral-200">
+            <span class="h-2 w-2 rounded-full bg-neutral-400"></span><span>Neuf scellé</span>
+        </button>
+    </div>
+</div>

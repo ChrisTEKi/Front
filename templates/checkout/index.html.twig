@@ -1,0 +1,248 @@
+{% extends 'base.html.twig' %}
+{% block title %}Validation de la commande — GoBuy{% endblock %}
+
+{% block body %}
+{% set subtotal = 0 %}
+{% for item in items %}{% set subtotal = subtotal + (item.product.price * item.quantity) %}{% endfor %}
+{% set shipping = items|length > 0 ? 10000 : 0 %}
+
+<div class="flex justify-center p-2 sm:p-6">
+<div data-checkout data-subtotal="{{ subtotal }}" data-shipping="{{ shipping }}" data-items="{{ items|length }}"
+     class="relative flex w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+
+    <div class="flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4">
+        <div class="flex items-center gap-2.5">
+            <button type="button" data-checkout-back class="hidden rounded-xl p-1.5 text-slate-600 transition-colors hover:bg-slate-100" title="Retour à l'adresse">{{ ux_icon('tabler:arrow-left', { class: 'h-4 w-4' }) }}</button>
+            <div>
+                <h2 class="text-base font-black text-slate-950">Validation de la commande</h2>
+                <p class="text-[11px] text-slate-500">Expédition rapide à Antananarivo &amp; Provinces</p>
+            </div>
+        </div>
+        <a href="{{ path('app_home') }}" class="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900">{{ ux_icon('tabler:x', { class: 'h-5 w-5' }) }}</a>
+    </div>
+
+    {# Progress #}
+    <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-6 py-2.5 text-xs">
+        <div class="flex items-center gap-2 font-bold text-slate-950">
+            <span data-step-dot="1" class="flex h-5 w-5 items-center justify-center rounded-full bg-slate-950 font-mono text-[10px] text-white">1</span><span>Adresse</span>
+        </div>
+        <div class="mx-4 h-px flex-1 bg-slate-200"></div>
+        <div data-step-label="2" class="flex items-center gap-2 text-slate-400">
+            <span data-step-dot="2" class="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 font-mono text-[10px] text-slate-500">2</span><span>Paiement</span>
+        </div>
+    </div>
+
+    <div class="space-y-5 p-5">
+
+        {% if items is empty %}
+            <div class="space-y-2 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900">
+                <div class="flex items-start gap-2">{{ ux_icon('tabler:alert-circle', { class: 'mt-0.5 h-4 w-4 shrink-0 text-amber-600' }) }}<span><strong>Votre panier est vide.</strong> Aperçu de l'interface de paiement : saisissez un montant pour tester le simulateur d'échéancier.</span></div>
+                <label class="flex items-center gap-2 pl-6"><span class="font-semibold">Montant (Ar)</span>
+                    <input type="number" min="0" step="1000" value="0" data-preview-amount class="w-36 rounded-xl border border-amber-200 bg-white px-3 py-1.5 font-mono text-xs text-slate-900 focus:border-slate-950 focus:outline-none"></label>
+            </div>
+        {% endif %}
+
+        {# ============ STEP 1 — ADRESSE ============ #}
+        <div data-step="1" class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">{{ ux_icon('tabler:map-pin', { class: 'h-4 w-4 text-slate-900' }) }}<h3 class="text-sm font-bold text-slate-950">Adresse de livraison</h3></div>
+                <button type="button" data-address-edit class="text-xs font-semibold text-slate-900 hover:underline">Changer</button>
+            </div>
+
+            <div data-address-summary class="space-y-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs">
+                <div class="flex items-center justify-between">
+                    <p class="font-bold text-slate-950" data-sum-name>Nom complet non spécifié</p>
+                    <span data-phone-badge class="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-700">{{ ux_icon('tabler:alert-circle', { class: 'h-3 w-3' }) }} Tél. à valider</span>
+                </div>
+                <p class="font-medium text-slate-600" data-sum-street>—</p>
+                <p class="font-medium text-slate-600"><span data-sum-city>Antananarivo</span> <span data-sum-postal>101</span></p>
+                <p class="flex items-center gap-1 pt-1 font-mono text-slate-500">{{ ux_icon('tabler:device-mobile', { class: 'h-3.5 w-3.5 text-slate-400' }) }}<span data-sum-phone>Aucun téléphone renseigné</span></p>
+            </div>
+
+            <div data-address-form class="hidden space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs">
+                <div><label class="mb-1 block font-semibold text-slate-700">Nom complet du destinataire *</label>
+                    <input type="text" name="fullName" placeholder="Ex: Andry Rakotomalala" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-slate-950 focus:outline-none"></div>
+                <div><label class="mb-1 block font-semibold text-slate-700">Téléphone mobile *</label>
+                    <input type="tel" name="phone" placeholder="Ex: 034 12 345 67" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 font-mono text-xs text-slate-900 focus:border-slate-950 focus:outline-none"></div>
+                <div><label class="mb-1 block font-semibold text-slate-700">Adresse complète / Lot *</label>
+                    <input type="text" name="street" placeholder="Ex: Lot II A 124, Ankadifotsy" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-slate-950 focus:outline-none"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="mb-1 block font-semibold text-slate-700">Ville *</label>
+                        <input type="text" name="city" value="Antananarivo" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-slate-950 focus:outline-none"></div>
+                    <div><label class="mb-1 block font-semibold text-slate-700">Code postal</label>
+                        <input type="text" name="postalCode" value="101" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-slate-950 focus:outline-none"></div>
+                </div>
+                <div><label class="mb-1 block font-semibold text-slate-700">Consignes pour le coursier</label>
+                    <textarea rows="2" name="courierNote" placeholder="Point de repère, étage, portail…" class="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-slate-950 focus:outline-none"></textarea></div>
+            </div>
+
+            <div data-phone-reminder class="flex items-start gap-2.5 rounded-2xl border border-slate-200 bg-slate-100 p-3 text-xs text-slate-700">
+                {{ ux_icon('tabler:alert-circle', { class: 'mt-0.5 h-4 w-4 shrink-0 text-slate-900' }) }}
+                <div><span class="font-bold text-slate-950">Vérification mobile par SMS requise :</span> Un code de confirmation rapide vous sera envoyé pour sécuriser vos livraisons et prélèvements.</div>
+            </div>
+
+            <button type="button" data-step1-next class="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-slate-800">
+                <span>Continuer vers le paiement</span>{{ ux_icon('tabler:arrow-right', { class: 'h-4 w-4' }) }}
+            </button>
+        </div>
+
+        {# ============ STEP 2 — PAIEMENT ============ #}
+        <div data-step="2" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-black text-slate-950">Moyen de paiement</h3>
+                <span class="font-mono text-[11px] text-slate-500">100% sécurisé</span>
+            </div>
+
+            {# --- Option 1 : 3x / 4x --- #}
+            <div data-pay="installments" class="cursor-pointer rounded-2xl border-2 border-slate-950 bg-white p-4 shadow-sm ring-1 ring-slate-950 transition-all">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-start gap-3">
+                        <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-[#00E5A3]">{{ ux_icon('tabler:stack-2', { class: 'h-5 w-5' }) }}</span>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-xs font-black text-slate-950">Paiement en 3x ou 4x sans frais</p>
+                                <span class="rounded-md bg-slate-950 px-2 py-0.5 font-mono text-[10px] font-bold text-[#00E5A3]">0% d'intérêt</span>
+                                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">Recommandé</span>
+                            </div>
+                            <p class="mt-0.5 text-[11px] text-slate-500">Étalez votre achat par mensualités débitées par Mobile Money ou Carte.</p>
+                        </div>
+                    </div>
+                    <span data-radio class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-slate-950 bg-slate-950"><span class="h-2 w-2 rounded-full bg-[#00E5A3]"></span></span>
+                </div>
+
+                <div data-pay-body class="mt-4 cursor-default space-y-4 border-t border-slate-200 pt-4">
+                    <div>
+                        <label class="mb-2 block text-[11px] font-bold uppercase tracking-wider text-slate-500">Choisissez votre formule de fractionnement</label>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            {% for n in [3, 4] %}
+                                <button type="button" data-installments="{{ n }}" class="rounded-xl border p-3 text-left transition-all {{ n == 3 ? 'border-slate-950 bg-slate-950 text-white shadow-xs' : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100' }}">
+                                    <div class="flex items-center justify-between"><span class="text-xs font-black">En {{ n }} fois</span>
+                                        <span data-inst-badge class="rounded px-1.5 py-0.5 font-mono text-[10px] {{ n == 3 ? 'bg-white/15 text-[#00E5A3]' : 'bg-slate-200 text-slate-700' }}">0 Ar de frais</span></div>
+                                    <div class="mt-1 font-mono text-sm font-bold"><span data-inst-monthly="{{ n }}">0</span> Ar <span class="text-[10px] font-normal opacity-80">/mois</span></div>
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="flex items-center gap-1.5 font-black text-slate-950">{{ ux_icon('tabler:calendar', { class: 'h-3.5 w-3.5 text-slate-700' }) }}Échéancier de remboursement (<span data-inst-count>3</span> mensualités)</span>
+                            <span class="font-mono text-[10px] font-bold text-slate-500">TAEG fixe 0%</span>
+                        </div>
+                        <div data-schedule class="space-y-2 pt-1"></div>
+                        <div class="flex items-center justify-between border-t border-slate-200/70 pt-2 text-[11px] font-medium text-slate-600">
+                            <span>Total de votre financement :</span><span class="font-mono font-bold text-slate-950"><span data-total-text>0</span> Ar</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2.5">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500">Canal de prélèvement des mensualités</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" data-channel="mobile_money" class="flex items-center justify-center gap-2 rounded-xl border border-slate-950 bg-slate-950 px-3 py-2 text-xs font-bold text-white transition-all">{{ ux_icon('tabler:device-mobile', { class: 'h-3.5 w-3.5' }) }}<span>Mobile Money</span></button>
+                            <button type="button" data-channel="card" class="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-slate-50">{{ ux_icon('tabler:credit-card', { class: 'h-3.5 w-3.5' }) }}<span>Carte Bancaire</span></button>
+                        </div>
+                        <div data-channel-panel="mobile_money" class="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <label class="block text-[11px] font-semibold text-slate-700">Numéro de compte Mobile Money (Mvola / Airtel / Orange)</label>
+                            <div class="relative">
+                                <input type="text" data-momo-input="installments" placeholder="034 XX XXX XX" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-xs font-medium text-slate-900 focus:border-slate-950 focus:outline-none">
+                                <span data-momo-badge class="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded bg-slate-950 px-2 py-0.5 font-mono text-[10px] font-bold text-[#00E5A3]"></span>
+                            </div>
+                            <p data-momo-msg class="text-[11px] text-slate-500">ℹ Saisissez votre numéro Mvola (034/038), Airtel (033) ou Orange (032).</p>
+                        </div>
+                        <div data-channel-panel="card" class="hidden space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+                            <div class="flex items-center justify-between font-semibold text-slate-700"><span>Carte enregistrée pour les 3 ou 4 échéances</span><span class="font-mono text-[10px] text-slate-500">Visa / Mastercard</span></div>
+                            <input type="text" placeholder="•••• •••• •••• ••••" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-600">
+                            <p class="text-[11px] text-slate-500">Votre carte bancaire sera automatiquement prélevée chaque mois à la date indiquée.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-2 border-t border-slate-200/80 pt-2 text-[11px] text-slate-600 sm:grid-cols-3">
+                        {% for c in ['Accord 100% immédiat', '0 Ar de frais cachés', 'Rappel SMS 48h avant'] %}
+                            <div class="flex items-center gap-1.5">{{ ux_icon('tabler:check', { class: 'h-3.5 w-3.5 shrink-0 text-slate-900' }) }}<span>{{ c }}</span></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {# --- Option 2 : Mobile Money comptant --- #}
+            <div data-pay="mobile_money" class="cursor-pointer rounded-2xl border-2 border-slate-200 bg-white p-4 transition-all hover:border-slate-300">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-800">{{ ux_icon('tabler:device-mobile', { class: 'h-5 w-5' }) }}</span>
+                        <div><p class="text-xs font-bold text-slate-950">Paiement comptant Mobile Money</p><p class="text-[11px] text-slate-500">Mvola, Airtel Money ou Orange Money</p></div>
+                    </div>
+                    <span data-radio class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-slate-300"></span>
+                </div>
+                <div data-pay-body class="mt-4 hidden cursor-default space-y-2 border-t border-slate-200 pt-3">
+                    <label class="block text-[11px] font-semibold text-slate-700">Numéro Mobile Money pour le débit direct :</label>
+                    <div class="relative">
+                        <input type="text" data-momo-input="mobile_money" placeholder="034 XX XXX XX" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-xs font-medium text-slate-900 focus:border-slate-950 focus:outline-none">
+                        <span data-momo-badge class="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded bg-slate-950 px-2 py-0.5 font-mono text-[10px] font-bold text-[#00E5A3]"></span>
+                    </div>
+                    <p data-momo-msg class="text-[11px] text-slate-500">ℹ Saisissez votre numéro pour vérification</p>
+                </div>
+            </div>
+
+            {# --- Option 3 : Carte --- #}
+            <div data-pay="card" class="cursor-pointer rounded-2xl border-2 border-slate-200 bg-white p-4 transition-all hover:border-slate-300">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-800">{{ ux_icon('tabler:credit-card', { class: 'h-5 w-5' }) }}</span>
+                        <div><p class="text-xs font-bold text-slate-950">Carte bancaire comptant</p><p class="text-[11px] text-slate-500">Visa / Mastercard / Carte locale</p></div>
+                    </div>
+                    <span data-radio class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-slate-300"></span>
+                </div>
+            </div>
+
+            {# --- Option 4 : Cash --- #}
+            <div data-pay="cash_on_delivery" class="cursor-pointer rounded-2xl border-2 border-slate-200 bg-white p-4 transition-all hover:border-slate-300">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-800">{{ ux_icon('tabler:cash', { class: 'h-5 w-5' }) }}</span>
+                        <div><p class="text-xs font-bold text-slate-950">Paiement à la livraison</p><p class="text-[11px] text-slate-500">Disponible pour certaines zones</p></div>
+                    </div>
+                    <span data-radio class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-slate-300"></span>
+                </div>
+            </div>
+
+            {# --- Récap --- #}
+            <div class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs">
+                <div class="flex justify-between text-slate-500"><span>Articles ({{ items|length }})</span><span class="font-mono"><span data-sum-subtotal>0</span> Ar</span></div>
+                <div class="flex justify-between text-slate-500"><span>Frais de livraison</span><span class="font-mono"><span data-sum-shipping>0</span> Ar</span></div>
+                <div class="flex justify-between border-t border-slate-200 pt-2 text-sm font-bold text-slate-950"><span>Montant total de la commande</span><span class="font-mono"><span data-sum-total>0</span> Ar</span></div>
+                <div data-installment-recap class="space-y-1 rounded-xl border bg-white p-2.5">
+                    <div class="flex justify-between text-xs font-bold text-slate-950"><span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-[#00E5A3]"></span>Montant débité aujourd'hui :</span><span class="font-mono text-sm" data-first-payment>0 Ar</span></div>
+                    <div class="flex justify-between text-[11px] text-slate-500"><span>Mensualités restantes :</span><span class="font-mono" data-remaining>—</span></div>
+                </div>
+            </div>
+
+            <p data-checkout-notice class="hidden rounded-xl border border-slate-200 bg-slate-100 p-3 text-xs text-slate-700"></p>
+
+            <button type="button" data-confirm-order class="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-xs font-bold text-white shadow-md transition-all hover:bg-slate-800">
+                {{ ux_icon('tabler:shield-check', { class: 'h-4 w-4 text-[#00E5A3]' }) }}<span data-confirm-label>Confirmer la commande</span>
+            </button>
+        </div>
+    </div>
+
+    {# Phone verification sub-modal (SMS OTP) #}
+    <div data-phone-modal class="pointer-events-none fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs">
+        <div class="pointer-events-auto w-full max-w-sm space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-900">{{ ux_icon('tabler:phone-call', { class: 'h-6 w-6' }) }}</div>
+            <div class="text-center"><h3 class="text-sm font-bold text-slate-950">Validation mobile par SMS</h3>
+                <p class="mt-1 text-xs text-slate-500">Vérification requise pour votre numéro <strong data-otp-phone></strong>.</p></div>
+            <div data-otp-send class="space-y-3">
+                <button type="button" data-otp-request class="w-full rounded-xl bg-slate-950 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-slate-800">Recevoir le code SMS</button>
+                <button type="button" data-otp-cancel class="w-full py-2 text-xs text-slate-500 hover:underline">Modifier mon numéro</button>
+            </div>
+            <div data-otp-verify class="hidden space-y-3">
+                <div class="rounded-xl border border-slate-200 bg-slate-100 p-2.5 text-center text-[11px] font-medium text-slate-800">Code SMS envoyé !</div>
+                <div><label class="mb-1 block text-[11px] font-semibold text-slate-700">Code à 6 chiffres :</label>
+                    <input type="text" maxlength="6" data-otp-input placeholder="123456" class="w-full rounded-xl border border-slate-300 bg-slate-50 py-2 text-center font-mono text-lg tracking-widest focus:border-slate-950 focus:outline-none">
+                    <p data-otp-error class="mt-1 hidden text-[11px] text-red-500"></p></div>
+                <button type="button" data-otp-confirm class="w-full rounded-xl bg-slate-950 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-slate-800">Confirmer mon numéro</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

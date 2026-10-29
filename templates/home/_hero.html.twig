@@ -1,0 +1,127 @@
+{# ============================================================
+   UberEatsHero equivalent: category bubble row, filter chips
+   (with Trier / Tarif de livraison dropdowns), 3 pastel promo
+   banners, and the 4-pillar value proposition bar.
+============================================================ #}
+<div class="w-full space-y-6 font-sans sm:space-y-8">
+
+    {# 1. Category bubble row #}
+    <div class="relative border-b border-neutral-100 pb-3">
+        <div class="flex select-none items-center gap-3 overflow-x-auto pb-1 sm:gap-6">
+            {% for cat in [
+                {slug: 'alimentation', name: 'Courses', icon: '🛒'},
+                {slug: 'alimentation', name: 'Repas', icon: '🍔'},
+                {name: 'Offres & Promos', icon: '🏷️', flash: true},
+                {slug: 'electronique', name: 'High-Tech', icon: '📱'},
+                {slug: 'mode', name: 'Mode & Style', icon: '👗'},
+                {slug: 'electromenager', name: 'Électroménager', icon: '🔌'},
+                {slug: 'maison', name: 'Maison', icon: '🏠'},
+                {slug: 'beaute', name: 'Santé & Beauté', icon: '💄'},
+                {name: 'Solidarité Locale', icon: '🤝', solidarity: true}
+            ] %}
+                <a href="{{ cat.solidarity is defined ? path('app_become_vendor') : (cat.flash is defined ? (path('app_home') ~ '#catalog-section') : path('app_department', {slug: cat.slug})) }}"
+                   class="group flex min-w-[72px] shrink-0 cursor-pointer flex-col items-center gap-2 rounded-2xl p-2 text-center transition-all duration-150 hover:bg-neutral-100/80 sm:min-w-[84px]">
+                    <span class="flex h-14 w-14 items-center justify-center rounded-full border border-neutral-200/60 bg-soft-gray text-2xl shadow-2xs transition-all duration-150 group-hover:scale-105 group-hover:bg-neutral-200/70 sm:h-16 sm:w-16 sm:text-3xl">{{ cat.icon }}</span>
+                    <span class="line-clamp-1 text-xs font-bold text-neutral-900 group-hover:text-black">{{ cat.name }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# 2. Filter chips row #}
+    <div class="flex select-none items-center gap-2.5 overflow-x-auto pb-1 text-xs font-bold">
+        <div class="relative shrink-0">
+            <button type="button" data-dropdown-toggle="sort-menu" aria-expanded="false"
+                    class="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-soft-gray px-3.5 py-2 text-neutral-800 transition-all hover:bg-neutral-200/80">
+                {{ ux_icon('tabler:adjustments-horizontal', {class: 'h-3.5 w-3.5'}) }}<span>Trier</span>{{ ux_icon('tabler:chevron-down', {class: 'h-3.5 w-3.5'}) }}
+            </button>
+            <div id="sort-menu" class="hidden absolute left-0 top-full z-50 mt-2 w-48 rounded-2xl border border-neutral-200 bg-white py-2 shadow-xl">
+                {% for s in ['Recommandés', 'Les mieux notés', 'Livraison express', 'Prix croissant', 'Prix décroissant'] %}
+                    <button type="button" class="flex w-full items-center justify-between px-4 py-2 text-left text-xs font-normal text-neutral-700 hover:bg-neutral-50">{{ s }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="relative shrink-0">
+            <button type="button" data-dropdown-toggle="fee-menu" aria-expanded="false"
+                    class="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-soft-gray px-3.5 py-2 text-neutral-800 transition-all hover:bg-neutral-200/80">
+                <span>Tarif de livraison</span>{{ ux_icon('tabler:chevron-down', {class: 'h-3.5 w-3.5'}) }}
+            </button>
+            <div id="fee-menu" class="hidden absolute left-0 top-full z-50 mt-2 w-52 rounded-2xl border border-neutral-200 bg-white py-2 shadow-xl">
+                {% for f in ['Tous les tarifs', '0 Ar avec GoBuy Pass', 'Moins de 2 500 Ar'] %}
+                    <button type="button" class="flex w-full items-center justify-between px-4 py-2 text-left text-xs font-normal text-neutral-700 hover:bg-neutral-50">{{ f }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <a href="{{ path('app_home') }}#catalog-section" class="flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-soft-gray px-3.5 py-2 text-neutral-800 transition-all hover:bg-neutral-200/80">
+            {{ ux_icon('tabler:tag', {class: 'h-3.5 w-3.5 text-gobuy-green'}) }}<span>Offres &amp; Promos</span>
+        </a>
+
+        <button type="button" data-toggle-chip class="flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-soft-gray px-3.5 py-2 text-neutral-800 transition-all hover:bg-neutral-200">
+            {{ ux_icon('tabler:star-filled', {class: 'h-3.5 w-3.5 text-amber-500'}) }}<span>Les mieux notés (★ 4.5+)</span>
+        </button>
+
+        <button type="button" data-toggle-chip class="flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-soft-gray px-3.5 py-2 text-neutral-800 transition-all hover:bg-neutral-200">
+            {{ ux_icon('tabler:clock', {class: 'h-3.5 w-3.5 text-gobuy-green'}) }}<span>Moins de 35 min</span>
+        </button>
+
+        <button type="button" data-toggle-chip data-active-class="bg-gobuy-green text-white border-gobuy-green shadow-xs" class="flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-soft-gray px-3.5 py-2 text-neutral-800 transition-all hover:bg-neutral-200">
+            {{ ux_icon('tabler:sparkles', {class: 'h-3.5 w-3.5 text-gobuy-green'}) }}<span>GoBuy Pass (0 Ar)</span>
+        </button>
+    </div>
+
+    {# 3. Three pastel promo banners #}
+    <div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
+        <a href="{{ path('app_home') }}#catalog-section" class="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-3xl border border-[#CEEBD6] bg-mint p-6 transition-all duration-200 hover:shadow-lg sm:p-7">
+            <div class="z-10 max-w-[62%] space-y-2">
+                <span class="inline-block rounded-full bg-gobuy-green px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white">Bons Plans</span>
+                <h3 class="text-xl font-black leading-snug tracking-tight text-neutral-900 sm:text-2xl">Les favoris à petits prix</h3>
+                <p class="text-xs font-medium text-neutral-600 sm:text-sm">Jusqu'à -30% sur vos repas et indispensables du jour.</p>
+            </div>
+            <span class="z-10 inline-flex w-fit items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors group-hover:bg-neutral-800">
+                Commander {{ ux_icon('tabler:arrow-right', {class: 'h-3.5 w-3.5'}) }}
+            </span>
+        </a>
+
+        <a href="{{ path('app_department', {slug: 'alimentation'}) }}" class="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-3xl border border-[#FDE5D2] bg-peach p-6 transition-all duration-200 hover:shadow-lg sm:p-7">
+            <div class="z-10 max-w-[62%] space-y-2">
+                <span class="inline-block rounded-full bg-orange-money px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white">Chrono Tana</span>
+                <h3 class="text-xl font-black leading-snug tracking-tight text-neutral-900 sm:text-2xl">Courses &amp; Frais en 35 min</h3>
+                <p class="text-xs font-medium text-neutral-600 sm:text-sm">Supermarchés et boutiques livrés chez vous.</p>
+            </div>
+            <span class="z-10 inline-flex w-fit items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors group-hover:bg-neutral-800">
+                Faire ses courses {{ ux_icon('tabler:arrow-right', {class: 'h-3.5 w-3.5'}) }}
+            </span>
+        </a>
+
+        <button type="button" data-open-modal="how-it-works" class="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-3xl border border-[#DCE7FD] bg-lavender p-6 text-left transition-all duration-200 hover:shadow-lg sm:p-7">
+            <div class="z-10 max-w-[62%] space-y-2">
+                <span class="inline-block rounded-full bg-indigo-600 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white">GoBuy Pass</span>
+                <h3 class="text-xl font-black leading-snug tracking-tight text-neutral-900 sm:text-2xl">0 Ar de livraison</h3>
+                <p class="text-xs font-medium text-neutral-600 sm:text-sm">Livraison offerte illimitée dès 35 000 Ar d'achat.</p>
+            </div>
+            <span class="z-10 inline-flex w-fit items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors group-hover:bg-neutral-800">
+                Découvrir le Pass {{ ux_icon('tabler:arrow-right', {class: 'h-3.5 w-3.5'}) }}
+            </span>
+        </button>
+    </div>
+
+    {# 4. Value proposition bar #}
+    <div class="grid grid-cols-2 gap-3 pt-2 md:grid-cols-4">
+        {% for pillar in [
+            {title: 'Moins de 45 min', subtitle: 'Livraison chrono Tana', icon: 'tabler:clock', bg: 'bg-black', fg: 'text-gobuy-green'},
+            {title: 'GoBuy Pass à 0 Ar', subtitle: 'Frais de port offerts', icon: 'tabler:discount-2', bg: 'bg-gobuy-green', fg: 'text-white'},
+            {title: 'Solidarité Locale', subtitle: 'Boutiques de quartier', icon: 'tabler:heart-handshake', bg: 'bg-amber-400', fg: 'text-black'},
+            {title: 'Paiement Mobile', subtitle: 'MVola, Orange, Airtel', icon: 'tabler:shield-check', bg: 'bg-black', fg: 'text-white'}
+        ] %}
+            <div class="flex items-center gap-3 rounded-2xl border border-neutral-200/50 bg-soft-gray p-3.5">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ pillar.bg }} {{ pillar.fg }}">{{ ux_icon(pillar.icon, {class: 'h-5 w-5'}) }}</span>
+                <div>
+                    <h4 class="text-xs font-bold text-neutral-900">{{ pillar.title }}</h4>
+                    <p class="text-[11px] text-neutral-500">{{ pillar.subtitle }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

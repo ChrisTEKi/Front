@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/*
+ * GoBuy brand theme — Tailwind v4 CSS-first config.
+ * Every --color-* token below is automatically turned into utility
+ * classes (bg-gobuy-black, text-gobuy-green, bg-mint, ...).
+ */
+@theme {
+    --color-gobuy-black: #000000;
+    --color-gobuy-green: #06C167;
+
+    --color-soft-gray: #F6F6F6;
+
+    /* Pastel promo banner backgrounds */
+    --color-mint: #EAF7EE;
+    --color-peach: #FFF5EC;
+    --color-lavender: #F0F5FF;
+
+    /* Malagasy mobile-money & card operator colors */
+    --color-mvola: #008751;
+    --color-orange-money: #FF7900;
+    --color-airtel: #E60000;
+    --color-visa: #1A1F71;
+    --color-mastercard: #EB001B;
+
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    font-family: var(--font-sans);
+}

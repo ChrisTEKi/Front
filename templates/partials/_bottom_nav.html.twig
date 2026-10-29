@@ -1,0 +1,25 @@
+{# Mobile-only bottom navigation bar, matches BottomNav.tsx #}
+<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur-md lg:hidden">
+    <div class="mx-auto flex max-w-md items-center justify-around">
+        {% set nav_items = [
+            {route: 'app_home', label: 'Accueil', icon: 'tabler:home'},
+            {route: 'app_categories', label: 'Parcourir', icon: 'tabler:compass'},
+            {route: 'app_home', label: 'Rayons', icon: 'tabler:layout-grid'},
+            {route: 'app_cart', label: 'Panier', icon: 'tabler:shopping-bag', badge: true},
+            {route: 'app_account', label: 'Compte', icon: 'tabler:user'}
+        ] %}
+        {% for item in nav_items %}
+            {% set is_active = app.request.attributes.get('_route') == item.route %}
+            <a href="{{ path(item.route) }}" class="relative flex w-14 flex-col items-center justify-center rounded-xl py-1 {{ is_active ? 'text-black' : 'text-neutral-400 hover:text-black' }}">
+                <span class="relative">
+                    {{ ux_icon(item.icon, { class: 'h-5 w-5' }) }}
+                    {% if item.badge is defined %}
+                        <span data-cart-count-badge class="absolute -right-2.5 -top-1.5 hidden h-4 min-w-4 items-center justify-center rounded-full bg-gobuy-green px-1 font-mono text-[9px] font-black text-white ring-2 ring-white"></span>
+                    {% endif %}
+                </span>
+                <span class="mt-1 text-[10px] tracking-tight {{ is_active ? 'font-bold text-black' : 'font-medium text-neutral-500' }}">{{ item.label }}</span>
+                {% if is_active %}<span class="mt-0.5 h-1 w-1 rounded-full bg-gobuy-green"></span>{% endif %}
+            </a>
+        {% endfor %}
+    </div>
+</nav>

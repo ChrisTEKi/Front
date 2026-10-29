@@ -1,0 +1,40 @@
+{# `notifications` (e-mails & SMS envoyés) is empty until a messaging back-end exists. #}
+{% set notifications = notifications|default([]) %}
+<div data-modal="notifications" class="pointer-events-none fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-xs sm:p-4">
+    <div class="pointer-events-auto my-auto flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 p-4">
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">{{ ux_icon('tabler:bell', { class: 'h-4 w-4' }) }}</span>
+                <div><h2 class="text-sm font-bold text-slate-900">Centre de notifications</h2><p class="text-[11px] text-slate-500">Boîte de réception des E-mails &amp; SMS envoyés</p></div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" class="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:underline">{{ ux_icon('tabler:checks', { class: 'h-3.5 w-3.5' }) }}<span>Tout marquer lu</span></button>
+                <button type="button" data-modal-close class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">{{ ux_icon('tabler:x', { class: 'h-5 w-5' }) }}</button>
+            </div>
+        </div>
+        <div class="flex-1 space-y-3 overflow-y-auto p-4">
+            {% if notifications is empty %}
+                <div class="space-y-1 p-8 text-center text-xs text-slate-400">
+                    {{ ux_icon('tabler:mail', { class: 'mx-auto mb-2 h-8 w-8 text-slate-300' }) }}
+                    <p class="font-semibold text-slate-700">Aucun message pour l'instant</p>
+                    <p class="text-[11px]">Inscrivez-vous, passez commande ou demandez un code OTP pour voir les emails et SMS reçus ici en temps réel.</p>
+                </div>
+            {% else %}
+                {% for n in notifications %}
+                    <div class="space-y-1.5 rounded-2xl border p-3.5 text-xs {{ n.type == 'email' ? 'border-emerald-100 bg-emerald-50/40' : 'border-blue-100 bg-blue-50/40' }}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <span class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold text-white {{ n.type == 'email' ? 'bg-emerald-600' : 'bg-blue-600' }}">{{ n.type|upper }}</span>
+                                <span class="text-[11px] font-bold text-slate-800">À : {{ n.recipient }}</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400">{{ n.timestamp|date('H:i:s') }}</span>
+                        </div>
+                        {% if n.subject %}<p class="text-xs font-bold text-slate-900">{{ n.subject }}</p>{% endif %}
+                        <p class="whitespace-pre-line text-xs leading-relaxed text-slate-600">{{ n.message }}</p>
+                        {% if n.code %}<div class="mt-1 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1 font-mono text-xs font-bold text-emerald-800"><span>CODE OTP :</span><span class="text-sm tracking-widest text-emerald-600">{{ n.code }}</span></div>{% endif %}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
