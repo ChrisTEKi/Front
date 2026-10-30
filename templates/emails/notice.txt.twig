@@ -1,0 +1,10 @@
+{# Version texte brut de l'avis de sécurité. #}
+{{ ('notice.' ~ notice ~ '.title')|trans({}, 'emails') }}
+
+{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}
+
+{{ ('notice.' ~ notice ~ '.body')|trans({'%date%': date is defined and date ? date|format_date('long') : '', '%detail%': detail is defined and detail ? detail : ''}, 'emails') }}
+
+{% if notice != 'account_purged' %}{{ 'notice.not_you'|trans({}, 'emails') }}
+{% endif %}
+— {{ app_name }}

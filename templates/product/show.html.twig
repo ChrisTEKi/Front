@@ -1,18 +1,18 @@
 {% extends 'base.html.twig' %}
-{% block title %}{{ product ? product.name ~ ' — GoBuy' : 'Produit introuvable — GoBuy' }}{% endblock %}
+{% block title %}{{ product ? product.name ~ ' — GoBuy' : 'product.not_found'|trans ~ ' — GoBuy' }}{% endblock %}
 
 {% block body %}
 {% if product is null %}
     <div class="mx-auto max-w-md space-y-4 p-10 text-center">
         <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">{{ ux_icon('tabler:package-off', { class: 'h-7 w-7' }) }}</span>
-        <div><h2 class="text-sm font-bold text-slate-900">Produit introuvable</h2>
-            <p class="mt-1 text-xs text-slate-500">Le catalogue GoBuy n'est pas encore connecté à cette page — cette fiche produit s'affichera automatiquement dès qu'un vrai produit existe.</p></div>
-        <a href="{{ path('app_home') }}" class="inline-block rounded-2xl bg-black px-5 py-2.5 text-xs font-bold text-white hover:bg-neutral-800">Retour à l'accueil</a>
+        <div><h2 class="text-sm font-bold text-slate-900">{{ 'product.not_found'|trans }}</h2>
+            <p class="mt-1 text-xs text-slate-500">{{ 'product.not_found_text'|trans }}</p></div>
+        <a href="{{ path('app_home') }}" class="inline-block rounded-2xl bg-black px-5 py-2.5 text-xs font-bold text-white hover:bg-neutral-800">{{ 'product.back_home'|trans }}</a>
     </div>
 {% else %}
     <div class="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
         <nav class="flex items-center gap-1.5 text-xs text-slate-500">
-            <a href="{{ path('app_home') }}" class="hover:text-black">Accueil</a>{{ ux_icon('tabler:chevron-right', {class: 'h-3.5 w-3.5'}) }}
+            <a href="{{ path('app_home') }}" class="hover:text-black">{{ 'dept.home'|trans }}</a>{{ ux_icon('tabler:chevron-right', {class: 'h-3.5 w-3.5'}) }}
             <span class="font-semibold text-slate-800">{{ product.name }}</span>
         </nav>
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -21,15 +21,15 @@
                     <img src="{{ product.images[0] }}" alt="{{ product.name }}" class="h-full w-full object-contain mix-blend-multiply">
                 </div>
                 {% if product.images|length > 1 %}
-                    <div class="flex gap-2">{% for img in product.images %}<div class="h-16 w-16 overflow-hidden rounded-xl border border-slate-200 bg-white p-1"><img src="{{ img }}" class="h-full w-full object-contain"></div>{% endfor %}</div>
+                    <div class="flex gap-2">{% for img in product.images %}<div class="h-16 w-16 overflow-hidden rounded-xl border border-slate-200 bg-white p-1"><img src="{{ img }}" alt="{{ product.name }}" class="h-full w-full object-contain"></div>{% endfor %}</div>
                 {% endif %}
             </div>
             <div class="space-y-4">
                 <div><p class="text-xs font-bold text-neutral-500">{{ product.supplierName }}</p><h1 class="mt-1 text-xl font-black text-black">{{ product.name }}</h1></div>
-                <div class="flex items-center gap-2 text-xs text-neutral-600"><span class="flex items-center font-bold text-black">{{ ux_icon('tabler:star-filled', {class:'mr-0.5 h-4 w-4 text-gobuy-green'}) }}{{ product.rating|number_format(1) }}</span><span>({{ product.reviewsCount }} avis)</span></div>
-                <div class="text-3xl font-black text-black">{{ product.price|number_format(0, ',', ' ') }} <span class="text-sm">Ar</span></div>
+                <div class="flex items-center gap-2 text-xs text-neutral-600"><span class="flex items-center font-bold text-black">{{ ux_icon('tabler:star-filled', {class:'mr-0.5 h-4 w-4 text-gobuy-green'}) }}{{ product.rating|number_format(1) }}</span><span>{{ 'product.reviews'|trans({'%count%': product.reviewsCount}) }}</span></div>
+                <div class="text-3xl font-black text-black">{{ product.price|format_number(locale: app.request.locale) }} <span class="text-sm">Ar</span></div>
                 <p class="text-sm leading-relaxed text-neutral-600">{{ product.description }}</p>
-                <button type="button" data-add-to-cart="{{ product.id }}" class="flex w-full items-center justify-center gap-2 rounded-full bg-black px-6 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-neutral-800">{{ ux_icon('tabler:shopping-cart', {class:'h-4 w-4'}) }}Ajouter au panier</button>
+                <button type="button" data-add-to-cart="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-image="{{ product.images[0]|default('') }}" data-product-supplier="{{ product.supplierName }}" class="flex w-full items-center justify-center gap-2 rounded-full bg-black px-6 py-3.5 text-sm font-bold text-white shadow-xs hover:bg-neutral-800">{{ ux_icon('tabler:shopping-cart', {class:'h-4 w-4'}) }}{{ 'product.add_to_cart'|trans }}</button>
             </div>
         </div>
     </div>

@@ -1,0 +1,118 @@
+# Textes affichés par le JavaScript (messages, bulles, compteurs), envoyés au navigateur dans la page (voir JsDictionaryExtension) — espagnol.
+net:
+    error: "No se puede contactar con el servidor. Compruebe su conexión e inténtelo de nuevo."
+session:
+    expired: "Su sesión ha caducado. Vuelva a empezar."
+otp:
+    resend: "Reenviar el código"
+    resend_in: "Reenviar el código en %seconds% s"
+    sent: "Se acaba de enviar un nuevo código."
+    enter_code: "Introduzca el código de 6 dígitos."
+account:
+    delete_word_mismatch: "Escriba la palabra solicitada para confirmar la eliminación."
+    saved: "Cambios guardados."
+    reauth_code_sent: "Código enviado a su correo electrónico."
+    phone_sent: "Código enviado al %phone%."
+    phone_removed: "Número de teléfono eliminado."
+    phone_verified_ok: "Número verificado correctamente."
+cart:
+    added: "Artículo añadido a la cesta"
+    removed: "Artículo eliminado de la cesta"
+    items_count: "%count% artículos"
+    increase: "Añadir uno más"
+    decrease: "Quitar uno"
+    remove: "Eliminar el artículo"
+favorites:
+    added: "Añadido a sus favoritos"
+    removed: "Eliminado de sus favoritos"
+    confirm_clear: "¿Quiere quitar todos sus productos favoritos?"
+    cleared: "Favoritos vaciados."
+    none: "Ningún favorito guardado"
+    count: "%count% producto(s) guardado(s)"
+header:
+    city_updated: "Zona de entrega actualizada: %city%"
+common:
+    copied: "Copiado"
+    copied_bang: "¡Copiado!"
+flash:
+    ends_in: "Termina en %time%"
+momo:
+    err:
+        prefix: "El número debe empezar por 03x o +261"
+        length: "El número debe tener 10 dígitos (p. ej.: 034 12 345 67)"
+        carrier: "Operador de Mobile Money no reconocido (requerido: 034, 038, 033, 032, 037)"
+    ok:
+        mvola: "Número Mvola (Telma) válido"
+        airtel: "Número Airtel Money válido"
+        orange: "Número Orange Money válido"
+checkout:
+    err:
+        address: "Indique al menos el nombre, la dirección y la ciudad de entrega."
+        momo: "Número de Mobile Money no válido: %reason%"
+        phone: "Su número de teléfono debe verificarse por SMS antes de hacer un pedido."
+    items: "Artículos (%count%)"
+    today: "Hoy"
+    nth_debit: "Cobro %n%"
+    schedule_title: "Calendario de pagos (%count% cuotas)"
+    pay_today: "Pagar %amount% hoy"
+    pay_amount: "Pagar %amount%"
+    confirm: "Confirmar el pedido"
+    no_phone: "Ningún teléfono indicado"
+    phone_verified: "Tel. verificado"
+    placed: "Pedido registrado."
+    verify:
+        phone_title: "Validación móvil por SMS"
+        phone_text: "Se le enviará un código de confirmación rápido para proteger sus entregas y cobros."
+        phone_label: "Su número de teléfono móvil"
+        momo_title: "Verificación del número de Mobile Money"
+        momo_text: "Por su seguridad, comprobamos que este número le pertenece antes de pagar con él: se le enviará un código por SMS."
+        momo_label: "Número de Mobile Money a verificar"
+        sent: "¡Código SMS enviado al %number%!"
+vendor:
+    sim:
+        advantage: "Con el plan Pro ganas %amount% más al mes."
+    form:
+        sending: "Enviando…"
+        fix: "Corrige los campos señalados."
+        required: "Este campo es obligatorio."
+support:
+    network: "No se puede contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo."
+contact:
+    title:
+        email: "Cambiar mi correo electrónico"
+        phone: "Cambiar mi número de teléfono"
+        phone_remove: "Quitar mi número de teléfono"
+    intro:
+        email: "Por tu seguridad, primero enviamos un código a tu dirección actual y luego un segundo código a la nueva. Nada cambia hasta que introduces el segundo código."
+        phone: "Por tu seguridad, primero enviamos un código a tu correo actual y luego un SMS al nuevo número. Nada cambia hasta que introduces el código recibido por SMS."
+        phone_remove: "Para confirmar que eres tú, enviamos un código a tu correo actual. Introdúcelo para quitar tu número."
+    label:
+        email: "Nuevo correo electrónico"
+        phone: "Nuevo número de teléfono"
+    placeholder:
+        email: "nueva.direccion@ejemplo.com"
+        phone: "034 12 345 67"
+    send_old: "Recibir el código en mi dirección actual"
+    confirm: "Validar el código"
+    hint:
+        old: "Código enviado a %target% (tu dirección actual). Introdúcelo para confirmar que eres tú."
+        new_email: "Segundo código enviado a %target% (la nueva dirección). Introdúcelo para confirmarla."
+        new_phone: "SMS enviado al %target% (el nuevo número). Introduce el código recibido para confirmarlo."
+    sent_old: "Código enviado a tu dirección actual."
+    sent_new: "Dirección actual confirmada. Se acaba de enviar un segundo código."
+    resent: "Nuevo código enviado."
+    resend: "Reenviar el código"
+    done:
+        email: "Tu correo electrónico se ha modificado. Se ha enviado un aviso a la dirección anterior."
+        phone: "Tu número de teléfono se ha modificado y verificado."
+        phone_removed: "Tu número de teléfono se ha quitado."
+avatar:
+    unsupported: "Formato no admitido. Elige una foto JPEG, PNG, WebP o GIF."
+    saved: "Foto de perfil guardada."
+    removed: "Foto de perfil eliminada."
+addresses:
+    form:
+        add: "Nueva dirección"
+        edit: "Editar dirección"
+    saved: "Dirección guardada."
+    confirm_delete: "¿Eliminar esta dirección? Tus pedidos anteriores no se ven afectados."

@@ -1,0 +1,13 @@
+{# Version texte brut de l'invitation administrateur. #}
+{{ 'admin_invitation.title'|trans({}, 'emails') }}
+
+{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}
+
+{{ 'admin_invitation.intro'|trans({}, 'emails') }}
+
+{{ link }}
+
+{{ 'admin_invitation.validity'|trans({'%days%': days}, 'emails') }}
+{{ 'admin_invitation.ignore'|trans({}, 'emails') }}
+
+— {{ app_name }}

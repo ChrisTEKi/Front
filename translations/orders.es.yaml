@@ -1,0 +1,43 @@
+# Textos de pedidos: errores de la API, etiquetas de seguimiento y de pago (ES).
+error:
+    account_not_allowed: "Solo las cuentas de cliente pueden hacer pedidos."
+    phone_not_verified: "Verifique primero su número de teléfono por SMS para poder pedir."
+    mobile_money_invalid: "Número de Mobile Money no válido."
+    mobile_money_not_verified: "Verifique primero este número Mobile Money por SMS."
+    empty_cart: "Su carrito está vacío."
+    invalid_quantity: "Cantidad no válida (entre 1 y 99 por artículo)."
+    too_many_lines: "Su carrito contiene demasiados artículos distintos."
+    unknown_product: "Un artículo de su carrito ya no existe. Actualice su carrito."
+    product_unavailable: "«%name%» ya no está disponible."
+    invalid_installments: "Plan de pago a plazos no válido."
+    too_many_orders: "Demasiados pedidos en poco tiempo. Inténtelo de nuevo en %minutes% min."
+    order_closed: "Este pedido está cerrado: su estado ya no puede cambiar."
+    order_backwards: "Un pedido no puede volver a una etapa anterior."
+    validation: "Corrija los campos con errores."
+    invalid_courier: "Nombre o teléfono del repartidor no válido."
+    not_found: "No se ha encontrado ningún pedido con esta referencia."
+status:
+    confirmed: "Pedido confirmado"
+    preparing: "En preparación"
+    out_for_delivery: "En reparto"
+    delivered: "Entregado"
+    cancelled: "Cancelado"
+tracking:
+    description:
+        confirmed: "Su pedido ha sido registrado."
+        preparing: "Su paquete se está preparando."
+        out_for_delivery: "Su paquete está en camino."
+        delivered: "Su paquete ha sido entregado."
+        cancelled: "Este pedido ha sido cancelado."
+    today: "Hoy"
+    nth_debit: "Cobro n.º %n%"
+payment:
+    installments: "Pago en %count% cuotas sin intereses"
+    mobile_money: "Mobile Money (%carrier%)"
+    card: "Tarjeta bancaria"
+    cash_on_delivery: "Pago contra reembolso"
+    status:
+        pending: "Pendiente"
+        paid: "Pagado"
+        failed: "Fallido"
+        refunded: "Reembolsado"

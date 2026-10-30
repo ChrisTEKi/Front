@@ -1,0 +1,21 @@
+# Messages de validation des formulaires (FR). {{ limit }} est remplacé par la valeur de la règle.
+field:
+    required: "Ce champ est obligatoire."
+    too_short: "Valeur trop courte."
+    too_long: "Valeur trop longue."
+    invalid: "Valeur invalide."
+name:
+    too_short: "Saisissez votre nom complet."
+email:
+    invalid: "Adresse e-mail invalide."
+phone:
+    invalid: "Numéro de mobile invalide (ex : 034 12 345 67 ou +261 34 12 345 67)."
+password:
+    too_short: "Le mot de passe doit contenir au moins {{ limit }} caractères."
+    too_long: "Le mot de passe ne doit pas dépasser {{ limit }} caractères."
+    not_complex: "Utilisez au moins 3 types de caractères : minuscules, majuscules, chiffres, symboles."
+    contains_email: "Le mot de passe ne doit pas contenir votre adresse e-mail."
+    too_common: "Ce mot de passe est trop courant."
+    compromised: "Ce mot de passe est apparu dans une fuite de données publique. Choisissez-en un autre."
+contact:
+    invalid: "Saisissez une adresse e-mail ou un numéro de téléphone valide."

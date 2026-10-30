@@ -1,24 +1,24 @@
-<section aria-label="Livraison la plus rapide" class="space-y-4">
+<section aria-label="{{ 'home.fast.aria'|trans }}" class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
             <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gobuy-green text-white shadow-xs">
                 {{ ux_icon('tabler:truck-delivery', { class: 'h-5 w-5' }) }}
             </span>
             <div>
-                <h3 class="text-base font-black tracking-tight text-black sm:text-xl">Livraison la plus rapide à Antananarivo</h3>
-                <p class="text-xs font-medium text-neutral-500">Courses, alimentation et indispensables livrés chez vous en un temps record</p>
+                <h3 class="text-base font-black tracking-tight text-black sm:text-xl">{{ 'home.fast.title'|trans }}</h3>
+                <p class="text-xs font-medium text-neutral-500">{{ 'home.fast.subtitle'|trans }}</p>
             </div>
         </div>
         <a href="#catalog-section" class="flex items-center gap-0.5 text-xs font-bold text-neutral-900 hover:text-gobuy-green">
-            <span>Voir la sélection</span>{{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4' }) }}
+            <span>{{ 'home.fast.see'|trans }}</span>{{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4' }) }}
         </a>
     </div>
 
     {% if fastestDeliveryProducts is empty %}
         <div class="flex flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-neutral-300 bg-soft-gray/60 px-6 py-10 text-center">
             {{ ux_icon('tabler:package', { class: 'h-8 w-8 text-neutral-400' }) }}
-            <p class="text-sm font-semibold text-neutral-600">Le catalogue arrive bientôt</p>
-            <p class="max-w-sm text-xs text-neutral-400">Cette section affichera les produits les plus rapides à livrer une fois le catalogue connecté.</p>
+            <p class="text-sm font-semibold text-neutral-600">{{ 'home.fast.empty_title'|trans }}</p>
+            <p class="max-w-sm text-xs text-neutral-400">{{ 'home.fast.empty_text'|trans }}</p>
         </div>
     {% else %}
         <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">

@@ -1,31 +1,24 @@
 {% extends 'base.html.twig' %}
-{% block title %}Mon panier — GoBuy{% endblock %}
+{% block title %}{{ 'cart.page_title'|trans }}{% endblock %}
 {% block body %}
-<div class="mx-auto max-w-2xl space-y-4 p-4 sm:p-6">
-    <h2 class="text-lg font-bold text-slate-900">Mon panier</h2>
-    {% if items is empty %}
-        <div class="rounded-3xl border border-slate-200 bg-white p-12 text-center">
-            {{ ux_icon('tabler:shopping-bag', { class: 'mx-auto mb-2 h-12 w-12 text-slate-300' }) }}
-            <p class="text-sm font-semibold text-slate-700">Votre panier est vide</p>
-            <a href="{{ path('app_home') }}" class="mt-4 inline-block rounded-2xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-emerald-700">Explorer les produits</a>
+{# Page du panier : structure seulement, le contenu est rempli par assets/cart.js (le panier vit dans le navigateur). #}
+<div data-cart-view="page" class="mx-auto max-w-2xl space-y-4 p-4 sm:p-6">
+    <h2 class="text-lg font-bold text-slate-900">{{ 'cart.title'|trans }}</h2>
+
+    <div data-cart-empty class="rounded-3xl border border-slate-200 bg-white p-12 text-center">
+        {{ ux_icon('tabler:shopping-bag', { class: 'mx-auto mb-2 h-12 w-12 text-slate-300' }) }}
+        <p class="text-sm font-semibold text-slate-700">{{ 'cart.empty_title'|trans }}</p>
+        <a href="{{ path('app_home') }}" class="mt-4 inline-block rounded-2xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-emerald-700">{{ 'cart.explore'|trans }}</a>
+    </div>
+
+    <div data-cart-filled class="hidden space-y-4">
+        <div data-cart-lines class="divide-y divide-slate-100 rounded-3xl border border-slate-200 bg-white p-4"></div>
+        <div class="space-y-1.5 rounded-3xl border border-slate-200 bg-white p-4 text-xs">
+            <div class="flex justify-between text-slate-500"><span>{{ 'cart.subtotal'|trans }}</span><span class="font-mono font-semibold text-slate-800" data-cart-subtotal></span></div>
+            <div class="flex justify-between text-slate-500"><span>{{ 'cart.shipping'|trans }}</span><span class="font-mono font-semibold text-slate-800" data-cart-shipping></span></div>
+            <div class="flex justify-between border-t border-slate-100 pt-2 text-sm font-black text-slate-950"><span>{{ 'cart.total'|trans }}</span><span class="font-mono text-base" data-cart-total></span></div>
         </div>
-    {% else %}
-        <div class="divide-y divide-slate-100 rounded-3xl border border-slate-200 bg-white p-4">
-            {% for item in items %}
-                <div class="flex items-center justify-between py-3 text-xs">
-                    <div class="flex items-center gap-3">
-                        <img src="{{ item.product.images[0] }}" alt="{{ item.product.name }}" class="h-14 w-14 rounded-xl object-cover">
-                        <div><p class="font-bold text-slate-900">{{ item.product.name }}</p><p class="font-bold text-emerald-700">{{ item.product.price|number_format(0, ',', ' ') }} Ar</p></div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 font-bold hover:bg-slate-100">-</button>
-                        <span class="w-4 text-center font-bold">{{ item.quantity }}</span>
-                        <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 font-bold hover:bg-slate-100">+</button>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-        <a href="{{ path('app_checkout') }}" class="block w-full rounded-2xl bg-emerald-600 py-3.5 text-center text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700">Passer la commande</a>
-    {% endif %}
+        <a href="{{ path('app_checkout') }}" class="block w-full rounded-2xl bg-emerald-600 py-3.5 text-center text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700">{{ 'cart.checkout_short'|trans }}</a>
+    </div>
 </div>
 {% endblock %}

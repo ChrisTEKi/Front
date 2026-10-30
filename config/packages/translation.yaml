@@ -1,5 +1,13 @@
+# =============================================================================
+# translation.yaml — traductions FR / EN / ES.
+# Fichiers : translations/<domaine>.<langue>.yaml
+#   messages  → textes de l'interface        validators → messages d'erreur de validation
+#   security  → erreurs d'authentification   emails     → contenu des e-mails
+# =============================================================================
 framework:
-    default_locale: en
+    default_locale: fr
     translator:
         default_path: '%kernel.project_dir%/translations'
-        providers:
+        # Si une clé manque en EN ou ES, on retombe sur le français plutôt que d'afficher la clé brute.
+        fallbacks: [fr]
+        providers: {}

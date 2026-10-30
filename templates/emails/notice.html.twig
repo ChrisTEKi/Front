@@ -1,0 +1,16 @@
+{#
+ | Avis de sécurité générique (mot de passe modifié, suppression de compte programmée/annulée, 2FA modifiée…).
+ | Prévenir l'utilisateur de tout changement sensible permet de détecter vite un piratage.
+ | Variables : notice (clé : password_changed | two_factor_changed | deletion_scheduled | account_restored | phone_changed | account_purged),
+ |            date (facultatif : date de suppression définitive), detail (facultatif : texte inséré dans le message, ex. nouvelle adresse masquée).
+ | Clés : … | email_changed | email_in_use.
+ | Textes : translations/emails.<langue>.yaml → notice.<clé>.title / body.
+ #}
+{% extends 'emails/_layout.html.twig' %}
+
+{% block content %}
+    <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">{{ ('notice.' ~ notice ~ '.title')|trans({}, 'emails') }}</h1>
+    <p style="margin:0 0 12px;">{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}</p>
+    <p style="margin:0 0 12px;">{{ ('notice.' ~ notice ~ '.body')|trans({'%date%': date is defined and date ? date|format_date('long') : '', '%detail%': detail is defined and detail ? detail : ''}, 'emails') }}</p>
+    {% if notice != 'account_purged' %}<p style="margin:0;color:#6B7280;">{{ 'notice.not_you'|trans({}, 'emails') }}</p>{% endif %}
+{% endblock %}

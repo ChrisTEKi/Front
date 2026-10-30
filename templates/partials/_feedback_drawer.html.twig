@@ -1,32 +1,41 @@
-{# Fixed vertical "Feedback" tab on the right edge + drawer with a satisfaction form #}
-<button type="button" data-drawer-toggle="feedback-drawer" title="Donner un avis"
-        class="fixed right-0 top-1/2 z-40 -translate-y-1/2 select-none rounded-l-md bg-[#1d232a] px-2 py-4 text-xs font-bold tracking-wider text-white shadow-lg transition-all [writing-mode:vertical-rl] hover:bg-black">Feedback</button>
+{#
+ | Onglet vertical « Feedback » au bord droit de l'écran + tiroir d'avis.
+ | L'avis part par e-mail vers l'équipe (POST /support/message, voir SupportApiController) : le tiroir n'est donc affiché
+ | QUE si l'adresse du support est configurée (GOBUY_SUPPORT_EMAIL). Jamais de formulaire qui n'enverrait rien.
+ #}
+{% if support_email() %}
+<button type="button" data-drawer-toggle="feedback-drawer" title="{{ 'modal.feedback.give'|trans }}"
+        class="fixed right-0 top-1/2 z-40 -translate-y-1/2 select-none rounded-l-md bg-[#1d232a] px-2 py-4 text-xs font-bold tracking-wider text-white shadow-lg transition-all [writing-mode:vertical-rl] hover:bg-black">{{ 'modal.feedback.tab'|trans }}</button>
 
 <div id="feedback-drawer" class="pointer-events-none fixed inset-0 z-50">
     <div data-drawer-overlay data-drawer-close class="absolute inset-0 bg-slate-950/40 opacity-0 backdrop-blur-xs transition-opacity duration-200"></div>
     <div data-drawer-panel data-drawer-closed="translate-x-full" class="absolute right-0 top-0 flex h-full w-full max-w-sm translate-x-full flex-col justify-between bg-white shadow-2xl transition-transform duration-200">
         <div>
             <div class="flex items-center justify-between border-b border-slate-100 p-4">
-                <div><h3 class="text-sm font-bold text-slate-900">Feedback</h3><p class="text-[11px] text-slate-500">Avis utilisateur</p></div>
-                <button type="button" data-drawer-close class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">{{ ux_icon('tabler:x', { class: 'h-5 w-5' }) }}</button>
+                <div><h3 class="text-sm font-bold text-slate-900">{{ 'modal.feedback.title'|trans }}</h3><p class="text-[11px] text-slate-500">{{ 'modal.feedback.sub'|trans }}</p></div>
+                <button type="button" data-drawer-close aria-label="{{ 'modal.how.close'|trans }}" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">{{ ux_icon('tabler:x', { class: 'h-5 w-5' }) }}</button>
             </div>
             <div class="space-y-3 p-4 text-xs" data-feedback>
-                <span class="text-xs font-bold text-slate-900">Donnez votre avis sur le service</span>
+                <span class="text-xs font-bold text-slate-900">{{ 'modal.feedback.prompt'|trans }}</span>
                 <div data-feedback-done class="hidden space-y-1 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center text-emerald-800">
                     {{ ux_icon('tabler:check', { class: 'mx-auto h-6 w-6 text-emerald-600' }) }}
-                    <p class="text-xs font-bold">Misaotra betsaka !</p>
-                    <p class="text-[11px]">Votre avis a bien été transmis à nos équipes à Antananarivo.</p>
+                    <p class="text-xs font-bold">{{ 'modal.feedback.thanks'|trans }}</p>
+                    <p class="text-[11px]">{{ 'modal.feedback.thanks_text'|trans }}</p>
                 </div>
-                <form data-feedback-form class="space-y-3">
+                <form data-feedback-form data-support-form="feedback" class="space-y-3">
                     <div data-mood-group class="flex items-center justify-around rounded-xl border border-stone-200 bg-stone-50 p-2">
-                        {% for mood in ['😊', '😐', '🙁'] %}<button type="button" data-mood class="rounded-lg p-1.5 text-2xl opacity-60 transition-transform">{{ mood }}</button>{% endfor %}
+                        {% for mood in [{code: 'happy', emoji: '😊'}, {code: 'neutral', emoji: '😐'}, {code: 'sad', emoji: '🙁'}] %}
+                            <button type="button" data-mood="{{ mood.code }}" aria-label="{{ ('modal.feedback.mood_' ~ mood.code)|trans }}" class="rounded-lg p-1.5 text-2xl opacity-60 transition-transform">{{ mood.emoji }}</button>
+                        {% endfor %}
                     </div>
-                    <textarea rows="3" placeholder="Une remarque, une question sur notre reconditionnement ou un problème technique ?" class="w-full resize-none rounded-xl border border-neutral-200 p-3 text-xs focus:outline-none focus:ring-2 focus:ring-black"></textarea>
-                    <button type="submit" class="w-full rounded-full bg-black py-2.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-neutral-800">Envoyer mon retour</button>
+                    <textarea name="message" required minlength="5" maxlength="2000" rows="3" placeholder="{{ 'modal.feedback.placeholder'|trans }}" class="w-full resize-none rounded-xl border border-neutral-200 p-3 text-xs focus:outline-none focus:ring-2 focus:ring-black"></textarea>
+                    <p data-support-error role="alert" class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-semibold text-rose-700"></p>
+                    <button type="submit" class="w-full rounded-full bg-black py-2.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-neutral-800 disabled:opacity-60">{{ 'modal.feedback.submit'|trans }}</button>
                 </form>
-                <button type="button" data-drawer-close data-open-modal="how-it-works" class="w-full rounded-xl border border-slate-200 p-3 text-left font-bold text-slate-900 hover:bg-slate-50">Comment ça marche ?</button>
+                <button type="button" data-drawer-close data-open-modal="how-it-works" class="w-full rounded-xl border border-slate-200 p-3 text-left font-bold text-slate-900 hover:bg-slate-50">{{ 'modal.feedback.how'|trans }}</button>
             </div>
         </div>
-        <div class="border-t border-slate-200 bg-stone-50 p-4 text-center text-[11px] text-slate-500">GoBuy Madagascar • Reconditionné &amp; Garanti</div>
+        <div class="border-t border-slate-200 bg-stone-50 p-4 text-center text-[11px] text-slate-500">{{ 'modal.feedback.footer'|trans }}</div>
     </div>
 </div>
+{% endif %}

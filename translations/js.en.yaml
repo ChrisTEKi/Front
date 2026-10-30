@@ -1,0 +1,118 @@
+# Textes affichés par le JavaScript (messages, bulles, compteurs), envoyés au navigateur dans la page (voir JsDictionaryExtension) — anglais.
+net:
+    error: "The server cannot be reached. Check your connection and try again."
+session:
+    expired: "Your session has expired. Please start again."
+otp:
+    resend: "Resend the code"
+    resend_in: "Resend the code in %seconds% s"
+    sent: "A new code has just been sent."
+    enter_code: "Enter the 6-digit code."
+account:
+    delete_word_mismatch: "Type the requested word to confirm the deletion."
+    saved: "Changes saved."
+    reauth_code_sent: "Code sent to your email address."
+    phone_sent: "Code sent to %phone%."
+    phone_removed: "Phone number removed."
+    phone_verified_ok: "Number verified successfully."
+cart:
+    added: "Item added to cart"
+    removed: "Item removed from cart"
+    items_count: "%count% items"
+    increase: "Add one more"
+    decrease: "Remove one"
+    remove: "Remove item"
+favorites:
+    added: "Added to your favorites"
+    removed: "Removed from your favorites"
+    confirm_clear: "Do you want to remove all your favorite products?"
+    cleared: "Favorites cleared."
+    none: "No favorites saved"
+    count: "%count% saved product(s)"
+header:
+    city_updated: "Delivery area updated: %city%"
+common:
+    copied: "Copied"
+    copied_bang: "Copied!"
+flash:
+    ends_in: "Ends in %time%"
+momo:
+    err:
+        prefix: "The number must start with 03x or +261"
+        length: "The number must have 10 digits (e.g. 034 12 345 67)"
+        carrier: "Mobile Money operator not recognised (required: 034, 038, 033, 032, 037)"
+    ok:
+        mvola: "Valid Mvola (Telma) number"
+        airtel: "Valid Airtel Money number"
+        orange: "Valid Orange Money number"
+checkout:
+    err:
+        address: "Please fill in at least the name, address and city for delivery."
+        momo: "Invalid Mobile Money number: %reason%"
+        phone: "Your phone number must be verified by SMS before you can order."
+    items: "Items (%count%)"
+    today: "Today"
+    nth_debit: "Payment %n%"
+    schedule_title: "Repayment schedule (%count% instalments)"
+    pay_today: "Pay %amount% today"
+    pay_amount: "Pay %amount%"
+    confirm: "Confirm order"
+    no_phone: "No phone number provided"
+    phone_verified: "Phone verified"
+    placed: "Order placed."
+    verify:
+        phone_title: "Mobile validation by SMS"
+        phone_text: "A quick confirmation code will be sent to you to secure your deliveries and payments."
+        phone_label: "Your mobile phone number"
+        momo_title: "Mobile Money number verification"
+        momo_text: "For your security, we check that this number belongs to you before you pay with it: an SMS code will be sent to it."
+        momo_label: "Mobile Money number to verify"
+        sent: "SMS code sent to %number%!"
+vendor:
+    sim:
+        advantage: "With the Pro plan, you earn %amount% more per month."
+    form:
+        sending: "Sending…"
+        fix: "Please correct the highlighted fields."
+        required: "This field is required."
+support:
+    network: "The server cannot be reached. Check your connection and try again."
+contact:
+    title:
+        email: "Change my email address"
+        phone: "Change my phone number"
+        phone_remove: "Remove my phone number"
+    intro:
+        email: "For your security, we first send a code to your current address, then a second code to the new address. Nothing changes until you enter the second code."
+        phone: "For your security, we first send a code to your current email address, then an SMS to the new number. Nothing changes until you enter the SMS code."
+        phone_remove: "To confirm it is you, we send a code to your current email address. Enter it to remove your number."
+    label:
+        email: "New email address"
+        phone: "New phone number"
+    placeholder:
+        email: "new.address@example.com"
+        phone: "034 12 345 67"
+    send_old: "Send the code to my current address"
+    confirm: "Confirm code"
+    hint:
+        old: "Code sent to %target% (your current address). Enter it to confirm it is you."
+        new_email: "Second code sent to %target% (the new address). Enter it to confirm it."
+        new_phone: "SMS sent to %target% (the new number). Enter the code you received to confirm it."
+    sent_old: "Code sent to your current address."
+    sent_new: "Current address confirmed. A second code has just been sent."
+    resent: "New code sent."
+    resend: "Resend the code"
+    done:
+        email: "Your email address has been changed. A notice was sent to the old address."
+        phone: "Your phone number has been changed and verified."
+        phone_removed: "Your phone number has been removed."
+avatar:
+    unsupported: "Unsupported format. Choose a JPEG, PNG, WebP or GIF photo."
+    saved: "Profile photo saved."
+    removed: "Profile photo removed."
+addresses:
+    form:
+        add: "New address"
+        edit: "Edit address"
+    saved: "Address saved."
+    confirm_delete: "Delete this address? Your past orders are not affected."

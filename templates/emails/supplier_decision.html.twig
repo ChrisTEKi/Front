@@ -1,0 +1,21 @@
+{#
+ | Décision de l'équipe GoBuy sur une demande de compte fournisseur.
+ | Variables : approved (bool), reason (facultatif : motif du refus), dashboard_url.
+ #}
+{% extends 'emails/_layout.html.twig' %}
+
+{% block content %}
+    {% if approved %}
+        <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">{{ 'supplier_decision.approved.title'|trans({}, 'emails') }}</h1>
+        <p style="margin:0 0 12px;">{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}</p>
+        <p style="margin:0 0 24px;">{{ 'supplier_decision.approved.body'|trans({}, 'emails') }}</p>
+        <p style="margin:0;text-align:center;">
+            <a href="{{ dashboard_url }}" style="display:inline-block;background:#06C167;color:#FFFFFF;text-decoration:none;font-weight:700;border-radius:999px;padding:14px 32px;">{{ 'supplier_decision.approved.button'|trans({}, 'emails') }}</a>
+        </p>
+    {% else %}
+        <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">{{ 'supplier_decision.rejected.title'|trans({}, 'emails') }}</h1>
+        <p style="margin:0 0 12px;">{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}</p>
+        <p style="margin:0 0 12px;">{{ 'supplier_decision.rejected.body'|trans({}, 'emails') }}</p>
+        {% if reason %}<p style="margin:0;padding:12px 16px;background:#F6F6F6;border-radius:8px;">{{ reason }}</p>{% endif %}
+    {% endif %}
+{% endblock %}

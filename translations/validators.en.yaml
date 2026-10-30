@@ -1,0 +1,21 @@
+# Form validation messages (EN). {{ limit }} is replaced by the rule's value.
+field:
+    required: "This field is required."
+    too_short: "Value too short."
+    too_long: "Value too long."
+    invalid: "Invalid value."
+name:
+    too_short: "Enter your full name."
+email:
+    invalid: "Invalid email address."
+phone:
+    invalid: "Invalid mobile number (e.g. 034 12 345 67 or +261 34 12 345 67)."
+password:
+    too_short: "The password must be at least {{ limit }} characters long."
+    too_long: "The password must not exceed {{ limit }} characters."
+    not_complex: "Use at least 3 kinds of characters: lowercase, uppercase, digits, symbols."
+    contains_email: "The password must not contain your email address."
+    too_common: "This password is too common."
+    compromised: "This password appeared in a public data breach. Choose another one."
+contact:
+    invalid: "Enter a valid e-mail address or phone number."

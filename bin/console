@@ -1,19 +1,27 @@
 #!/usr/bin/env php
 <?php
+// =============================================================================
+// bin/console — point d'entrée de la ligne de commande Symfony.
+// Toutes les commandes (migrations, création du super admin, purge des comptes…)
+// passent par ce fichier : `php bin/console <commande>`.
+// =============================================================================
 
 use App\Kernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 
+// Vérifie que `composer install` a bien été exécuté (sinon message clair).
 if (!is_dir(dirname(__DIR__).'/vendor')) {
-    throw new LogicException('Dependencies are missing. Try running "composer install".');
+    throw new LogicException('Les dépendances sont absentes. Lancez "composer install".');
 }
 
+// Ce fichier est généré par le composant symfony/runtime lors de `composer install`.
 if (!is_file(dirname(__DIR__).'/vendor/autoload_runtime.php')) {
-    throw new LogicException('Symfony Runtime is missing. Try running "composer require symfony/runtime".');
+    throw new LogicException('symfony/runtime est absent. Lancez "composer install".');
 }
 
 require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
 
+// Le runtime nous fournit l'environnement (APP_ENV) et le mode debug (APP_DEBUG).
 return function (array $context) {
     $kernel = new Kernel($context['APP_ENV'], (bool) $context['APP_DEBUG']);
 

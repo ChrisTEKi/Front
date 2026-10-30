@@ -1,23 +1,75 @@
-# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
-
-# This file is the entry point to configure your own services.
-# Files in the packages/ subdirectory configure your dependencies.
-# See also https://symfony.com/doc/current/service_container/import.html
-
-# Put parameters here that don't need to change on each machine where the app is deployed
-# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+# =============================================================================
+# services.yaml — déclaration des services (classes injectées automatiquement).
+# =============================================================================
 parameters:
+    # ---- Codes OTP -----------------------------------------------------------
+    app.otp.length: 6                 # nombre de chiffres d'un code
+    app.otp.ttl_seconds: 600          # durée de validité : 10 minutes
+    app.otp.max_attempts: 5           # saisies erronées autorisées avant blocage du code
+    app.otp.resend_cooldown: 30       # secondes minimum entre deux envois
+    app.otp.log_codes: '%env(bool:APP_OTP_LOG_CODES)%'   # DEV uniquement : écrit les codes dans les logs
+
+    # ---- Langues -------------------------------------------------------------
+    app.locales: ['fr', 'en', 'es']
+    app.default_locale: 'fr'
+
+    # ---- Expéditeur des e-mails ------------------------------------------------
+    app.mailer.from_email: '%env(MAILER_FROM_EMAIL)%'
+    app.mailer.from_name: '%env(MAILER_FROM_NAME)%'
+
+    # ---- Commandes ----------------------------------------------------------------
+    app.order.delivery_fee: 10000     # frais de livraison forfaitaires en Ariary (même règle que la maquette)
+
+    # ---- Support ----------------------------------------------------------------
+    # Destinataire des messages des formulaires du site (contact, réclamation, avis, candidature). Vide = formulaires masqués.
+    app.support.email: '%env(GOBUY_SUPPORT_EMAIL)%'
+
+    # ---- URL publique ----------------------------------------------------------
+    app.default_uri: '%env(DEFAULT_URI)%'
 
 services:
-    # default configuration for services in *this* file
+    # Réglages par défaut pour TOUS les services de src/ :
+    #  - autowire     : Symfony devine les dépendances d'après les types du constructeur,
+    #  - autoconfigure: les classes sont reconnues automatiquement (commandes, subscribers, voters…).
     _defaults:
-        autowire: true      # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        autowire: true
+        autoconfigure: true
 
-    # makes classes in src/ available to be used as services
-    # this creates a service per class whose id is the fully-qualified class name
+    # Enregistre chaque classe de src/ comme service (sauf entités, enums et noyau : ce ne sont pas des services).
     App\:
         resource: '../src/'
+        exclude:
+            - '../src/Entity/'
+            - '../src/Enum/'
+            - '../src/Kernel.php'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    # Catalogue produits : vide tant que la table des produits n'existe pas. À remplacer par votre implémentation
+    # (voir App\Order\CatalogInterface) : App\Order\CatalogInterface: '@App\Catalog\DoctrineCatalog'
+    App\Order\CatalogInterface:
+        alias: App\Order\EmptyCatalog
+
+# --- Tests : les codes OTP ne partent pas vers de vrais e-mails/SMS, ils sont gardés en mémoire pour être relus par les tests.
+when@test:
+    services:
+        App\Tests\Support\InMemoryOtpDelivery:
+            public: true
+        App\Notification\OtpDeliveryInterface:
+            alias: App\Tests\Support\InMemoryOtpDelivery
+            public: true
+        # Catalogue de test : produits définis par les tests (voir tests/Support/InMemoryCatalog.php).
+        App\Tests\Support\InMemoryCatalog:
+            public: true
+        # La purge des comptes est appelée directement par certains tests.
+        App\Account\AccountPurger:
+            autowire: true
+            public: true
+        App\Order\CatalogInterface:
+            alias: App\Tests\Support\InMemoryCatalog
+            public: true
+        # Faux Google/Apple : aucun appel réseau, jetons signés avec une clé de test (voir tests/Support/FakeOidcProvider.php).
+        App\Tests\Support\FakeOidcProvider:
+            public: true
+        http_client:
+            class: Symfony\Component\HttpClient\MockHttpClient
+            factory: ['@App\Tests\Support\FakeOidcProvider', 'httpClient']
+            public: true

@@ -1,20 +1,20 @@
+# Dépendances et artefacts de build
+/vendor/
+/var/
+/public/assets/
+/public/bundles/
+/composer.harness.json
+/composer.harness.lock
 
-###> symfony/framework-bundle ###
+# Configuration locale et secrets : JAMAIS dans git
 /.env.local
 /.env.local.php
 /.env.*.local
 /config/secrets/prod/prod.decrypt.private.php
-/public/bundles/
-/var/
-/vendor/
-###< symfony/framework-bundle ###
+/*.p8
 
-###> symfony/asset-mapper ###
-/public/assets/
-/assets/vendor/
-###< symfony/asset-mapper ###
-
-###> phpunit/phpunit ###
-/phpunit.xml
-/.phpunit.cache/
-###< phpunit/phpunit ###
+# Divers
+.phpunit.result.cache
+.phpunit.cache/
+.idea/
+.vscode/

@@ -1,159 +1,568 @@
 {% extends 'base.html.twig' %}
-{% block title %}Espace Administrateur — GoBuy{% endblock %}
+{# Tous les textes de cette page sont dans translations/admin.<langue>.yaml (FR / EN / ES). #}
+{% trans_default_domain 'admin' %}
+{% block title %}{{ 'page.title'|trans }}{% endblock %}
+
+{# ----- Petites briques réutilisables ----- #}
+{% macro badge(text, tone) %}
+    {% set tones = {green: 'bg-emerald-100 text-emerald-800', amber: 'bg-amber-100 text-amber-800', red: 'bg-rose-100 text-rose-800', slate: 'bg-slate-100 text-slate-700', indigo: 'bg-indigo-100 text-indigo-800'} %}
+    <span class="inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold {{ tones[tone]|default(tones.slate) }}">{{ text }}</span>
+{% endmacro %}
+
+{# Coche verte (vérifié) ou croix rouge (non vérifié). `label` = texte lu par les lecteurs d'écran. #}
+{% macro tick(ok, label) %}
+    {% if ok %}<span class="text-emerald-600" title="{{ label }}">{{ ux_icon('tabler:circle-check', {class: 'h-4 w-4'}) }}</span><span class="sr-only">{{ label }}</span>
+    {% else %}<span class="text-rose-500" title="{{ label }}">{{ ux_icon('tabler:alert-circle', {class: 'h-4 w-4'}) }}</span><span class="sr-only">{{ label }}</span>{% endif %}
+{% endmacro %}
+
+{% import _self as ui %}
 
 {% block body %}
-<div data-admin-dashboard class="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+{% set can = d.can %}
+<div data-admin-dashboard data-initial-tab="{{ tab }}" data-session-expired="{{ 'error.session_expired'|trans }}" data-network-error="{{ 'error.network'|trans }}" data-saved="{{ 'notice.saved'|trans }}" class="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
 
     <div class="flex flex-col justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
         <div>
-            <div class="flex items-center gap-2"><span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-800">Supervision Générale</span><span class="text-xs text-slate-400">Septembre 2026</span></div>
-            <h1 class="mt-1 text-xl font-bold text-slate-900">Tableau de bord Administrateur</h1>
-            <p class="text-xs text-slate-500">Validation des comptes fournisseurs, surveillance des transactions et exports automatisés en tableaux.</p>
+            <div class="flex items-center gap-2"><span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-800">{{ 'dash.badge'|trans }}</span><span class="text-xs text-slate-400">{{ 'now'|format_date(pattern: 'LLLL y', locale: app.request.locale)|capitalize }}</span></div>
+            <h1 class="mt-1 text-xl font-bold text-slate-900">{{ 'dash.title'|trans }}</h1>
+            <p class="text-xs text-slate-500">{{ 'dash.subtitle'|trans }}</p>
         </div>
-        <button type="button" data-export="clients" class="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700">{{ ux_icon('tabler:download', {class:'h-3.5 w-3.5'}) }}<span>Export Tableaux CSV</span></button>
+        <button type="button" data-admin-tab="exports" class="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700">{{ ux_icon('tabler:download', {class: 'h-3.5 w-3.5'}) }}<span>{{ 'dash.export_button'|trans }}</span></button>
     </div>
 
-    <div data-export-notice class="hidden items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800"><span data-export-notice-icon>{{ ux_icon('tabler:circle-check', {class:'h-4 w-4 shrink-0 text-emerald-600'}) }}</span><span data-export-notice-text></span></div>
+    {# Zone de messages (succès / erreur des actions) : remplie par assets/admin.js #}
+    <div data-admin-notice role="status" aria-live="polite" class="hidden items-center gap-2 rounded-2xl border p-3 text-xs"></div>
 
+    {# ---- Onglets : chacun n'apparaît que si l'admin a le droit correspondant ---- #}
     <div data-admin-tabs class="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-2 text-xs font-semibold">
-        {% for t in [
-            {id:'overview', l:"Vue d'ensemble"},
-            {id:'vendor_applications', l:'Candidatures Vendeurs'},
-            {id:'vendor_payouts', l:'Reversements & Commissions'},
-            {id:'suppliers_approval', l:'Validation Fournisseurs'},
-            {id:'users_table', l:'Base Utilisateurs (' ~ users|length ~ ')'},
-            {id:'orders_table', l:'Commandes (' ~ orders|length ~ ')'},
-            {id:'exports', l:'Exports CSV'}
-        ] %}
-            <button type="button" data-admin-tab="{{ t.id }}" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ t.l }}</button>
-        {% endfor %}
+        <button type="button" data-admin-tab="overview" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.overview'|trans }}</button>
+        {% if can['suppliers.view'] %}
+            <button type="button" data-admin-tab="vendor_applications" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.vendor_applications'|trans }}</button>
+        {% endif %}
+        {% if can['finance.view'] %}
+            <button type="button" data-admin-tab="vendor_payouts" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.vendor_payouts'|trans }}</button>
+        {% endif %}
+        {% if can['suppliers.view'] %}
+            <button type="button" data-admin-tab="suppliers_approval" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.suppliers_approval'|trans }}</button>
+        {% endif %}
+        {% if d.usersList is not null %}
+            <button type="button" data-admin-tab="users_table" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.users_table'|trans({'%count%': d.usersList.total}) }}</button>
+        {% endif %}
+        {% if can['orders.view'] %}
+            <button type="button" data-admin-tab="orders_table" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.orders_table'|trans({'%count%': d.counts.orders}) }}</button>
+        {% endif %}
+        {% if can['admins.view'] %}
+            <button type="button" data-admin-tab="admins" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.admins'|trans({'%count%': d.admins|length}) }}</button>
+            <button type="button" data-admin-tab="roles" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.roles'|trans }}</button>
+        {% endif %}
+        {% if d.audit is not null %}
+            <button type="button" data-admin-tab="audit" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.audit'|trans }}</button>
+        {% endif %}
+        {% if can['users.export'] or can['suppliers.export'] or can['admins.export'] or can['finance.view'] %}
+            <button type="button" data-admin-tab="exports" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.exports'|trans }}</button>
+        {% endif %}
     </div>
 
-    {# ---- OVERVIEW ---- #}
+    {# ======================= VUE D'ENSEMBLE ======================= #}
     <div data-admin-panel="overview" class="hidden space-y-6">
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Clients inscrits</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ users|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">{{ ux_icon('tabler:users', {class:'h-5 w-5'}) }}</span></div>
-            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Fournisseurs actifs</span><div class="mt-1 text-2xl font-bold text-slate-900">0</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">{{ ux_icon('tabler:building-store', {class:'h-5 w-5'}) }}</span></div>
-            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Produits au catalogue</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ products|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">{{ ux_icon('tabler:package', {class:'h-5 w-5'}) }}</span></div>
-            <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">Commandes totales</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ orders|length }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">{{ ux_icon('tabler:file-spreadsheet', {class:'h-5 w-5'}) }}</span></div>
+            {% if d.counts.clients is not null %}
+                <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">{{ 'overview.clients'|trans }}</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ d.counts.clients }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">{{ ux_icon('tabler:users', {class: 'h-5 w-5'}) }}</span></div>
+            {% endif %}
+            {% if d.counts.suppliersApproved is not null %}
+                <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">{{ 'overview.suppliers_active'|trans }}</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ d.counts.suppliersApproved }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">{{ ux_icon('tabler:building-store', {class: 'h-5 w-5'}) }}</span></div>
+                <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">{{ 'overview.suppliers_pending'|trans }}</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ d.counts.suppliersPending }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">{{ ux_icon('tabler:package', {class: 'h-5 w-5'}) }}</span></div>
+            {% endif %}
+            {% if d.counts.orders is not null %}
+                <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs"><div><span class="text-xs font-medium text-slate-500">{{ 'overview.orders'|trans }}</span><div class="mt-1 text-2xl font-bold text-slate-900">{{ d.counts.orders }}</div></div><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">{{ ux_icon('tabler:file-spreadsheet', {class: 'h-5 w-5'}) }}</span></div>
+            {% endif %}
         </div>
 
-        {% if pendingSuppliers is not empty %}
+        {% if d.pendingSuppliers is not empty %}
             <div class="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white">{{ ux_icon('tabler:alert-circle', {class:'h-5 w-5'}) }}</span>
-                    <div><h3 class="text-xs font-bold text-amber-900">{{ pendingSuppliers|length }} nouveau(x) dossier(s) fournisseur en attente</h3><p class="text-[11px] text-amber-700">L'approbation admin est obligatoire pour qu'ils puissent mettre en vente leurs produits.</p></div></div>
-                <button type="button" data-admin-tab="suppliers_approval" class="rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700">Examiner les dossiers</button>
+                <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white">{{ ux_icon('tabler:alert-circle', {class: 'h-5 w-5'}) }}</span>
+                    <div><h3 class="text-xs font-bold text-amber-900">{{ 'overview.pending_banner_title'|trans({'%count%': d.pendingSuppliers|length}) }}</h3><p class="text-[11px] text-amber-700">{{ 'overview.pending_banner_text'|trans }}</p></div></div>
+                <button type="button" data-admin-tab="suppliers_approval" class="rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700">{{ 'overview.pending_banner_button'|trans }}</button>
             </div>
         {% endif %}
 
-        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-            <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">Commandes récentes</h3><button type="button" data-admin-tab="orders_table" class="text-xs text-indigo-600 hover:underline">Voir tout</button></div>
-            {% if orders is empty %}
-                <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucune commande enregistrée pour le moment.</div>
-            {% endif %}
-        </div>
+        {% if can['orders.view'] %}
+            <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+                <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">{{ 'overview.recent_orders'|trans }}</h3><button type="button" data-admin-tab="orders_table" class="text-xs text-indigo-600 hover:underline">{{ 'overview.see_all'|trans }}</button></div>
+                {% if d.orders is empty %}
+                    <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">{{ 'orders.none'|trans }}</div>
+                {% else %}
+                    <ul class="divide-y divide-slate-100 text-xs">
+                        {% for o in d.orders|slice(0, 5) %}
+                            <li class="flex items-center justify-between gap-3 py-2.5"><span class="font-mono font-semibold text-slate-900">{{ o.orderNumber }}</span><span class="truncate text-slate-500">{{ o.customerName }}</span><span class="font-mono text-slate-700">{{ o.total|format_number }} Ar</span>{{ ui.badge(o.statusLabel, 'indigo') }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endif %}
     </div>
 
-    {# ---- VENDOR APPLICATIONS ---- #}
+    {# ======================= CANDIDATURES VENDEURS ======================= #}
+    {% if can['suppliers.view'] %}
     <div data-admin-panel="vendor_applications" class="hidden space-y-4">
         <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
             <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-                <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:building-store', {class:'h-4 w-4 text-emerald-600'}) }}Candidatures d'adhésion Vendeurs & Boutiques</h3>
-                    <p class="text-xs text-slate-500">Dossiers déposés depuis la page "Devenir Vendeur" détaillant les règles, commissions et formules.</p></div>
-                <span class="rounded-xl bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{{ vendorApplications|length }} candidature(s)</span>
+                <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:building-store', {class: 'h-4 w-4 text-emerald-600'}) }}{{ 'applications.title'|trans }}</h3>
+                    <p class="text-xs text-slate-500">{{ 'applications.subtitle'|trans }}</p></div>
+                <span class="rounded-xl bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{{ 'applications.count'|trans({'%count%': d.supplierApplications|length}) }}</span>
             </div>
-            {% if vendorApplications is empty %}
-                <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucune candidature de vendeur pour le moment.</div>
+            {% if d.supplierApplications is empty %}
+                <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">{{ 'applications.none'|trans }}</div>
+            {% else %}
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse text-left text-xs">
+                        <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                            <th class="px-3 py-2.5">{{ 'applications.col.company'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.manager'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.contact'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.status'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.date'|trans }}</th>{% if can['suppliers.approve'] %}<th class="px-3 py-2.5"></th>{% endif %}
+                        </tr></thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for s in d.supplierApplications %}
+                                <tr>
+                                    <td class="px-3 py-2.5 font-semibold text-slate-900">{{ s.companyName }}<details class="font-normal"><summary class="cursor-pointer text-[11px] font-semibold text-emerald-700 marker:content-none">{{ 'application.show'|trans }}</summary>{{ include('admin/_supplier_application.html.twig', {s: s}) }}</details></td>
+                                    <td class="px-3 py-2.5 text-slate-600">{{ s.managerName }}</td>
+                                    <td class="px-3 py-2.5 text-slate-600"><div class="flex items-center gap-1">{{ ui.tick(s.emailVerified, 'verified.email'|trans) }}<span>{{ s.email }}</span></div><div class="flex items-center gap-1">{{ ui.tick(s.phoneVerified, 'verified.phone'|trans) }}<span>{{ s.phone|default('—') }}</span></div></td>
+                                    <td class="px-3 py-2.5">{{ ui.badge(('supplier_status.' ~ s.status)|trans, s.status == 'approved' ? 'green' : (s.status == 'pending' ? 'amber' : 'red')) }}</td>
+                                    <td class="px-3 py-2.5 text-slate-500">{{ s.submittedAt|format_date('medium', locale: app.request.locale) }}</td>
+                                    {% if can['suppliers.approve'] %}
+                                        <td class="px-3 py-2.5 text-right">
+                                            {% if s.status == 'approved' %}
+                                                <button type="button" data-supplier-decision="suspend" data-id="{{ s.id }}" data-company="{{ s.companyName }}" class="rounded-lg border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ 'supplier.suspend'|trans }}</button>
+                                            {% elseif s.status == 'suspended' and s.approvable %}
+                                                <button type="button" data-supplier-decision="approve" data-id="{{ s.id }}" class="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50">{{ 'supplier.reapprove'|trans }}</button>
+                                            {% endif %}
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
-    {# ---- VENDOR PAYOUTS ---- #}
+    {# ======================= REVERSEMENTS ======================= #}
+    {% if can['finance.view'] %}
     <div data-admin-panel="vendor_payouts" class="hidden space-y-6">
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Ventes Totales Vendeurs</span><div class="font-mono text-lg font-black text-slate-900">0 Ar</div></div>
-            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Commissions GoBuy</span><div class="font-mono text-lg font-black text-emerald-600">+0 Ar</div></div>
-            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Loyers Boutiques Pro</span><div class="font-mono text-lg font-black text-indigo-600">+0 Ar</div></div>
-            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">Net à reverser en attente</span><div class="font-mono text-lg font-black text-rose-600">0 Ar</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">{{ 'payouts.sales_total'|trans }}</span><div class="font-mono text-lg font-black text-slate-900">{{ d.salesTotal|format_number }} Ar</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">{{ 'payouts.commissions'|trans }}</span><div class="font-mono text-lg font-black text-emerald-600">—</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">{{ 'payouts.rents'|trans }}</span><div class="font-mono text-lg font-black text-indigo-600">—</div></div>
+            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">{{ 'payouts.net_pending'|trans }}</span><div class="font-mono text-lg font-black text-rose-600">—</div></div>
         </div>
         <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-            <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:currency-dollar', {class:'h-4 w-4 text-emerald-600'}) }}Tableau des reversements bi-hebdomadaires</h3>
-                <p class="text-xs text-slate-500">Reversements effectués après déduction des commissions et loyers boutique.</p></div>
-            {% if vendorPayouts is empty %}
-                <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">Aucun reversement à afficher pour le moment.</div>
+            <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:currency-dollar', {class: 'h-4 w-4 text-emerald-600'}) }}{{ 'payouts.title'|trans }}</h3>
+                <p class="text-xs text-slate-500">{{ 'payouts.subtitle'|trans }}</p></div>
+            <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">{{ 'payouts.none'|trans }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ======================= VALIDATION FOURNISSEURS ======================= #}
+    {% if can['suppliers.view'] %}
+    <div data-admin-panel="suppliers_approval" class="hidden space-y-4">
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+            <h3 class="text-sm font-bold text-slate-900">{{ 'approval.title'|trans }}</h3>
+            <p class="text-xs text-slate-500">{{ 'approval.subtitle'|trans }}</p>
+            {% if d.pendingSuppliers is empty %}
+                <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">{{ 'approval.none'|trans }}</div>
+            {% else %}
+                <div class="space-y-3">
+                    {% for s in d.pendingSuppliers %}
+                        <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-900">{{ s.companyName }}</h4>
+                                    <p class="text-[11px] text-slate-500">{{ s.companyAddress }}</p>
+                                    {% if s.description %}<p class="mt-1 text-xs text-slate-600">{{ s.description }}</p>{% endif %}
+                                </div>
+                                <span class="text-[11px] text-slate-400">{{ 'approval.submitted'|trans({'%date%': s.submittedAt|format_date('medium', locale: app.request.locale)}) }}</span>
+                            </div>
+                            <div class="grid grid-cols-1 gap-1 text-xs text-slate-700 sm:grid-cols-3">
+                                <span>{{ s.managerName }}</span>
+                                <span class="flex items-center gap-1">{{ ui.tick(s.emailVerified, 'verified.email'|trans) }}{{ s.email }}</span>
+                                <span class="flex items-center gap-1">{{ ui.tick(s.phoneVerified, 'verified.phone'|trans) }}{{ s.phone|default('—') }}</span>
+                            </div>
+                            <details class="group"><summary class="cursor-pointer text-[11px] font-semibold text-emerald-700 marker:content-none">{{ 'application.show'|trans }}</summary>{{ include('admin/_supplier_application.html.twig', {s: s}) }}</details>
+                            {% if can['suppliers.approve'] %}
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button type="button" data-supplier-decision="approve" data-id="{{ s.id }}" {% if not s.approvable %}disabled title="{{ 'approval.not_verified'|trans }}"{% endif %} class="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">{{ ux_icon('tabler:check', {class: 'h-3.5 w-3.5'}) }}{{ 'approval.approve'|trans }}</button>
+                                    <button type="button" data-supplier-decision="reject" data-id="{{ s.id }}" data-company="{{ s.companyName }}" class="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-50">{{ ux_icon('tabler:x', {class: 'h-3.5 w-3.5'}) }}{{ 'approval.reject'|trans }}</button>
+                                    {% if not s.approvable %}<span class="text-[11px] text-amber-700">{{ 'approval.not_verified'|trans }}</span>{% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
-    {# ---- SUPPLIERS APPROVAL ---- #}
-    <div data-admin-panel="suppliers_approval" class="hidden space-y-4">
-        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-            <h3 class="text-sm font-bold text-slate-900">Dossiers Fournisseurs à approuver par l'Administrateur</h3>
-            <p class="text-xs text-slate-500">Chaque fournisseur doit obligatoirement avoir son e-mail et son téléphone vérifiés, puis être validé par un administrateur avant de pouvoir accéder à l'espace vendeur.</p>
-            <div class="rounded-2xl bg-slate-50 p-8 text-center text-xs text-slate-400">{% if pendingSuppliers is empty %}✓ Tous les dossiers fournisseurs sont traités ! Aucun fournisseur en attente.{% endif %}</div>
-        </div>
-    </div>
-
-    {# ---- USERS TABLE ---- #}
+    {# ======================= BASE UTILISATEURS ======================= #}
+    {% if d.usersList is not null %}
+    {% set ul = d.usersList %}
     <div data-admin-panel="users_table" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
         <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <h3 class="text-sm font-bold text-slate-900">Annuaire des utilisateurs inscrits</h3>
-            <div class="flex items-center gap-2">
-                <select class="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold">
-                    <option value="all">Tous les rôles</option><option value="client">Clients</option><option value="supplier">Fournisseurs</option><option value="admin">Administrateurs</option><option value="courier">Livreurs</option>
+            <h3 class="text-sm font-bold text-slate-900">{{ 'users.title'|trans }}</h3>
+            <form method="get" action="{{ path('app_admin_dashboard') }}" class="flex items-center gap-2">
+                <input type="hidden" name="tab" value="users_table">
+                <select name="role" aria-label="{{ 'users.role_filter'|trans }}" class="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold">
+                    {% if can['users.view'] %}
+                        <option value="client"{% if ul.type == 'client' %} selected{% endif %}>{{ 'users.clients'|trans }}</option>
+                        <option value="supplier"{% if ul.type == 'supplier' %} selected{% endif %}>{{ 'users.suppliers'|trans }}</option>
+                    {% endif %}
+                    {% if can['admins.view'] %}<option value="admin"{% if ul.type == 'admin' %} selected{% endif %}>{{ 'users.admins'|trans }}</option>{% endif %}
                 </select>
-                <input type="text" placeholder="Filtrer nom ou email..." class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
-            </div>
+                <input type="text" name="q" value="{{ ul.search }}" maxlength="100" placeholder="{{ 'users.filter_placeholder'|trans }}" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
+                <button type="submit" class="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">{{ ux_icon('tabler:search', {class: 'h-3.5 w-3.5'}) }}<span class="sr-only">{{ 'users.search'|trans }}</span></button>
+            </form>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full border-collapse text-left text-xs">
                 <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
-                    <th class="px-3 py-2.5">Utilisateur</th><th class="px-3 py-2.5">Rôle</th><th class="px-3 py-2.5">E-mail Vérifié</th><th class="px-3 py-2.5">Téléphone</th><th class="px-3 py-2.5">2FA</th><th class="px-3 py-2.5">Date</th>
+                    <th class="px-3 py-2.5">{{ 'users.col.user'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.role'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.email_verified'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.phone'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.twofa'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.date'|trans }}</th>{% if can['users.suspend'] and ul.type != 'admin' %}<th class="px-3 py-2.5"></th>{% endif %}
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
-                    {% if users is empty %}<tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucun utilisateur inscrit pour le moment.</td></tr>{% endif %}
+                    {% for u in ul.rows %}
+                        <tr>
+                            <td class="px-3 py-2.5"><div class="font-semibold text-slate-900">{{ u.name }}</div><div class="text-slate-500">{{ u.email }}</div></td>
+                            <td class="px-3 py-2.5">{{ ui.badge(('users.type.' ~ u.type)|trans, u.type == 'admin' ? 'indigo' : (u.type == 'supplier' ? 'green' : 'slate')) }}{% if u.status != 'active' %} {{ ui.badge(('account_status.' ~ u.status)|trans, 'red') }}{% endif %}</td>
+                            <td class="px-3 py-2.5">{{ ui.tick(u.emailVerified, 'verified.email'|trans) }}</td>
+                            <td class="px-3 py-2.5"><div class="flex items-center gap-1">{{ ui.tick(u.phoneVerified, 'verified.phone'|trans) }}<span class="text-slate-600">{{ u.phone|default('—') }}</span></div></td>
+                            <td class="px-3 py-2.5">{{ u.twoFactor ? 'users.on'|trans : 'users.off'|trans }}</td>
+                            <td class="px-3 py-2.5 text-slate-500">{{ u.createdAt|format_date('medium', locale: app.request.locale) }}</td>
+                            {% if can['users.suspend'] and ul.type != 'admin' %}
+                                <td class="px-3 py-2.5 text-right">
+                                    {% if u.status == 'active' %}
+                                        <button type="button" data-user-status="suspend" data-id="{{ u.id }}" data-confirm="{{ 'users.confirm_suspend'|trans({'%name%': u.name}) }}" class="rounded-lg border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ 'users.suspend'|trans }}</button>
+                                    {% elseif u.status == 'suspended' %}
+                                        <button type="button" data-user-status="reactivate" data-id="{{ u.id }}" class="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50">{{ 'users.reactivate'|trans }}</button>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="px-3 py-8 text-center text-slate-400">{{ 'users.none'|trans }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if ul.pages > 1 %}
+            <nav class="flex items-center justify-between text-xs" aria-label="{{ 'pagination.label'|trans }}">
+                {% if ul.page > 1 %}<a class="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50" href="{{ path('app_admin_dashboard', {tab: 'users_table', role: ul.type, q: ul.search, page: ul.page - 1}) }}">{{ 'pagination.previous'|trans }}</a>{% else %}<span></span>{% endif %}
+                <span class="text-slate-500">{{ 'pagination.page_of'|trans({'%page%': ul.page, '%pages%': ul.pages}) }}</span>
+                {% if ul.page < ul.pages %}<a class="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50" href="{{ path('app_admin_dashboard', {tab: 'users_table', role: ul.type, q: ul.search, page: ul.page + 1}) }}">{{ 'pagination.next'|trans }}</a>{% else %}<span></span>{% endif %}
+            </nav>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {# ======================= COMMANDES ======================= #}
+    {% if can['orders.view'] %}
+    <div data-admin-panel="orders_table" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <h3 class="text-sm font-bold text-slate-900">{{ 'orders.title'|trans }}</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-xs">
+                <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                    <th class="px-3 py-2.5">{{ 'orders.col.number'|trans }}</th><th class="px-3 py-2.5">{{ 'orders.col.customer'|trans }}</th><th class="px-3 py-2.5">{{ 'orders.col.amount'|trans }}</th><th class="px-3 py-2.5">{{ 'orders.col.payment'|trans }}</th><th class="px-3 py-2.5">{{ 'orders.col.status'|trans }}</th><th class="px-3 py-2.5">{{ 'orders.col.date'|trans }}</th>{% if can['orders.update_tracking'] %}<th class="px-3 py-2.5"></th>{% endif %}
+                </tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for o in d.orders %}
+                        <tr>
+                            <td class="px-3 py-2.5 font-mono font-semibold text-slate-900">{{ o.orderNumber }}</td>
+                            <td class="px-3 py-2.5 text-slate-600">{{ o.customerName|default('—') }}</td>
+                            <td class="px-3 py-2.5 font-mono text-slate-700">{{ o.total|format_number }} Ar</td>
+                            <td class="px-3 py-2.5 text-slate-600">{{ o.paymentLabel }}</td>
+                            <td class="px-3 py-2.5">{{ ui.badge(o.statusLabel, o.status == 'delivered' ? 'green' : (o.status == 'cancelled' ? 'red' : 'indigo')) }}{% if o.courierName %}<div class="mt-0.5 text-[10px] text-slate-400">{{ o.courierName }}</div>{% endif %}</td>
+                            <td class="px-3 py-2.5 text-slate-500">{{ o.createdAt|format_datetime('short', 'short', locale: app.request.locale) }}</td>
+                            {% if can['orders.update_tracking'] %}
+                                <td class="px-3 py-2.5 text-right">{% if not o.closed %}<button type="button" data-order-edit data-number="{{ o.orderNumber }}" data-status="{{ o.status }}" data-courier="{{ o.courierName }}" class="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">{{ 'orders.update'|trans }}</button>{% endif %}</td>
+                            {% endif %}
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="px-3 py-8 text-center text-slate-400">{{ 'orders.none'|trans }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ======================= ADMINISTRATEURS (Super Admin) ======================= #}
+    {% if can['admins.view'] %}
+    <div data-admin-panel="admins" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:shield-check', {class: 'h-4 w-4 text-indigo-600'}) }}{{ 'admins.title'|trans }}</h3><p class="text-xs text-slate-500">{{ 'admins.subtitle'|trans }}</p></div>
+            {% if can['admins.manage'] %}<button type="button" data-admin-invite-open class="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700">{{ ux_icon('tabler:plus', {class: 'h-3.5 w-3.5'}) }}{{ 'admins.invite'|trans }}</button>{% endif %}
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-xs">
+                <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                    <th class="px-3 py-2.5">{{ 'admins.col.admin'|trans }}</th><th class="px-3 py-2.5">{{ 'admins.col.profile'|trans }}</th><th class="px-3 py-2.5">{{ 'admins.col.status'|trans }}</th><th class="px-3 py-2.5">{{ 'admins.col.last_login'|trans }}</th>{% if can['admins.manage'] %}<th class="px-3 py-2.5"></th>{% endif %}
+                </tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for a in d.admins %}
+                        <tr>
+                            <td class="px-3 py-2.5"><div class="font-semibold text-slate-900">{{ a.name }}</div><div class="text-slate-500">{{ a.email }}</div></td>
+                            <td class="px-3 py-2.5"><div class="text-slate-700">{{ a.roleLabel }}</div>{% if a.extra or a.denied %}<div class="text-[10px] text-slate-400">{{ 'admins.overrides'|trans({'%extra%': a.extra|length, '%denied%': a.denied|length}) }}</div>{% endif %}</td>
+                            <td class="px-3 py-2.5">
+                                {% if a.invited %}{{ ui.badge('admins.status.invited'|trans, 'amber') }}
+                                {% elseif a.status == 'active' %}{{ ui.badge('admins.status.active'|trans, 'green') }}
+                                {% else %}{{ ui.badge('admins.status.suspended'|trans, 'red') }}{% endif %}
+                            </td>
+                            <td class="px-3 py-2.5 text-slate-500">{{ a.lastLoginAt ? a.lastLoginAt|format_datetime('short', 'short', locale: app.request.locale) : '—' }}</td>
+                            {% if can['admins.manage'] %}
+                                <td class="px-3 py-2.5 text-right">
+                                    {% if not a.isSuper %}
+                                        <div class="flex flex-wrap justify-end gap-1.5">
+                                            <button type="button" data-admin-edit data-id="{{ a.id }}" data-name="{{ a.name }}" data-role-id="{{ a.roleId }}" data-extra="{{ a.extra|json_encode }}" data-denied="{{ a.denied|json_encode }}" class="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">{{ 'admins.edit'|trans }}</button>
+                                            {% if a.invited %}
+                                                <button type="button" data-admin-confirm="resend" data-id="{{ a.id }}" class="rounded-lg border border-amber-200 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-50">{{ 'admins.resend'|trans }}</button>
+                                            {% elseif a.status == 'active' %}
+                                                <button type="button" data-admin-confirm="reset_access" data-id="{{ a.id }}" class="rounded-lg border border-amber-200 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-50">{{ 'admins.reset_access'|trans }}</button>
+                                                <button type="button" data-admin-confirm="suspend" data-id="{{ a.id }}" class="rounded-lg border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ 'admins.suspend'|trans }}</button>
+                                            {% else %}
+                                                <button type="button" data-admin-confirm="reactivate" data-id="{{ a.id }}" class="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50">{{ 'admins.reactivate'|trans }}</button>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-[10px] font-bold uppercase text-indigo-600">{{ 'admins.super'|trans }}</span>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
-    {# ---- EXPORTS ---- #}
-    <div data-admin-panel="exports" class="hidden space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-        <div>
-            <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">Générateur Automatique de Tableaux</span>
-            <h3 class="mt-1.5 text-base font-bold text-slate-900">Export automatisé en fichiers tableurs (CSV / Excel)</h3>
-            <p class="text-xs text-slate-500">Téléchargez instantanément les listes complètes des clients, fournisseurs, administrateurs et commandes enregistrés dans la base PostgreSQL sous forme de fichiers tableurs formatés.</p>
+    {# ======================= PROFILS & DROITS ======================= #}
+    <div data-admin-panel="roles" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:key', {class: 'h-4 w-4 text-indigo-600'}) }}{{ 'roles.title'|trans }}</h3><p class="text-xs text-slate-500">{{ 'roles.subtitle'|trans }}</p></div>
+            {% if can['admins.manage'] %}<button type="button" data-role-edit data-role="" class="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700">{{ ux_icon('tabler:plus', {class: 'h-3.5 w-3.5'}) }}{{ 'roles.new'|trans }}</button>{% endif %}
         </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {% for exp in [
-                {type:'clients', icon:'tabler:users', iconWrap:'bg-blue-100 text-blue-700', btn:'border-blue-200 text-blue-700 hover:bg-blue-50', title:'Tableau des Clients inscrits', desc:'Contient ID, Nom complet, E-mail, Téléphone, Statut vérification, Sécurité 2FA et date.', file:'gobuy_clients.csv'},
-                {type:'fournisseurs', icon:'tabler:building-store', iconWrap:'bg-emerald-100 text-emerald-700', btn:'border-emerald-200 text-emerald-700 hover:bg-emerald-50', title:'Tableau des Fournisseurs & Vendeurs', desc:"Contient Raison sociale, Gérant, Téléphone, E-mail, Statut d'approbation Admin et volume de ventes.", file:'gobuy_fournisseurs.csv'},
-                {type:'admins', icon:'tabler:shield-check', iconWrap:'bg-indigo-100 text-indigo-700', btn:'border-indigo-200 text-indigo-700 hover:bg-indigo-50', title:'Tableau des Administrateurs', desc:"Liste des comptes superviseurs, niveau de privilèges, politiques 2FA et date d'octroi.", file:'gobuy_admins.csv'},
-                {type:'commandes', icon:'tabler:file-spreadsheet', iconWrap:'bg-amber-100 text-amber-700', btn:'border-amber-200 text-amber-700 hover:bg-amber-50', title:'Tableau des Commandes & Transactions', desc:'Numéros de commande, Clients, Totaux (Ar), Mobile Money vérifiés et statut d\'acheminement.', file:'gobuy_commandes.csv'}
-            ] %}
-                <div class="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="flex items-start gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ exp.iconWrap }}">{{ ux_icon(exp.icon, {class:'h-5 w-5'}) }}</span>
-                        <div><h4 class="text-xs font-bold text-slate-900">{{ exp.title }}</h4><p class="mt-0.5 text-[11px] text-slate-500">{{ exp.desc }}</p></div></div>
-                    <button type="button" data-export="{{ exp.type }}" data-export-file="{{ exp.file }}" class="flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-3 py-2.5 text-xs font-semibold transition-colors {{ exp.btn }}">
-                        {{ ux_icon('tabler:download', {class:'h-3.5 w-3.5'}) }}<span>Télécharger <code>{{ exp.file }}</code></span></button>
+            {% for r in d.roles %}
+                <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="flex items-start justify-between gap-2">
+                        <div><h4 class="text-sm font-bold text-slate-900">{{ r.label }}</h4><p class="font-mono text-[10px] text-slate-400">{{ r.code }}</p>{% if r.description %}<p class="mt-1 text-xs text-slate-500">{{ r.description }}</p>{% endif %}</div>
+                        <span class="shrink-0 text-[11px] text-slate-500">{{ 'roles.members'|trans({'%count%': r.members}) }}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1">
+                        {% if r.isSuper %}{{ ui.badge('roles.all_rights'|trans, 'indigo') }}
+                        {% else %}{% for p in r.permissions %}{{ ui.badge(('perm.' ~ p)|trans, 'slate') }}{% else %}<span class="text-[11px] text-slate-400">{{ 'roles.no_rights'|trans }}</span>{% endfor %}{% endif %}
+                    </div>
+                    {% if can['admins.manage'] and not r.isSuper %}
+                        <div class="flex gap-2">
+                            <button type="button" data-role-edit data-role="{{ {id: r.id, code: r.code, label: r.label, description: r.description, permissions: r.permissions, isSystem: r.isSystem}|json_encode }}" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">{{ 'roles.edit'|trans }}</button>
+                            {% if not r.isSystem and r.members == 0 %}<button type="button" data-role-delete data-id="{{ r.id }}" data-name="{{ r.label }}" class="flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ ux_icon('tabler:trash', {class: 'h-3 w-3'}) }}{{ 'roles.delete'|trans }}</button>{% endif %}
+                        </div>
+                    {% endif %}
                 </div>
             {% endfor %}
         </div>
     </div>
+    {% endif %}
 
-    {# ---- ORDERS TABLE ---- #}
-    <div data-admin-panel="orders_table" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-        <h3 class="text-sm font-bold text-slate-900">Historique global des commandes</h3>
+    {# ======================= JOURNAL D'AUDIT ======================= #}
+    {% if d.audit is not null %}
+    <div data-admin-panel="audit" class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:list', {class: 'h-4 w-4 text-slate-600'}) }}{{ 'audit.title'|trans }}</h3><p class="text-xs text-slate-500">{{ 'audit.subtitle'|trans }}</p></div>
         <div class="overflow-x-auto">
             <table class="w-full border-collapse text-left text-xs">
                 <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
-                    <th class="px-3 py-2.5">N° Commande</th><th class="px-3 py-2.5">Client</th><th class="px-3 py-2.5">Montant</th><th class="px-3 py-2.5">Paiement</th><th class="px-3 py-2.5">Statut</th><th class="px-3 py-2.5">Date</th>
+                    <th class="px-3 py-2.5">{{ 'audit.col.date'|trans }}</th><th class="px-3 py-2.5">{{ 'audit.col.actor'|trans }}</th><th class="px-3 py-2.5">{{ 'audit.col.action'|trans }}</th><th class="px-3 py-2.5">{{ 'audit.col.details'|trans }}</th><th class="px-3 py-2.5">{{ 'audit.col.ip'|trans }}</th>
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
-                    {% if orders is empty %}<tr><td colspan="6" class="px-3 py-8 text-center text-slate-400">Aucune commande enregistrée pour le moment.</td></tr>{% endif %}
+                    {% for a in d.audit.rows %}
+                        <tr>
+                            <td class="whitespace-nowrap px-3 py-2 text-slate-500">{{ a.at|format_datetime('short', 'medium', locale: app.request.locale) }}</td>
+                            <td class="px-3 py-2 text-slate-700">{{ a.actor|default('—') }}</td>
+                            <td class="px-3 py-2 font-mono text-[11px] font-semibold text-slate-900">{{ a.action }}</td>
+                            <td class="max-w-xs truncate px-3 py-2 font-mono text-[10px] text-slate-500" title="{{ a.details }}">{{ a.targetType ? a.targetType ~ ' ' : '' }}{{ a.details }}</td>
+                            <td class="px-3 py-2 font-mono text-[10px] text-slate-400">{{ a.ip|default('—') }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="px-3 py-8 text-center text-slate-400">{{ 'audit.none'|trans }}</td></tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
+        <nav class="flex items-center justify-between text-xs" aria-label="{{ 'pagination.label'|trans }}">
+            {% if d.audit.page > 1 %}<a class="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50" href="{{ path('app_admin_dashboard', {tab: 'audit', audit: d.audit.page - 1}) }}">{{ 'pagination.previous'|trans }}</a>{% else %}<span></span>{% endif %}
+            <span class="text-slate-500">{{ 'pagination.page'|trans({'%page%': d.audit.page}) }}</span>
+            {% if d.audit.rows|length == d.audit.perPage %}<a class="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50" href="{{ path('app_admin_dashboard', {tab: 'audit', audit: d.audit.page + 1}) }}">{{ 'pagination.next'|trans }}</a>{% else %}<span></span>{% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+    {# ======================= EXPORTS CSV ======================= #}
+    <div data-admin-panel="exports" class="hidden space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div>
+            <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">{{ 'exports.badge'|trans }}</span>
+            <h3 class="mt-1.5 text-base font-bold text-slate-900">{{ 'exports.title'|trans }}</h3>
+            <p class="text-xs text-slate-500">{{ 'exports.subtitle'|trans }}</p>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {% for exp in [
+                {type: 'clients', perm: 'users.export', icon: 'tabler:users', iconWrap: 'bg-blue-100 text-blue-700', btn: 'border-blue-200 text-blue-700 hover:bg-blue-50', file: 'gobuy_clients.csv'},
+                {type: 'fournisseurs', perm: 'suppliers.export', icon: 'tabler:building-store', iconWrap: 'bg-emerald-100 text-emerald-700', btn: 'border-emerald-200 text-emerald-700 hover:bg-emerald-50', file: 'gobuy_fournisseurs.csv'},
+                {type: 'admins', perm: 'admins.export', icon: 'tabler:shield-check', iconWrap: 'bg-indigo-100 text-indigo-700', btn: 'border-indigo-200 text-indigo-700 hover:bg-indigo-50', file: 'gobuy_admins.csv'},
+                {type: 'commandes', perm: 'finance.view', icon: 'tabler:file-spreadsheet', iconWrap: 'bg-amber-100 text-amber-700', btn: 'border-amber-200 text-amber-700 hover:bg-amber-50', file: 'gobuy_commandes.csv'}
+            ] %}
+                {% if can[exp.perm] %}
+                    {# Formulaire POST + jeton CSRF : un site tiers ne peut pas déclencher le téléchargement à l'insu de l'admin. #}
+                    <form method="post" action="{{ path('admin_api_export', {type: exp.type}) }}" class="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <input type="hidden" name="_token" value="{{ csrf_token('admin_export') }}">
+                        <div class="flex items-start gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ exp.iconWrap }}">{{ ux_icon(exp.icon, {class: 'h-5 w-5'}) }}</span>
+                            <div><h4 class="text-xs font-bold text-slate-900">{{ ('exports.' ~ exp.type ~ '.title')|trans }}</h4><p class="mt-0.5 text-[11px] text-slate-500">{{ ('exports.' ~ exp.type ~ '.desc')|trans }}</p></div></div>
+                        <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-3 py-2.5 text-xs font-semibold transition-colors {{ exp.btn }}">
+                            {{ ux_icon('tabler:download', {class: 'h-3.5 w-3.5'}) }}<span>{{ 'exports.download'|trans }} <code>{{ exp.file }}</code></span></button>
+                    </form>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <p class="text-[11px] text-slate-400">{{ 'exports.note'|trans }}</p>
     </div>
 </div>
+
+{# =====================================================================================
+   FENÊTRES DE DIALOGUE (balise <dialog> native : accessible au clavier, fermeture par Échap).
+   Elles sont pilotées par assets/admin.js ; les actions sensibles redemandent le mot de passe.
+   ===================================================================================== #}
+{% set dialogClass = 'm-auto w-[calc(100%-2rem)] max-w-lg rounded-3xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-950/50' %}
+{% set inputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs' %}
+{% set labelClass = 'mb-1 block text-[11px] font-semibold text-slate-600' %}
+{% set primaryBtn = 'rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60' %}
+{% set cancelBtn = 'rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50' %}
+
+{# --- Motif (refus ou retrait d'approbation d'un fournisseur) --- #}
+<dialog data-dialog="reason" class="{{ dialogClass }}">
+    <form method="dialog" data-dialog-form class="space-y-4 p-6">
+        <h3 class="text-sm font-bold text-slate-900" data-dialog-title>{{ 'dialog.reason.title'|trans }}</h3>
+        <p class="text-xs text-slate-500">{{ 'dialog.reason.help'|trans }}</p>
+        <div><label class="{{ labelClass }}" for="reason-text">{{ 'dialog.reason.label'|trans }}</label><textarea id="reason-text" name="reason" rows="3" minlength="5" maxlength="500" required class="{{ inputClass }}"></textarea></div>
+        <p data-dialog-error role="alert" class="hidden rounded-xl bg-rose-50 p-2 text-xs text-rose-700"></p>
+        <div class="flex justify-end gap-2"><button type="button" data-dialog-cancel class="{{ cancelBtn }}">{{ 'dialog.cancel'|trans }}</button><button type="submit" class="{{ primaryBtn }}">{{ 'dialog.confirm'|trans }}</button></div>
+    </form>
+</dialog>
+
+{# --- Suivi d'une commande : étape + livreur --- #}
+{% if can['orders.update_tracking'] %}
+<dialog data-dialog="order" class="{{ dialogClass }}">
+    <form method="dialog" data-dialog-form class="space-y-4 p-6">
+        <h3 class="text-sm font-bold text-slate-900">{{ 'dialog.order.title'|trans }} <span class="font-mono" data-order-number></span></h3>
+        <div><label class="{{ labelClass }}" for="order-status">{{ 'dialog.order.status'|trans }}</label>
+            <select id="order-status" name="status" class="{{ inputClass }}">
+                {% for s in d.orderStatuses %}<option value="{{ s }}">{{ ('order_status.' ~ s)|trans }}</option>{% endfor %}
+            </select></div>
+        <div><label class="{{ labelClass }}" for="order-description">{{ 'dialog.order.description'|trans }}</label><input id="order-description" name="description" maxlength="200" class="{{ inputClass }}"></div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div><label class="{{ labelClass }}" for="order-courier">{{ 'dialog.order.courier_name'|trans }}</label><input id="order-courier" name="courierName" maxlength="150" class="{{ inputClass }}"></div>
+            <div><label class="{{ labelClass }}" for="order-courier-phone">{{ 'dialog.order.courier_phone'|trans }}</label><input id="order-courier-phone" name="courierPhone" inputmode="tel" maxlength="30" class="{{ inputClass }}"></div>
+        </div>
+        <p data-dialog-error role="alert" class="hidden rounded-xl bg-rose-50 p-2 text-xs text-rose-700"></p>
+        <div class="flex justify-end gap-2"><button type="button" data-dialog-cancel class="{{ cancelBtn }}">{{ 'dialog.cancel'|trans }}</button><button type="submit" class="{{ primaryBtn }}">{{ 'dialog.save'|trans }}</button></div>
+    </form>
+</dialog>
+{% endif %}
+
+{% if can['admins.manage'] %}
+{# --- Confirmation par mot de passe (suspendre / réactiver / renvoyer l'invitation / supprimer un profil) --- #}
+<dialog data-dialog="confirm" data-titles="{{ {
+    suspend: 'dialog.confirm_password.title_suspend'|trans,
+    reactivate: 'dialog.confirm_password.title_reactivate'|trans,
+    resend: 'dialog.confirm_password.title_resend'|trans,
+    reset_access: 'dialog.confirm_password.title_reset_access'|trans,
+    role_delete: 'dialog.confirm_password.title_role_delete'|trans({'%name%': '__NAME__'})
+}|json_encode }}" class="{{ dialogClass }}">
+    <form method="dialog" data-dialog-form class="space-y-4 p-6">
+        <h3 class="text-sm font-bold text-slate-900" data-dialog-title>{{ 'dialog.confirm_password.title'|trans }}</h3>
+        <p class="text-xs text-slate-500">{{ 'dialog.confirm_password.help'|trans }}</p>
+        <div><label class="{{ labelClass }}" for="confirm-password">{{ 'dialog.password'|trans }}</label><input id="confirm-password" type="password" name="password" autocomplete="current-password" required class="{{ inputClass }}"></div>
+        <p data-dialog-error role="alert" class="hidden rounded-xl bg-rose-50 p-2 text-xs text-rose-700"></p>
+        <div class="flex justify-end gap-2"><button type="button" data-dialog-cancel class="{{ cancelBtn }}">{{ 'dialog.cancel'|trans }}</button><button type="submit" class="{{ primaryBtn }}">{{ 'dialog.confirm'|trans }}</button></div>
+    </form>
+</dialog>
+
+{# --- Invitation / modification des accès d'un administrateur --- #}
+<dialog data-dialog="admin" data-title-invite="{{ 'dialog.admin.title_invite'|trans }}" data-title-edit="{{ 'dialog.admin.title_edit'|trans({'%name%': '__NAME__'}) }}" class="{{ dialogClass }}">
+    <form method="dialog" data-dialog-form class="max-h-[85vh] space-y-4 overflow-y-auto p-6">
+        <h3 class="text-sm font-bold text-slate-900" data-admin-dialog-title>{{ 'dialog.admin.title_invite'|trans }}</h3>
+        <div data-admin-invite-fields class="space-y-3">
+            <div><label class="{{ labelClass }}" for="admin-name">{{ 'dialog.admin.name'|trans }}</label><input id="admin-name" name="fullName" maxlength="100" autocomplete="off" class="{{ inputClass }}"></div>
+            <div><label class="{{ labelClass }}" for="admin-email">{{ 'dialog.admin.email'|trans }}</label><input id="admin-email" type="email" name="email" maxlength="180" autocomplete="off" class="{{ inputClass }}"></div>
+            <div><label class="{{ labelClass }}" for="admin-locale">{{ 'dialog.admin.locale'|trans }}</label>
+                <select id="admin-locale" name="locale" class="{{ inputClass }}"><option value="fr">Français</option><option value="en">English</option><option value="es">Español</option></select></div>
+        </div>
+        <div><label class="{{ labelClass }}" for="admin-role">{{ 'dialog.admin.role'|trans }}</label>
+            <select id="admin-role" name="roleId" required class="{{ inputClass }}">
+                {% for r in d.roles|filter(r => not r.isSuper) %}<option value="{{ r.id }}">{{ r.label }}</option>{% endfor %}
+            </select></div>
+        <fieldset class="space-y-1">
+            <legend class="{{ labelClass }}">{{ 'dialog.admin.overrides'|trans }}</legend>
+            <p class="text-[11px] text-slate-400">{{ 'dialog.admin.overrides_help'|trans }}</p>
+            <table class="w-full text-xs">
+                <thead><tr class="text-[10px] uppercase text-slate-400"><th class="py-1 text-left">{{ 'dialog.admin.right'|trans }}</th><th class="w-16 py-1">{{ 'dialog.admin.add'|trans }}</th><th class="w-16 py-1">{{ 'dialog.admin.remove'|trans }}</th></tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for p in d.assignablePermissions %}
+                        <tr><td class="py-1.5 text-slate-700">{{ ('perm.' ~ p.value)|trans }}</td>
+                            <td class="text-center"><input type="checkbox" name="extra" value="{{ p.value }}" aria-label="{{ 'dialog.admin.add'|trans }} — {{ ('perm.' ~ p.value)|trans }}"></td>
+                            <td class="text-center"><input type="checkbox" name="denied" value="{{ p.value }}" aria-label="{{ 'dialog.admin.remove'|trans }} — {{ ('perm.' ~ p.value)|trans }}"></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </fieldset>
+        <div><label class="{{ labelClass }}" for="admin-password">{{ 'dialog.password'|trans }}</label><input id="admin-password" type="password" name="password" autocomplete="current-password" required class="{{ inputClass }}"><p class="mt-1 text-[11px] text-slate-400">{{ 'dialog.confirm_password.help'|trans }}</p></div>
+        <p data-dialog-error role="alert" class="hidden rounded-xl bg-rose-50 p-2 text-xs text-rose-700"></p>
+        <div class="flex justify-end gap-2"><button type="button" data-dialog-cancel class="{{ cancelBtn }}">{{ 'dialog.cancel'|trans }}</button><button type="submit" class="{{ primaryBtn }}">{{ 'dialog.save'|trans }}</button></div>
+    </form>
+</dialog>
+
+{# --- Création / modification d'un profil de droits --- #}
+<dialog data-dialog="role" data-title-new="{{ 'dialog.role.title_new'|trans }}" data-title-edit="{{ 'dialog.role.title_edit'|trans({'%name%': '__NAME__'}) }}" class="{{ dialogClass }}">
+    <form method="dialog" data-dialog-form class="max-h-[85vh] space-y-4 overflow-y-auto p-6">
+        <h3 class="text-sm font-bold text-slate-900" data-role-dialog-title>{{ 'dialog.role.title_new'|trans }}</h3>
+        <input type="hidden" name="id">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div><label class="{{ labelClass }}" for="role-label">{{ 'dialog.role.label'|trans }}</label><input id="role-label" name="label" maxlength="100" required class="{{ inputClass }}"></div>
+            <div><label class="{{ labelClass }}" for="role-code">{{ 'dialog.role.code'|trans }}</label><input id="role-code" name="code" maxlength="50" pattern="[a-z][a-z0-9_]{1,49}" required class="{{ inputClass }} font-mono"></div>
+        </div>
+        <div><label class="{{ labelClass }}" for="role-description">{{ 'dialog.role.description'|trans }}</label><input id="role-description" name="description" maxlength="255" class="{{ inputClass }}"></div>
+        <fieldset class="space-y-1">
+            <legend class="{{ labelClass }}">{{ 'dialog.role.rights'|trans }}</legend>
+            <div class="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                {% for p in d.assignablePermissions %}
+                    <label class="flex items-center gap-2 text-xs text-slate-700"><input type="checkbox" name="permissions" value="{{ p.value }}">{{ ('perm.' ~ p.value)|trans }}</label>
+                {% endfor %}
+            </div>
+        </fieldset>
+        <div><label class="{{ labelClass }}" for="role-password">{{ 'dialog.password'|trans }}</label><input id="role-password" type="password" name="password" autocomplete="current-password" required class="{{ inputClass }}"></div>
+        <p data-dialog-error role="alert" class="hidden rounded-xl bg-rose-50 p-2 text-xs text-rose-700"></p>
+        <div class="flex justify-end gap-2"><button type="button" data-dialog-cancel class="{{ cancelBtn }}">{{ 'dialog.cancel'|trans }}</button><button type="submit" class="{{ primaryBtn }}">{{ 'dialog.save'|trans }}</button></div>
+    </form>
+</dialog>
+{% endif %}
+
+{# URLs des actions : lues par assets/admin.js (aucune URL n'est écrite en dur dans le JavaScript). #}
+<script type="application/json" id="admin-endpoints">{{ {
+    supplierDecision: path('admin_api_supplier_decision', {id: '__ID__'}),
+    userStatus: path('admin_api_user_status', {id: '__ID__'}),
+    orderStatus: path('admin_api_order_status', {number: '__ID__'}),
+    adminInvite: path('admin_api_admin_invite'),
+    adminAccess: path('admin_api_admin_access', {id: '__ID__'}),
+    adminStatus: path('admin_api_admin_status', {id: '__ID__'}),
+    adminResend: path('admin_api_admin_resend', {id: '__ID__'}),
+    adminResetAccess: path('admin_api_admin_reset_access', {id: '__ID__'}),
+    roleSave: path('admin_api_role_save'),
+    roleDelete: path('admin_api_role_delete', {id: '__ID__'})
+}|json_encode(constant('JSON_HEX_TAG'))|raw }}</script>
 {% endblock %}

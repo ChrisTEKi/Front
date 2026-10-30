@@ -1,0 +1,26 @@
+{# Toute autre erreur (500…) : page AUTONOME, volontairement sans le gabarit du site (ni base de données, ni menu, ni JavaScript) :
+   si la panne vient justement d'un de ces éléments, cette page doit quand même s'afficher. Elle ne montre jamais le détail technique. #}
+<!DOCTYPE html>
+<html lang="{{ app.request.locale|default('fr') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ 'error.generic.title'|trans }} — GoBuy</title>
+    <style>
+        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #fff; color: #0f172a; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        main { max-width: 32rem; padding: 1.5rem; text-align: center; }
+        .code { display: inline-block; padding: .25rem .75rem; border: 1px solid #e2e8f0; border-radius: 999px; background: #f1f5f9; font: 700 11px ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: #334155; }
+        h1 { margin: 1rem 0 .5rem; font-size: 1.5rem; font-weight: 900; }
+        p { margin: 0 0 1.5rem; font-size: .875rem; color: #64748b; line-height: 1.5; }
+        a { display: inline-block; padding: .625rem 1.25rem; border-radius: 1rem; background: #000; color: #fff; font-size: .75rem; font-weight: 700; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <main>
+        <span class="code">{{ 'error.code'|trans({'%code%': status_code}) }}</span>
+        <h1>{{ 'error.generic.title'|trans }}</h1>
+        <p>{{ 'error.generic.text'|trans }}</p>
+        <a href="/">{{ 'error.home'|trans }}</a>
+    </main>
+</body>
+</html>

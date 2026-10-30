@@ -1,0 +1,3 @@
+# Erreurs d'authentification Symfony (FR) : messages des exceptions « CustomUserMessageAccountStatusException ».
+account_not_active: "Ce compte n'est pas actif."
+account_not_verified: "Veuillez d'abord vérifier votre e-mail ou votre téléphone."

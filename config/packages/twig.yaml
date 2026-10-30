@@ -1,5 +1,23 @@
+# =============================================================================
+# twig.yaml — moteur de templates.
+# =============================================================================
 twig:
     file_name_pattern: '*.twig'
+    # Les dates sont stockées en UTC en base ; on les AFFICHE à l'heure de Madagascar (UTC+3, pas d'heure d'été).
+    date:
+        timezone: 'Indian/Antananarivo'
+    # Variables disponibles dans tous les templates.
+    globals:
+        app_name: 'GoBuy'
+        # Numéro WhatsApp du support (chiffres, ex. « 261… ») : vide tant que l'équipe n'en a pas un VRAI (le lien est alors masqué).
+        support_whatsapp: '%env(GOBUY_SUPPORT_WHATSAPP)%'
+        # Identité légale de l'éditeur (affichée dans le Centre d'information). Une valeur vide est simplement masquée :
+        # le site n'invente jamais d'adresse, de NIF, de STAT ou de RCS. Renseignez les VRAIES valeurs dans .env.local.
+        company:
+            address: '%env(GOBUY_COMPANY_ADDRESS)%'
+            nif: '%env(GOBUY_COMPANY_NIF)%'
+            stat: '%env(GOBUY_COMPANY_STAT)%'
+            rcs: '%env(GOBUY_COMPANY_RCS)%'
 
 when@test:
     twig:

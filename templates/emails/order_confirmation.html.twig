@@ -1,0 +1,60 @@
+{#
+ | E-mail automatique de confirmation de commande (HTML).
+ | Variables : order (App\Entity\Order), trackingUrl (lien absolu vers le suivi).
+ | Textes : translations/emails.<langue>.yaml → order_confirmation.*
+ | Chaque ligne d'article est un <tr> : les clients de messagerie gèrent mal les mises en page modernes.
+ #}
+{% extends 'emails/_layout.html.twig' %}
+
+{% block content %}
+    <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">{{ 'order_confirmation.title'|trans({}, 'emails') }}</h1>
+    <p style="margin:0 0 12px;">{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}</p>
+    <p style="margin:0 0 16px;">{{ 'order_confirmation.intro'|trans({'%order%': order.orderNumber}, 'emails') }}</p>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;margin:0 0 16px;font-size:14px;">
+        <tr>
+            <td style="padding:8px 0;border-bottom:2px solid #000000;font-weight:700;">{{ 'order_confirmation.items'|trans({}, 'emails') }}</td>
+            <td align="right" style="padding:8px 0;border-bottom:2px solid #000000;font-weight:700;">{{ 'order_confirmation.amount'|trans({}, 'emails') }}</td>
+        </tr>
+        {% for item in order.items %}
+            <tr>
+                <td style="padding:8px 0;border-bottom:1px solid #E5E7EB;">{{ item.productName }} <span style="color:#6B7280;">× {{ item.quantity }}</span></td>
+                <td align="right" style="padding:8px 0;border-bottom:1px solid #E5E7EB;white-space:nowrap;">{{ item.lineTotal|number_format(0, ',', ' ') }} Ar</td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <td style="padding:8px 0;color:#6B7280;">{{ 'order_confirmation.subtotal'|trans({}, 'emails') }}</td>
+            <td align="right" style="padding:8px 0;color:#6B7280;white-space:nowrap;">{{ order.subtotal|number_format(0, ',', ' ') }} Ar</td>
+        </tr>
+        <tr>
+            <td style="padding:0 0 8px;color:#6B7280;">{{ 'order_confirmation.delivery'|trans({}, 'emails') }}</td>
+            <td align="right" style="padding:0 0 8px;color:#6B7280;white-space:nowrap;">{{ order.deliveryFee|number_format(0, ',', ' ') }} Ar</td>
+        </tr>
+        <tr>
+            <td style="padding:8px 0;border-top:2px solid #000000;font-weight:800;">{{ 'order_confirmation.total'|trans({}, 'emails') }}</td>
+            <td align="right" style="padding:8px 0;border-top:2px solid #000000;font-weight:800;white-space:nowrap;">{{ order.total|number_format(0, ',', ' ') }} Ar</td>
+        </tr>
+    </table>
+
+    {% set address = order.shippingAddress %}
+    <p style="margin:0 0 4px;font-weight:700;">{{ 'order_confirmation.address'|trans({}, 'emails') }}</p>
+    <p style="margin:0 0 16px;color:#374151;">
+        {{ address.fullName }}<br>
+        {{ address.street }}<br>
+        {{ address.city }}{% if address.postalCode %} {{ address.postalCode }}{% endif %}
+    </p>
+
+    <p style="margin:0 0 4px;font-weight:700;">{{ 'order_confirmation.payment'|trans({}, 'emails') }}</p>
+    <p style="margin:0 0 16px;color:#374151;">
+        {% if order.paymentMethod.value == 'mobile_money' %}{{ 'order_confirmation.method.mobile_money'|trans({'%carrier%': order.paymentCarrier ? order.paymentCarrier.label : ''}, 'emails') }}
+        {% elseif order.paymentMethod.value == 'card' %}{{ 'order_confirmation.method.card'|trans({}, 'emails') }}
+        {% else %}{{ 'order_confirmation.method.cash_on_delivery'|trans({}, 'emails') }}{% endif %}
+        {% if order.installmentsCount > 1 %}<br>{{ 'order_confirmation.installments'|trans({'%count%': order.installmentsCount, '%amount%': (order.total / order.installmentsCount)|round|number_format(0, ',', ' ')}, 'emails') }}{% endif %}
+        {% if order.paymentStatus.value == 'pending' and order.paymentMethod.value != 'cash_on_delivery' %}<br><span style="color:#6B7280;">{{ 'order_confirmation.payment_pending'|trans({}, 'emails') }}</span>{% endif %}
+    </p>
+
+    <p style="margin:0 0 20px;">
+        <a href="{{ trackingUrl }}" style="display:inline-block;background:#000000;color:#FFFFFF;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:12px;">{{ 'order_confirmation.button'|trans({}, 'emails') }}</a>
+    </p>
+    <p style="margin:0;color:#6B7280;font-size:13px;">{{ 'order_confirmation.help'|trans({}, 'emails') }}</p>
+{% endblock %}

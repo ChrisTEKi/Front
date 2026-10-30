@@ -1,88 +1,112 @@
 {% extends 'base.html.twig' %}
-{% block title %}Suivi de commande — GoBuy{% endblock %}
+{% block title %}{{ 'tracking.page_title'|trans }}{% endblock %}
 
+{#
+   Suivi d'une commande (réservé aux personnes connectées ; un client ne voit QUE ses propres commandes : voir
+   OrderRepository::findForClientByReference).
+   `order` est le tableau préparé par OrderPresenter::detail() : textes déjà traduits, dates en DateTimeImmutable (heure
+   d'Antananarivo à l'affichage), aucun accès direct à l'entité.
+#}
 {% block body %}
+{% set tz = 'Indian/Antananarivo' %}
 <div class="mx-auto max-w-md p-4 sm:p-6">
 {% if order is null %}
     <div class="space-y-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <div class="flex items-center gap-2">
             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">{{ ux_icon('tabler:package', { class: 'h-4 w-4' }) }}</span>
-            <div><h2 class="text-sm font-bold text-slate-900">Suivi direct de commande</h2><p class="text-[11px] text-slate-500">Localisez votre colis en temps réel</p></div>
+            <div><h2 class="text-sm font-bold text-slate-900">{{ 'tracking.direct_title'|trans }}</h2><p class="text-[11px] text-slate-500">{{ 'tracking.direct_sub'|trans }}</p></div>
         </div>
         <form data-quick-tracking action="{{ path('app_order_tracking') }}" method="get" class="space-y-2">
-            <label class="block text-xs font-bold text-slate-800">Numéro de commande</label>
+            <label for="tracking-number" class="block text-xs font-bold text-slate-800">{{ 'tracking.number'|trans }}</label>
             <div class="relative">
-                <input type="text" name="number" value="{{ number }}" placeholder="Ex: MK123456 ou 123456" class="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-3.5 pr-10 font-mono text-xs focus:border-emerald-500 focus:outline-none">
-                <button type="submit" class="absolute right-1.5 top-1.5 rounded-xl bg-emerald-600 p-1.5 text-white hover:bg-emerald-700">{{ ux_icon('tabler:search', { class: 'h-4 w-4' }) }}</button>
+                <input id="tracking-number" type="text" name="number" value="{{ number }}" maxlength="40" placeholder="{{ 'tracking.placeholder'|trans }}" class="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-3.5 pr-10 font-mono text-xs focus:border-emerald-500 focus:outline-none">
+                <button type="submit" aria-label="{{ 'tracking.search'|trans }}" class="absolute right-1.5 top-1.5 rounded-xl bg-emerald-600 p-1.5 text-white hover:bg-emerald-700">{{ ux_icon('tabler:search', { class: 'h-4 w-4' }) }}</button>
             </div>
         </form>
         {% if number %}
-            <div class="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-xs text-red-700">{{ ux_icon('tabler:alert-circle', { class: 'mt-0.5 h-4 w-4 shrink-0' }) }}<span>Aucune commande trouvée avec la référence "{{ number }}". Vérifiez le numéro figurant sur votre reçu SMS ou e-mail.</span></div>
+            <div role="alert" class="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-xs text-red-700">{{ ux_icon('tabler:alert-circle', { class: 'mt-0.5 h-4 w-4 shrink-0' }) }}<span>{{ 'tracking.not_found'|trans({'%number%': number}) }}</span></div>
         {% endif %}
     </div>
 {% else %}
     <div class="flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-100 p-4">
             <div class="flex items-center gap-2">
-                <a href="{{ path('app_account', {section: 'orders'}) }}" class="rounded-lg p-1 text-slate-500 hover:bg-slate-100">{{ ux_icon('tabler:arrow-left', { class: 'h-4 w-4' }) }}</a>
-                <div><h2 class="text-sm font-bold text-slate-900">Ma commande</h2><span class="text-[11px] font-semibold text-emerald-700">#{{ order.orderNumber }}</span></div>
+                <a href="{{ path('app_account', {section: 'orders'}) }}" aria-label="{{ 'common.back'|trans }}" class="rounded-lg p-1 text-slate-500 hover:bg-slate-100">{{ ux_icon('tabler:arrow-left', { class: 'h-4 w-4' }) }}</a>
+                <div><h2 class="text-sm font-bold text-slate-900">{{ 'tracking.my_order'|trans }}</h2><span class="text-[11px] font-semibold text-emerald-700">#{{ order.orderNumber }}</span></div>
             </div>
+            <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">{{ order.statusLabel }}</span>
         </div>
         <div class="space-y-5 p-5">
             <div class="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs">
-                <div><p class="font-bold text-slate-800">#{{ order.orderNumber }}</p><p class="text-[11px] text-slate-400">{{ order.createdAt|date('d/m/Y') }} • {{ order.items|length }} articles</p></div>
-                <div class="text-right"><span class="text-xs font-extrabold text-slate-900">{{ order.total|number_format(0, ',', ' ') }} Ar</span>
-                    <p class="text-[10px] font-medium text-slate-700">{% if order.paymentMethod == 'installments' %}Paiement en {{ order.paymentDetails.installmentsCount|default(3) }}x sans frais{% elseif order.paymentMethod == 'mobile_money' %}Mobile Money ({{ order.paymentDetails.carrier|default('')|upper }}){% elseif order.paymentMethod == 'card' %}Carte bancaire{% else %}Paiement à la livraison{% endif %}</p></div>
+                <div><p class="font-bold text-slate-800">#{{ order.orderNumber }}</p><p class="text-[11px] text-slate-400">{{ order.createdAt|format_date('short', '', tz) }} • {{ 'tracking.items_count'|trans({'%count%': order.itemCount}) }}</p></div>
+                <div class="text-right"><span class="text-xs font-extrabold text-slate-900">{{ order.total|format_number }} Ar</span>
+                    <p class="text-[10px] font-medium text-slate-700">{{ order.paymentLabel }}</p>
+                    <p class="text-[10px] text-slate-400">{{ order.paymentStatusLabel }}</p></div>
             </div>
 
-            {% if order.paymentMethod == 'installments' and order.paymentDetails.schedule is defined %}
+            {% if order.paymentMethod == 'installments' and order.paymentDetails.schedule is not empty %}
                 <div class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-xs">
-                    <div class="flex items-center justify-between"><span class="font-bold text-slate-900">Échéancier de paiement ({{ order.paymentDetails.installmentsCount }}x sans frais)</span><span class="rounded bg-slate-950 px-2 py-0.5 font-mono text-[10px] font-bold text-[#00E5A3]">TAEG 0%</span></div>
+                    <div class="flex items-center justify-between"><span class="font-bold text-slate-900">{{ 'tracking.schedule'|trans({'%count%': order.paymentDetails.installmentsCount}) }}</span><span class="rounded bg-slate-950 px-2 py-0.5 font-mono text-[10px] font-bold text-[#00E5A3]">{{ 'tracking.taeg'|trans }}</span></div>
                     {% for step in order.paymentDetails.schedule %}
                         <div class="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-2 text-[11px]">
                             <div class="flex items-center gap-2"><span class="flex h-4 w-4 items-center justify-center rounded-full font-mono text-[9px] font-bold {{ step.isPaid ? 'bg-slate-950 text-[#00E5A3]' : 'bg-slate-100 text-slate-600' }}">{{ step.isPaid ? '✓' : step.stepIndex }}</span>
-                                <div><span class="font-semibold text-slate-800">{{ step.label }}</span><span class="ml-1.5 text-slate-400">({{ step.dueDate }})</span></div></div>
-                            <span class="font-mono font-bold text-slate-900">{{ step.amount|number_format(0, ',', ' ') }} Ar</span>
+                                <div><span class="font-semibold text-slate-800">{{ step.label }}</span><span class="ml-1.5 text-slate-400">({{ step.dueDate|format_date('short', '', tz) }})</span></div></div>
+                            <span class="font-mono font-bold text-slate-900">{{ step.amount|format_number }} Ar</span>
                         </div>
                     {% endfor %}
                 </div>
             {% endif %}
 
             <div class="space-y-4">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800">Suivi de commande</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800">{{ 'tracking.timeline'|trans }}</h3>
                 <div class="relative space-y-6 pl-6">
                     <div class="absolute bottom-2 left-2.5 top-2 w-0.5 bg-slate-200"></div>
                     {% for step in order.trackingSteps %}
                         <div class="relative flex items-start gap-3 text-xs">
                             <div class="absolute -left-6 top-0.5">
-                                {% if step.completed %}<span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xs ring-4 ring-white">{{ ux_icon('tabler:circle-check', { class: 'h-3.5 w-3.5' }) }}</span>
-                                {% elseif step.current|default(false) %}<span class="flex h-5 w-5 animate-pulse items-center justify-center rounded-full bg-amber-500 text-white shadow-xs ring-4 ring-white">{{ ux_icon('tabler:clock', { class: 'h-3 w-3' }) }}</span>
+                                {% if step.cancelled|default(false) %}<span class="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-xs ring-4 ring-white">{{ ux_icon('tabler:x', { class: 'h-3 w-3' }) }}</span>
+                                {% elseif step.completed %}<span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xs ring-4 ring-white">{{ ux_icon('tabler:circle-check', { class: 'h-3.5 w-3.5' }) }}</span>
+                                {% elseif step.current %}<span class="flex h-5 w-5 animate-pulse items-center justify-center rounded-full bg-amber-500 text-white shadow-xs ring-4 ring-white">{{ ux_icon('tabler:clock', { class: 'h-3 w-3' }) }}</span>
                                 {% else %}<span class="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 ring-4 ring-white"><span class="h-2 w-2 rounded-full bg-slate-400"></span></span>{% endif %}
                             </div>
-                            <div class="flex-1"><div class="flex items-center justify-between"><span class="font-semibold {{ step.completed or step.current|default(false) ? 'text-slate-900' : 'text-slate-400' }}">{{ step.label }}</span>{% if step.date is defined %}<span class="text-[10px] text-slate-400">{{ step.date }}</span>{% endif %}</div>
-                                {% if step.description is defined %}<p class="mt-0.5 text-[11px] leading-tight text-slate-500">{{ step.description }}</p>{% endif %}</div>
+                            <div class="flex-1"><div class="flex items-center justify-between gap-2"><span class="font-semibold {{ step.completed or step.current ? 'text-slate-900' : 'text-slate-400' }}">{{ step.label }}</span>{% if step.date %}<span class="shrink-0 text-[10px] text-slate-400">{{ step.date|format_datetime('short', 'short', '', tz) }}</span>{% endif %}</div>
+                                {% if step.description %}<p class="mt-0.5 text-[11px] leading-tight text-slate-500">{{ step.description }}</p>{% endif %}</div>
                         </div>
                     {% endfor %}
                 </div>
             </div>
 
-            {% if order.courierName is defined and order.courierName %}
-                <div class="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3.5 text-xs">
-                    <div class="flex items-center gap-2.5"><span class="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white">{{ ux_icon('tabler:truck-delivery', { class: 'h-4 w-4' }) }}</span>
-                        <div><p class="font-bold text-slate-900">{{ order.courierName }}</p><p class="text-[10px] text-slate-500">Livreur assigné à votre commande</p></div></div>
-                    {% if order.courierPhone is defined and order.courierPhone %}<a href="tel:{{ order.courierPhone }}" class="flex items-center gap-1 rounded-xl border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">{{ ux_icon('tabler:phone', { class: 'h-3.5 w-3.5' }) }}<span>{{ order.courierPhone }}</span></a>{% endif %}
+            {% if order.courierName %}
+                <div class="flex items-center justify-between gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3.5 text-xs">
+                    <div class="flex items-center gap-2.5"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">{{ ux_icon('tabler:truck-delivery', { class: 'h-4 w-4' }) }}</span>
+                        <div><p class="font-bold text-slate-900">{{ order.courierName }}</p><p class="text-[10px] text-slate-500">{{ 'tracking.courier_assigned'|trans }}</p></div></div>
+                    {% if order.courierPhone %}<a href="tel:{{ order.courierPhone|replace({' ': ''}) }}" class="flex items-center gap-1 rounded-xl border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">{{ ux_icon('tabler:phone', { class: 'h-3.5 w-3.5' }) }}<span>{{ order.courierPhone }}</span></a>{% endif %}
                 </div>
             {% endif %}
 
             <div class="space-y-3 border-t border-slate-100 pt-2">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800">Articles de la commande</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800">{{ 'tracking.items'|trans }}</h3>
                 {% for item in order.items %}
-                    <div class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-2.5 text-xs">
-                        <div class="flex items-center gap-2.5"><img src="{{ item.product.images[0] }}" alt="{{ item.product.name }}" class="h-12 w-12 shrink-0 rounded-lg border border-slate-200 bg-white object-cover">
-                            <div><p class="line-clamp-1 font-semibold text-slate-800">{{ item.product.name }}</p><p class="text-[11px] text-slate-400">Qté: {{ item.quantity }}</p></div></div>
-                        <div class="text-right font-bold text-slate-800">{{ (item.product.price * item.quantity)|number_format(0, ',', ' ') }} Ar</div>
+                    <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-2.5 text-xs">
+                        <div class="min-w-0"><p class="line-clamp-2 font-semibold text-slate-800">{{ item.name }}</p><p class="text-[11px] text-slate-400">{{ 'tracking.qty'|trans({'%qty%': item.quantity}) }}</p></div>
+                        <div class="shrink-0 text-right font-bold text-slate-800">{{ item.lineTotal|format_number }} Ar</div>
                     </div>
                 {% endfor %}
+            </div>
+
+            {% if order.address %}
+                <div class="space-y-1 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs">
+                    <h3 class="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-800">{{ 'tracking.delivery_address'|trans }}</h3>
+                    <p class="font-bold text-slate-900">{{ order.address.fullName|default('') }}</p>
+                    <p class="text-slate-600">{{ order.address.street|default('') }}, {{ order.address.city|default('') }}{% if order.address.postalCode|default('') %} {{ order.address.postalCode }}{% endif %}</p>
+                    {% if order.address.phone|default('') %}<p class="font-mono text-slate-500">{{ order.address.phone }}</p>{% endif %}
+                </div>
+            {% endif %}
+
+            <div class="space-y-1.5 border-t border-slate-100 pt-3 text-xs">
+                <div class="flex justify-between text-slate-500"><span>{{ 'tracking.subtotal'|trans }}</span><span class="font-mono">{{ order.subtotal|format_number }} Ar</span></div>
+                <div class="flex justify-between text-slate-500"><span>{{ 'tracking.shipping'|trans }}</span><span class="font-mono">{{ order.deliveryFee|format_number }} Ar</span></div>
+                <div class="flex justify-between text-sm font-black text-slate-950"><span>{{ 'cart.total'|trans }}</span><span class="font-mono">{{ order.total|format_number }} Ar</span></div>
             </div>
         </div>
     </div>

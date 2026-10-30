@@ -1,3 +1,7 @@
+# =============================================================================
+# mailer.yaml — envoi d'e-mails (codes OTP, confirmation de commande…).
+# Le serveur SMTP vient de MAILER_DSN (.env / .env.local).
+# =============================================================================
 framework:
     mailer:
         dsn: '%env(MAILER_DSN)%'

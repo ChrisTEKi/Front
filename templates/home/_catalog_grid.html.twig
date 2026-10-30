@@ -1,19 +1,19 @@
 {# Categories carousel + product catalog grid (empty state until a catalog exists) #}
 <div id="catalog-section" class="space-y-3 pt-4">
     <div class="flex items-center justify-between">
-        <h3 class="text-sm font-bold uppercase tracking-wider text-black">Catégories</h3>
+        <h3 class="text-sm font-bold uppercase tracking-wider text-black">{{ 'home.catalog.categories'|trans }}</h3>
         <a href="{{ path('app_categories') }}" class="flex items-center gap-0.5 text-xs font-bold text-neutral-900 hover:text-gobuy-green">
-            <span>Voir tout</span>{{ ux_icon('tabler:chevron-right', { class: 'h-3.5 w-3.5' }) }}
+            <span>{{ 'home.catalog.see_all'|trans }}</span>{{ ux_icon('tabler:chevron-right', { class: 'h-3.5 w-3.5' }) }}
         </a>
     </div>
     <div class="flex items-center gap-2 overflow-x-auto pb-2">
-        <a href="{{ path('app_home') }}" class="shrink-0 rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-xs">Tous les rayons</a>
+        <a href="{{ path('app_home') }}" class="shrink-0 rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-xs">{{ 'home.catalog.all_rayons'|trans }}</a>
         {% for cat in categories %}
-            <a href="{{ path('app_department', {slug: cat.slug}) }}" title="Ouvrir la page exclusive du rayon {{ cat.name }}"
+            <a href="{{ path('app_department', {slug: cat.slug}) }}" title="{{ 'home.catalog.open_dept'|trans({'%name%': cat.name}) }}"
                class="group flex shrink-0 items-center gap-2 rounded-full bg-soft-gray px-4 py-2 text-xs font-bold text-neutral-800 transition-all hover:bg-neutral-200 hover:text-black">
                 <span class="transition-transform group-hover:scale-110">{{ ux_icon(cat.icon, { class: 'h-4 w-4' }) }}</span>
                 <span>{{ cat.name }}</span>
-                <span class="text-[10px] font-semibold text-gobuy-green">Page dédiée →</span>
+                <span class="text-[10px] font-semibold text-gobuy-green">{{ 'home.catalog.dedicated'|trans }}</span>
             </a>
         {% endfor %}
     </div>
@@ -22,21 +22,21 @@
 <div class="space-y-3">
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-            <h3 class="text-sm font-bold text-slate-900">Produits populaires</h3>
-            <span class="text-xs font-medium text-slate-400">({{ catalogProducts|length }} articles)</span>
+            <h3 class="text-sm font-bold text-slate-900">{{ 'home.catalog.popular'|trans }}</h3>
+            <span class="text-xs font-medium text-slate-400">{{ 'home.catalog.count'|trans({'%count%': catalogProducts|length}) }}</span>
         </div>
         <select class="rounded-xl border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600">
-            <option value="default">Trier</option>
-            <option value="asc">Prix croissant</option>
-            <option value="desc">Prix décroissant</option>
+            <option value="default">{{ 'home.catalog.sort'|trans }}</option>
+            <option value="asc">{{ 'home.catalog.sort_asc'|trans }}</option>
+            <option value="desc">{{ 'home.catalog.sort_desc'|trans }}</option>
         </select>
     </div>
 
     {% if catalogProducts is empty %}
         <div class="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500">
             {{ ux_icon('tabler:package', { class: 'mx-auto mb-2 h-12 w-12 text-slate-300' }) }}
-            <p class="text-sm font-semibold">Aucun produit disponible pour le moment</p>
-            <p class="mt-1 text-xs text-slate-400">Le catalogue sera affiché ici dès qu'il sera connecté.</p>
+            <p class="text-sm font-semibold">{{ 'home.catalog.empty_title'|trans }}</p>
+            <p class="mt-1 text-xs text-slate-400">{{ 'home.catalog.empty_text'|trans }}</p>
         </div>
     {% else %}
         <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">

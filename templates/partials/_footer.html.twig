@@ -2,6 +2,9 @@
    Footer — brand column + app badges, 2 nav columns, socials,
    language/currency selectors, legal links, payment badges.
    Faithful port of Footer.tsx.
+
+   Tous les textes viennent de translations/messages.{fr,en,es}.yaml (clés « footer.* »). Le sélecteur de langue pointe vers
+   /langue/{fr|en|es} (LocaleController) : le choix est mémorisé, puis la personne revient sur la même page.
 ============================================================ #}
 <footer class="w-full border-t border-neutral-200 bg-white pb-12 pt-16 font-sans text-neutral-800">
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-8 lg:px-12">
@@ -16,23 +19,23 @@
                 </div>
 
                 <p class="max-w-sm text-sm leading-relaxed text-neutral-600">
-                    La plateforme de livraison ultra-rapide à Madagascar. Courses du quotidien, repas savoureux, électronique et commerces de quartier livrés chez vous en 20 à 45 minutes.
+                    {{ 'footer.tagline'|trans }}
                 </p>
 
                 <div class="flex flex-wrap items-center gap-3 pt-2">
-                    <button type="button" data-alert="L'application mobile iOS GoBuy sera disponible très prochainement sur l'App Store."
+                    <button type="button" data-alert="{{ 'footer.ios_soon'|trans }}"
                             class="group flex h-11 select-none items-center gap-3 rounded-xl bg-black px-4 text-white shadow-xs transition-colors hover:bg-neutral-800">
                         {{ ux_icon('tabler:brand-apple', { class: 'h-5 w-5 transition-transform group-hover:scale-105' }) }}
                         <span class="text-left leading-tight">
-                            <span class="block text-[9px] font-medium text-neutral-300">Télécharger dans l'</span>
+                            <span class="block text-[9px] font-medium text-neutral-300">{{ 'footer.app_store.top'|trans }}</span>
                             <span class="block text-xs font-bold tracking-wide">App Store</span>
                         </span>
                     </button>
-                    <button type="button" data-alert="L'application mobile Android GoBuy sera disponible très prochainement sur Google Play."
+                    <button type="button" data-alert="{{ 'footer.android_soon'|trans }}"
                             class="group flex h-11 select-none items-center gap-3 rounded-xl bg-black px-4 text-white shadow-xs transition-colors hover:bg-neutral-800">
                         {{ ux_icon('tabler:brand-google-play', { class: 'h-5 w-5 transition-transform group-hover:scale-105' }) }}
                         <span class="text-left leading-tight">
-                            <span class="block text-[8px] font-semibold uppercase tracking-wider text-neutral-300">Disponible sur</span>
+                            <span class="block text-[8px] font-semibold uppercase tracking-wider text-neutral-300">{{ 'footer.google_play.top'|trans }}</span>
                             <span class="block text-xs font-bold tracking-wide">Google Play</span>
                         </span>
                     </button>
@@ -41,38 +44,42 @@
 
             <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-10 lg:col-span-7">
                 <ul class="space-y-3.5 text-sm font-medium text-neutral-800">
-                    <li><button type="button" data-open-modal="company-info" data-info-section="faq" class="text-left hover:text-black hover:underline">Obtenir de l'aide</button></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="faq" class="text-left hover:text-black hover:underline">{{ 'footer.get_help'|trans }}</button></li>
                     <li>
                         <a href="{{ path('app_become_vendor') }}" class="group flex items-center gap-2 hover:text-black hover:underline">
-                            <span>Ajoutez votre restaurant ou boutique</span>
+                            <span>{{ 'footer.add_shop'|trans }}</span>
                             <span class="rounded-full bg-gobuy-green px-2 py-0.5 text-[10px] font-black text-white">0 Ar</span>
                         </a>
                     </li>
-                    <li><button type="button" data-open-modal="company-info" data-info-section="recruitment" class="text-left hover:text-black hover:underline">Inscrivez-vous pour livrer (Coursiers)</button></li>
-                    <li><a href="{{ path('app_auth') }}?mode=register_supplier" class="hover:text-black hover:underline">Créez un compte professionnel</a></li>
-                    <li><button type="button" data-open-modal="company-info" data-info-section="promotions" class="text-left font-bold text-gobuy-green hover:underline">Économisez sur votre première commande</button></li>
-                    <li><button type="button" data-open-modal="company-info" data-info-section="promotions" class="text-left hover:text-black hover:underline">Cartes-cadeaux &amp; GoBuy Pass</button></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="recruitment" class="text-left hover:text-black hover:underline">{{ 'footer.couriers'|trans }}</button></li>
+                    <li><a href="{{ path('app_auth') }}?mode=register_supplier" class="hover:text-black hover:underline">{{ 'footer.pro_account'|trans }}</a></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="promotions" class="text-left font-bold text-gobuy-green hover:underline">{{ 'footer.first_order'|trans }}</button></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="promotions" class="text-left hover:text-black hover:underline">{{ 'footer.gift_pass'|trans }}</button></li>
                 </ul>
 
                 <ul class="space-y-3.5 text-sm font-medium text-neutral-800">
-                    <li><button type="button" data-open-modal="company-info" data-info-section="delivery_zones" class="text-left hover:text-black hover:underline">Boutiques et restaurants à proximité</button></li>
-                    <li><button type="button" data-open-modal="company-info" data-info-section="delivery_zones" class="text-left hover:text-black hover:underline">Afficher toutes les villes à Madagascar</button></li>
-                    <li><button type="button" data-open-modal="company-info" data-info-section="delivery_zones" class="text-left text-xs text-neutral-500 hover:text-black hover:underline">Antananarivo • Tamatave • Majunga • Antsirabe</button></li>
-                    <li><button type="button" data-open-modal="company-info" data-info-section="about" class="text-left hover:text-black hover:underline">À propos de GoBuy</button></li>
-                    <li><button type="button" data-open-modal="company-info" data-info-section="about" class="text-left hover:text-black hover:underline">En savoir plus sur nos engagements RSE</button></li>
-                    <li><button type="button" data-open-modal="company-info" data-info-section="claims" class="text-left hover:text-black hover:underline">Centre de réclamations &amp; SAV</button></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="delivery_zones" class="text-left hover:text-black hover:underline">{{ 'footer.nearby'|trans }}</button></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="delivery_zones" class="text-left hover:text-black hover:underline">{{ 'footer.all_cities'|trans }}</button></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="delivery_zones" class="text-left text-xs text-neutral-500 hover:text-black hover:underline">{{ 'footer.cities'|trans }}</button></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="about" class="text-left hover:text-black hover:underline">{{ 'footer.about'|trans }}</button></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="about" class="text-left hover:text-black hover:underline">{{ 'footer.csr'|trans }}</button></li>
+                    <li><button type="button" data-open-modal="company-info" data-info-section="claims" class="text-left hover:text-black hover:underline">{{ 'footer.claims'|trans }}</button></li>
                 </ul>
             </div>
         </div>
 
         <div class="flex flex-col items-center justify-between gap-6 border-b border-neutral-200 py-8 sm:flex-row">
             <div class="flex items-center gap-4">
-                {% for social in [
+                {# Le lien WhatsApp n'apparaît que si un VRAI numéro est configuré (variable d'environnement GOBUY_SUPPORT_WHATSAPP, chiffres uniquement, ex. 261…). #}
+                {% set socials = [
                     {href: 'https://facebook.com', label: 'f', title: 'Facebook GoBuy'},
                     {href: 'https://instagram.com', icon: 'tabler:brand-instagram', title: 'Instagram GoBuy'},
-                    {href: 'https://linkedin.com', label: 'in', title: 'LinkedIn GoBuy SARL'},
-                    {href: 'https://wa.me/261340000000', icon: 'tabler:brand-whatsapp', title: 'Support WhatsApp GoBuy'}
+                    {href: 'https://linkedin.com', label: 'in', title: 'LinkedIn GoBuy SARL'}
                 ] %}
+                {% if support_whatsapp matches '/^\\+?[0-9]{8,15}$/' %}
+                    {% set socials = socials|merge([{href: 'https://wa.me/' ~ support_whatsapp|trim('+', 'left'), icon: 'tabler:brand-whatsapp', title: 'vendor.final.whatsapp'|trans}]) %}
+                {% endif %}
+                {% for social in socials %}
                     <a href="{{ social.href }}" target="_blank" rel="noreferrer" title="{{ social.title }}"
                        class="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 shadow-2xs transition-all hover:bg-black hover:text-white">
                         {% if social.icon is defined %}{{ ux_icon(social.icon, {class: 'h-4 w-4'}) }}{% else %}<span class="text-sm font-black">{{ social.label }}</span>{% endif %}
@@ -85,53 +92,48 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-4">
+                {# Langue : chaque entrée est un vrai lien vers /langue/xx (le serveur mémorise le choix, puis revient à la page courante). #}
+                {% set langs = {fr: {label: 'Français', flag: '🇫🇷'}, en: {label: 'English', flag: '🇬🇧'}, es: {label: 'Español', flag: '🇪🇸'}} %}
+                {% set current_lang = app.request.locale in langs|keys ? app.request.locale : 'fr' %}
                 <div class="relative">
-                    <button type="button" data-dropdown-toggle="lang-menu" aria-expanded="false"
+                    <button type="button" data-dropdown-toggle="lang-menu" aria-expanded="false" aria-label="{{ 'footer.language'|trans }}"
                             class="flex items-center gap-2 rounded-full border border-neutral-300 px-3.5 py-2 text-xs font-bold text-neutral-800 transition-colors hover:border-black">
                         {{ ux_icon('tabler:world', { class: 'h-4 w-4 text-neutral-600' }) }}
-                        <span data-lang-label>Français</span>
+                        <span data-lang-label>{{ langs[current_lang].label }}</span>
                         {{ ux_icon('tabler:chevron-down', { class: 'h-3.5 w-3.5 text-neutral-500' }) }}
                     </button>
                     <div id="lang-menu" class="hidden absolute bottom-full right-0 z-50 mb-2 w-44 rounded-2xl border border-neutral-200 bg-white py-1.5 shadow-xl">
-                        {% for lang in [{code:'fr', label:'Français', flag:'🇫🇷'}, {code:'en', label:'English', flag:'🇬🇧'}, {code:'es', label:'Español', flag:'🇪🇸'}] %}
-                            <button type="button" data-lang-option="{{ lang.label }}" class="flex w-full items-center justify-between px-4 py-2 text-left text-xs text-neutral-700 hover:bg-neutral-50">
+                        {% for code, lang in langs %}
+                            <a href="{{ path('app_locale_switch', {locale: code}) }}" hreflang="{{ code }}" lang="{{ code }}" {% if code == current_lang %}aria-current="true"{% endif %}
+                               class="flex w-full items-center justify-between px-4 py-2 text-left text-xs hover:bg-neutral-50 {{ code == current_lang ? 'font-bold text-black' : 'text-neutral-700' }}">
                                 <span class="flex items-center gap-2"><span>{{ lang.flag }}</span><span>{{ lang.label }}</span></span>
-                            </button>
+                                {% if code == current_lang %}{{ ux_icon('tabler:check', { class: 'h-3.5 w-3.5 text-gobuy-green' }) }}{% endif %}
+                            </a>
                         {% endfor %}
                     </div>
                 </div>
 
-                <div class="relative">
-                    <button type="button" data-dropdown-toggle="currency-menu" aria-expanded="false"
-                            class="flex items-center gap-2 rounded-full border border-neutral-300 px-3.5 py-2 text-xs font-bold text-neutral-800 transition-colors hover:border-black">
-                        <span>🇲🇬</span><span data-currency-label>Ariary (MGA)</span>
-                        {{ ux_icon('tabler:chevron-down', { class: 'h-3.5 w-3.5 text-neutral-500' }) }}
-                    </button>
-                    <div id="currency-menu" class="hidden absolute bottom-full right-0 z-50 mb-2 w-48 rounded-2xl border border-neutral-200 bg-white py-1.5 shadow-xl">
-                        {% for curr in [{label:'Ariary (MGA)', flag:'🇲🇬'}, {label:'Euro (€ EUR)', flag:'🇪🇺'}, {label:'US Dollar ($ USD)', flag:'🇺🇸'}] %}
-                            <button type="button" data-currency-option="{{ curr.label }}" class="flex w-full items-center justify-between px-4 py-2 text-left text-xs text-neutral-700 hover:bg-neutral-50">
-                                <span class="flex items-center gap-2"><span>{{ curr.flag }}</span><span>{{ curr.label }}</span></span>
-                            </button>
-                        {% endfor %}
-                    </div>
-                </div>
+                {# Devise : tous les prix sont en Ariary (aucun taux de change n'est géré) : on l'affiche, sans faux choix. #}
+                <span title="{{ 'footer.currency_note'|trans }}" class="flex items-center gap-2 rounded-full border border-neutral-300 px-3.5 py-2 text-xs font-bold text-neutral-800">
+                    <span>🇲🇬</span><span>{{ 'footer.currency'|trans }}</span>
+                </span>
             </div>
         </div>
 
         <div class="space-y-6 pt-8">
             <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-neutral-600">
-                    <button type="button" data-open-modal="company-info" data-info-section="legal" class="hover:text-black hover:underline">Politique de confidentialité</button>
-                    <button type="button" data-open-modal="company-info" data-info-section="cgu" class="hover:text-black hover:underline">Conditions d'utilisation</button>
-                    <button type="button" data-open-modal="company-info" data-info-section="cgv" class="hover:text-black hover:underline">Conditions générales de vente</button>
-                    <button type="button" data-open-modal="company-info" data-info-section="promotions" class="hover:text-black hover:underline">Tarifs et frais de livraison</button>
-                    <button type="button" data-open-modal="company-info" data-info-section="legal" class="text-neutral-500 hover:text-black hover:underline">Ne vendez pas et ne partagez pas mes informations personnelles</button>
+                    <button type="button" data-open-modal="company-info" data-info-section="legal" class="hover:text-black hover:underline">{{ 'footer.privacy'|trans }}</button>
+                    <button type="button" data-open-modal="company-info" data-info-section="cgu" class="hover:text-black hover:underline">{{ 'footer.terms'|trans }}</button>
+                    <button type="button" data-open-modal="company-info" data-info-section="cgv" class="hover:text-black hover:underline">{{ 'footer.sales'|trans }}</button>
+                    <button type="button" data-open-modal="company-info" data-info-section="promotions" class="hover:text-black hover:underline">{{ 'footer.pricing'|trans }}</button>
+                    <button type="button" data-open-modal="company-info" data-info-section="legal" class="text-neutral-500 hover:text-black hover:underline">{{ 'footer.no_sell'|trans }}</button>
                 </div>
-                <div class="shrink-0 text-xs text-neutral-500">© {{ 'now'|date('Y') }} GoBuy Technologies Inc. / GoBuy SARL.</div>
+                <div class="shrink-0 text-xs text-neutral-500">{{ 'footer.copyright'|trans({'%year%': 'now'|date('Y')}) }}</div>
             </div>
 
             <div class="flex flex-col items-center justify-between gap-4 border-t border-neutral-100 pt-4 text-[11px] text-neutral-400 sm:flex-row">
-                <p class="text-center sm:text-left">Ce site est protégé par reCAPTCHA. La Politique de confidentialité et les Conditions d'utilisation de Google s'appliquent.</p>
+                <p class="text-center sm:text-left">{{ 'footer.recaptcha'|trans }}</p>
 
                 <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                     <div title="MVola Telma Madagascar" class="flex h-6 select-none items-center gap-1 rounded-md bg-mvola px-2 text-white shadow-2xs">
@@ -153,11 +155,6 @@
                         </span>
                         <span class="text-[8px] font-bold tracking-tight text-neutral-800">mastercard</span>
                     </div>
-                    <button type="button" data-open-modal="symfony-inspector"
-                            class="ml-2 flex items-center gap-1 text-neutral-500 transition-colors hover:text-black" title="Inspecteur Backend Symfony 8.2 / PHP 8.4">
-                        {{ ux_icon('tabler:server', { class: 'h-3 w-3 text-gobuy-green' }) }}
-                        <span>Symfony 8.2 • PHP 8.4</span>
-                    </button>
                 </div>
             </div>
         </div>

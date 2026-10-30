@@ -1,0 +1,4 @@
+{# Page 404 (hors mode debug) : même habillage que le site. #}
+{% extends 'base.html.twig' %}
+{% block title %}{{ 'error.not_found.title'|trans }} — GoBuy{% endblock %}
+{% block body %}{{ include('@Twig/Exception/_error_card.html.twig', {kind: 'not_found', code: 404}) }}{% endblock %}

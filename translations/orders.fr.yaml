@@ -1,0 +1,43 @@
+# Textes des commandes : erreurs de l'API, libellés de suivi et de paiement (FR).
+error:
+    account_not_allowed: "Seuls les comptes clients peuvent passer commande."
+    phone_not_verified: "Vérifiez d'abord votre numéro de téléphone par SMS pour commander."
+    mobile_money_invalid: "Numéro Mobile Money invalide."
+    mobile_money_not_verified: "Vérifiez d'abord ce numéro Mobile Money par SMS."
+    empty_cart: "Votre panier est vide."
+    invalid_quantity: "Quantité invalide (entre 1 et 99 par article)."
+    too_many_lines: "Votre panier contient trop d'articles différents."
+    unknown_product: "Un article de votre panier n'existe plus. Actualisez votre panier."
+    product_unavailable: "« %name% » n'est plus disponible."
+    invalid_installments: "Formule de paiement en plusieurs fois invalide."
+    too_many_orders: "Trop de commandes en peu de temps. Réessayez dans %minutes% min."
+    order_closed: "Cette commande est terminée : son statut ne peut plus changer."
+    order_backwards: "Une commande ne peut pas revenir à une étape précédente."
+    validation: "Veuillez corriger les champs en erreur."
+    invalid_courier: "Nom ou téléphone du livreur invalide."
+    not_found: "Aucune commande trouvée avec cette référence."
+status:
+    confirmed: "Commande confirmée"
+    preparing: "En préparation"
+    out_for_delivery: "En cours de livraison"
+    delivered: "Livrée"
+    cancelled: "Annulée"
+tracking:
+    description:
+        confirmed: "Votre commande a bien été enregistrée."
+        preparing: "Votre colis est en cours de préparation."
+        out_for_delivery: "Votre colis est en route vers vous."
+        delivered: "Votre colis a été remis."
+        cancelled: "Cette commande a été annulée."
+    today: "Aujourd'hui"
+    nth_debit: "%n%e prélèvement"
+payment:
+    installments: "Paiement en %count%x sans frais"
+    mobile_money: "Mobile Money (%carrier%)"
+    card: "Carte bancaire"
+    cash_on_delivery: "Paiement à la livraison"
+    status:
+        pending: "En attente"
+        paid: "Payé"
+        failed: "Échoué"
+        refunded: "Remboursé"

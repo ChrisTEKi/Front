@@ -1,0 +1,31 @@
+{# Version texte brut de l'e-mail de confirmation de commande. #}
+{{ 'order_confirmation.title'|trans({}, 'emails') }}
+
+{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}
+
+{{ 'order_confirmation.intro'|trans({'%order%': order.orderNumber}, 'emails') }}
+
+{% for item in order.items %}
+- {{ item.productName }} x {{ item.quantity }} : {{ item.lineTotal|number_format(0, ',', ' ') }} Ar
+{% endfor %}
+
+{{ 'order_confirmation.subtotal'|trans({}, 'emails') }} : {{ order.subtotal|number_format(0, ',', ' ') }} Ar
+{{ 'order_confirmation.delivery'|trans({}, 'emails') }} : {{ order.deliveryFee|number_format(0, ',', ' ') }} Ar
+{{ 'order_confirmation.total'|trans({}, 'emails') }} : {{ order.total|number_format(0, ',', ' ') }} Ar
+
+{{ 'order_confirmation.address'|trans({}, 'emails') }} :
+{{ order.shippingAddress.fullName }}
+{{ order.shippingAddress.street }}
+{{ order.shippingAddress.city }}{% if order.shippingAddress.postalCode %} {{ order.shippingAddress.postalCode }}{% endif %}
+
+
+{{ 'order_confirmation.payment'|trans({}, 'emails') }} : {% if order.paymentMethod.value == 'mobile_money' %}{{ 'order_confirmation.method.mobile_money'|trans({'%carrier%': order.paymentCarrier ? order.paymentCarrier.label : ''}, 'emails') }}{% elseif order.paymentMethod.value == 'card' %}{{ 'order_confirmation.method.card'|trans({}, 'emails') }}{% else %}{{ 'order_confirmation.method.cash_on_delivery'|trans({}, 'emails') }}{% endif %}
+
+{% if order.installmentsCount > 1 %}{{ 'order_confirmation.installments'|trans({'%count%': order.installmentsCount, '%amount%': (order.total / order.installmentsCount)|round|number_format(0, ',', ' ')}, 'emails') }}
+{% endif %}
+
+{{ 'order_confirmation.button'|trans({}, 'emails') }} : {{ trackingUrl }}
+
+{{ 'order_confirmation.help'|trans({}, 'emails') }}
+
+— {{ app_name }}

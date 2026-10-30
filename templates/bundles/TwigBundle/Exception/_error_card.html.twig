@@ -1,0 +1,12 @@
+{# Carte d'erreur commune (404 / 403). Paramètres : `kind` = not_found | forbidden, `code` = code HTTP. #}
+<section class="mx-auto flex max-w-lg flex-col items-center gap-4 px-6 py-24 text-center">
+    <span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-slate-700">{{ 'error.code'|trans({'%code%': code}) }}</span>
+    <h1 class="text-2xl font-black text-slate-950">{{ ('error.' ~ kind ~ '.title')|trans }}</h1>
+    <p class="text-sm text-slate-500">{{ ('error.' ~ kind ~ '.text')|trans }}</p>
+    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+        <a href="{{ path('app_home') }}" class="rounded-2xl bg-black px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-neutral-800">{{ 'error.home'|trans }}</a>
+        {% if kind == 'forbidden' and not is_granted('IS_AUTHENTICATED_FULLY') %}
+            <a href="{{ path('app_auth') }}" class="rounded-2xl border border-slate-200 px-5 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-50">{{ 'error.login'|trans }}</a>
+        {% endif %}
+    </div>
+</section>

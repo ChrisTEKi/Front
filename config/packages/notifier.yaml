@@ -1,12 +1,9 @@
+# =============================================================================
+# notifier.yaml — envoi de SMS (codes OTP) via une passerelle configurable.
+# Pour changer de fournisseur SMS : installer son pont (symfony/xxx-notifier) et
+# modifier TEXTER_DSN. Aucun code PHP à changer.
+# =============================================================================
 framework:
     notifier:
-        chatter_transports:
         texter_transports:
-        channel_policy:
-            # use chat/slack, chat/telegram, sms/twilio or sms/nexmo
-            urgent: ['email']
-            high: ['email']
-            medium: ['email']
-            low: ['email']
-        admin_recipients:
-            - { email: admin@example.com }
+            main: '%env(TEXTER_DSN)%'

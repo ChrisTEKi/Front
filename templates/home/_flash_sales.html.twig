@@ -1,21 +1,21 @@
-<section aria-label="Offres spéciales et ventes flash" class="space-y-4">
+<section aria-label="{{ 'home.flash.aria'|trans }}" class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
             <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-black text-gobuy-green shadow-xs">
                 {{ ux_icon('tabler:bolt', { class: 'h-5 w-5' }) }}
             </span>
             <div>
-                <h3 class="text-base font-black tracking-tight text-black sm:text-xl">Offres Spéciales &amp; Ventes Flash</h3>
-                <p class="text-xs font-medium text-neutral-500">Tarifs négociés directement avec nos boutiques partenaires à Antananarivo</p>
+                <h3 class="text-base font-black tracking-tight text-black sm:text-xl">{{ 'home.flash.title'|trans }}</h3>
+                <p class="text-xs font-medium text-neutral-500">{{ 'home.flash.subtitle'|trans }}</p>
             </div>
         </div>
         <div class="flex items-center gap-2">
             <div class="hidden items-center gap-1.5 rounded-full border border-neutral-200/60 bg-neutral-100 px-3 py-1.5 font-mono text-xs font-bold text-black sm:flex">
                 {{ ux_icon('tabler:clock', { class: 'h-3.5 w-3.5 text-gobuy-green' }) }}
-                <span data-flash-countdown>Fin dans 06:41:22</span>
+                <span data-flash-countdown>{{ 'home.flash.ends_in'|trans({'%time%': '--:--:--'}) }}</span>
             </div>
             <a href="#catalog-section" class="flex items-center gap-0.5 text-xs font-bold text-neutral-900 hover:text-gobuy-green">
-                <span>Tout voir</span>{{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4' }) }}
+                <span>{{ 'home.flash.all'|trans }}</span>{{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4' }) }}
             </a>
         </div>
     </div>
@@ -23,8 +23,8 @@
     {% if flashSaleProducts is empty %}
         <div class="flex flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-neutral-300 bg-soft-gray/60 px-6 py-10 text-center">
             {{ ux_icon('tabler:package', { class: 'h-8 w-8 text-neutral-400' }) }}
-            <p class="text-sm font-semibold text-neutral-600">Les ventes flash arrivent bientôt</p>
-            <p class="max-w-sm text-xs text-neutral-400">Cette section affichera les offres en temps réel dès que le catalogue sera connecté.</p>
+            <p class="text-sm font-semibold text-neutral-600">{{ 'home.flash.empty_title'|trans }}</p>
+            <p class="max-w-sm text-xs text-neutral-400">{{ 'home.flash.empty_text'|trans }}</p>
         </div>
     {% else %}
         <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">

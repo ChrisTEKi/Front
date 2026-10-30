@@ -1,15 +1,62 @@
-# see https://symfony.com/doc/current/reference/configuration/framework.html
+# =============================================================================
+# framework.yaml — réglages généraux de Symfony (session, CSRF, langues…).
+# =============================================================================
 framework:
+    # Secret applicatif (voir .env) : signe CSRF, cookies, liens signés.
     secret: '%env(APP_SECRET)%'
 
-    # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # On n'accepte pas le "method override" (_method=DELETE dans un formulaire POST) :
+    # moins de surface d'attaque, nous n'en avons pas besoin.
+    http_method_override: false
 
-    #esi: true
-    #fragments: true
+    # Toute exception (même PHP fatale) passe par le gestionnaire d'erreurs Symfony → pages d'erreur propres.
+    handle_all_throwables: true
+
+    # ----- Langues (FR / EN / ES) -----
+    # Langue par défaut si rien ne peut être détecté (voir LocaleSubscriber pour la détection auto).
+    default_locale: fr
+    # Seules ces langues sont acceptées (le reste est ignoré lors de la détection).
+    enabled_locales: [fr, en, es]
+
+    # Reverse-proxys de confiance : permet de lire la VRAIE IP du client (journal d'audit, rate-limiting).
+    # Valeur vide = aucun proxy de confiance (comportement sûr par défaut).
+    trusted_proxies: '%env(default::TRUSTED_PROXIES)%'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
+
+    # ----- Session (stocke l'utilisateur connecté et l'état du parcours de connexion) -----
+    session:
+        name: gobuy_sid                 # nom du cookie (ne révèle pas la techno, contrairement à PHPSESSID)
+        cookie_secure: auto             # cookie envoyé uniquement en HTTPS dès que le site est servi en HTTPS
+        cookie_httponly: true           # invisible pour JavaScript → protège contre le vol de session par XSS
+        cookie_samesite: lax            # non envoyé sur les requêtes POST cross-site → protège contre le CSRF
+        gc_maxlifetime: 28800           # une session inactive est détruite après 8 h (les admins : 15 min, voir AdminIdleTimeoutSubscriber)
+
+    # URL publique du site : indispensable pour générer des liens ABSOLUS hors requête web
+    # (e-mails d'invitation et de confirmation, commandes de console, tâches planifiées).
+    router:
+        default_uri: '%app.default_uri%'
+        utf8: true
+
+    # Validation des formulaires. « not_compromised_password » active la contrainte NotCompromisedPassword
+    # (refus des mots de passe présents dans des fuites publiques, via l'API « Have I Been Pwned » en k-anonymat).
+    validation:
+        email_validation_mode: html5
+        not_compromised_password: true
+
+    # Protection CSRF (tokens anti-falsification de requête) : activée pour les formulaires ET nos appels JSON.
+    csrf_protection: true
+
+    # Les erreurs PHP (notices, warnings) sont écrites dans les logs.
+    php_errors:
+        log: true
 
 when@test:
     framework:
         test: true
+        validation:
+            # Pas d'appel réseau dans les tests.
+            not_compromised_password: false
+
         session:
+            # Session simulée en mémoire/fichier pour les tests fonctionnels.
             storage_factory_id: session.storage.factory.mock_file

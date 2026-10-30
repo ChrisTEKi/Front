@@ -1,0 +1,124 @@
+# Contenido de correos y SMS (ES). %name%, %minutes%, %days%, %code% se sustituyen al enviar.
+greeting: "Hola %name%,"
+layout:
+    footer: "Recibe este correo porque se realizó una acción con su dirección en GoBuy. Es un mensaje automático: por favor, no responda."
+sms:
+    otp: "GoBuy: su código es %code%. Válido %minutes% min. No lo comparta con nadie."
+otp:
+    validity: "Este código es válido durante %minutes% minutos y solo puede usarse una vez."
+    never_share: "No comparta nunca este código, ni siquiera con alguien que diga ser un asesor de GoBuy."
+    ignore: "Si no ha realizado esta solicitud, ignore este correo: su cuenta sigue protegida."
+    email_verification:
+        subject: "GoBuy: confirme su correo electrónico"
+        title: "Confirme su correo electrónico"
+        intro: "Introduzca este código en GoBuy para verificar su correo electrónico:"
+    phone_verification:
+        subject: "GoBuy: confirme su número de teléfono"
+        title: "Confirme su número de teléfono"
+        intro: "Introduzca este código en GoBuy para verificar su número:"
+    two_factor:
+        subject: "GoBuy: su código de acceso"
+        title: "Su código de acceso"
+        intro: "Alguien intenta iniciar sesión en su cuenta GoBuy. Para confirmar que es usted, introduzca este código:"
+    password_reset:
+        subject: "GoBuy: restablecer su contraseña"
+        title: "Restablecimiento de contraseña"
+        intro: "Ha solicitado restablecer su contraseña. Introduzca este código y elija una nueva contraseña:"
+    payment_phone:
+        subject: "GoBuy: confirme su número de pago"
+        title: "Confirme su número de pago"
+        intro: "Introduzca este código para confirmar su número Mobile Money:"
+    account_deletion:
+        subject: "GoBuy: confirme la eliminación de su cuenta"
+        title: "Confirme la eliminación de su cuenta"
+        intro: "Para confirmar la eliminación de su cuenta, introduzca este código:"
+    account_security:
+        subject: "GoBuy: confirme este cambio de seguridad"
+        title: "Confirme este cambio"
+        intro: "Para confirmar el cambio en los ajustes de seguridad de su cuenta, introduzca este código:"
+    contact_change_old:
+        subject: "GoBuy: confirma el cambio de tus datos de contacto"
+        title: "Confirma el cambio de tus datos de contacto"
+        intro: "Has pedido cambiar tu correo electrónico o tu número de teléfono. Para confirmar que eres tú, introduce este código en GoBuy:"
+    contact_change_new:
+        subject: "GoBuy: confirma tu nuevo correo electrónico"
+        title: "Confirma tu nuevo correo electrónico"
+        intro: "Esta dirección se ha elegido como nuevo correo de acceso de una cuenta GoBuy. Para confirmarla, introduce este código en GoBuy:"
+admin_invitation:
+    subject: "GoBuy: invitación para unirse al equipo de administración"
+    title: "Le invitamos a administrar GoBuy"
+    intro: "Se ha creado una cuenta de administrador para usted. Pulse el botón para elegir su contraseña y activar su acceso."
+    button: "Activar mi cuenta"
+    validity: "Este enlace es válido durante %days% días y solo puede usarse una vez."
+    fallback: "Si el botón no funciona, copie esta dirección en su navegador:"
+    ignore: "Si no esperaba esta invitación, ignore este correo: no se abrirá ningún acceso."
+already_registered:
+    subject: "GoBuy: ya tiene una cuenta"
+    title: "Ya tiene una cuenta GoBuy"
+    intro: "Alguien intentó crear una cuenta GoBuy con este correo, pero ya existe una cuenta. Puede iniciar sesión directamente o restablecer su contraseña si la olvidó."
+    login: "Iniciar sesión"
+    reset: "¿Olvidó su contraseña?"
+    ignore: "Si no fue usted, puede ignorar este correo: su cuenta no ha sido modificada."
+notice:
+    not_you: "Si no fue usted, restablezca de inmediato su contraseña y contacte con el soporte de GoBuy."
+    password_changed:
+        subject: "GoBuy: su contraseña ha sido modificada"
+        title: "Contraseña modificada"
+        body: "La contraseña de su cuenta GoBuy acaba de ser modificada. Se ha cerrado su sesión en los demás dispositivos."
+    two_factor_changed:
+        subject: "GoBuy: autenticación en dos pasos modificada"
+        title: "Autenticación en dos pasos modificada"
+        body: "Los ajustes de autenticación en dos pasos de su cuenta GoBuy acaban de modificarse."
+    deletion_scheduled:
+        subject: "GoBuy: eliminación de su cuenta programada"
+        title: "Eliminación de la cuenta programada"
+        body: "Su cuenta se eliminará definitivamente el %date%. Hasta entonces, basta con volver a iniciar sesión y elegir «Restaurar mi cuenta» para cancelar la eliminación."
+    account_restored:
+        subject: "GoBuy: su cuenta ha sido restaurada"
+        title: "Cuenta restaurada"
+        body: "Se ha cancelado la eliminación de su cuenta GoBuy: su cuenta vuelve a estar activa."
+    phone_changed:
+        subject: "GoBuy: su número de teléfono ha cambiado"
+        title: "Número de teléfono modificado"
+        body: "El número de teléfono de su cuenta GoBuy acaba de modificarse. El nuevo número debe verificarse por SMS y la autenticación en dos pasos por SMS se ha desactivado."
+    account_purged:
+        subject: "GoBuy: su cuenta se ha eliminado definitivamente"
+        title: "Cuenta eliminada definitivamente"
+        body: "Tal como solicitó, su cuenta GoBuy y sus datos personales se han borrado de forma definitiva. Sus pedidos anteriores se conservan para la contabilidad sin ninguna información sobre usted. Este es nuestro último mensaje."
+    email_changed:
+        subject: "GoBuy: el correo electrónico de tu cuenta ha cambiado"
+        title: "Correo electrónico modificado"
+        body: "El correo electrónico de acceso de tu cuenta GoBuy acaba de ser sustituido por %detail%. Ya no recibirás mensajes de GoBuy en esta dirección y se ha cerrado la sesión en tus otros dispositivos."
+    email_in_use:
+        subject: "GoBuy: alguien ha intentado usar tu dirección"
+        title: "Tu dirección se ha introducido en otra cuenta"
+        body: "Alguien ha pedido usar tu dirección como correo de acceso de otra cuenta GoBuy. Como ya está vinculada a tu cuenta, no se ha modificado nada."
+supplier_decision:
+    approved:
+        subject: "GoBuy: su cuenta de proveedor ha sido aprobada"
+        title: "Bienvenido a los proveedores de GoBuy"
+        body: "Buenas noticias: su solicitud ha sido aprobada. Ya puede acceder a su espacio de proveedor."
+        button: "Ir a mi espacio"
+    rejected:
+        subject: "GoBuy: su solicitud de cuenta de proveedor"
+        title: "No hemos podido aceptar su solicitud"
+        body: "Tras la revisión, no podemos dar curso por el momento a su solicitud de cuenta de proveedor."
+order_confirmation:
+    subject: "GoBuy: pedido %order% confirmado"
+    title: "¡Gracias por su pedido!"
+    intro: "Hemos registrado su pedido n.º %order%. Este es el resumen:"
+    items: "Artículos"
+    amount: "Importe"
+    subtotal: "Subtotal"
+    delivery: "Envío"
+    total: "Total"
+    address: "Dirección de entrega"
+    payment: "Pago"
+    method:
+        mobile_money: "Mobile Money %carrier%"
+        card: "Tarjeta bancaria"
+        cash_on_delivery: "Pago contra reembolso"
+    installments: "En %count% cuotas sin intereses: %amount% Ar cada una"
+    payment_pending: "Su pago se está procesando: se le avisará en cuanto se confirme."
+    button: "Seguir mi pedido"
+    help: "¿Necesita ayuda? Escríbanos desde su cuenta GoBuy, sección Ayuda."

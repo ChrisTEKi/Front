@@ -1,121 +1,158 @@
 {% extends 'base.html.twig' %}
-{% block title %}Mon compte — GoBuy{% endblock %}
+{% block title %}{{ 'account.page_title'|trans }}{% endblock %}
+
+{#
+   Page « Mon compte » (réservée aux personnes connectées : règle d'accès /compte).
+
+   Cette page AFFICHE l'état du compte ; les actions passent par l'API /compte/api/* :
+   mot de passe, double authentification, téléphone (+ code SMS), suppression du compte (effacement définitif après 30 jours) — assets/account.js ;
+   changement d'e-mail ou de téléphone avec double confirmation — assets/contact.js ;
+   photo de profil — assets/avatar.js ;  carnet d'adresses de livraison — assets/addresses.js.
+
+   Les actions sensibles demandent une confirmation : le mot de passe actuel, ou — pour un compte Google/Apple qui n'en a pas —
+   un code reçu par e-mail. Le macro « reauth » ci-dessous affiche le bon champ selon le compte
+   (le 2e argument dit à quoi sert le code : « security » ou « deletion », deux usages séparés côté serveur).
+#}
+{% macro reauth(user, purpose = 'security') %}
+    {% if user.hasPassword %}
+        <label class="block text-[11px] font-semibold text-slate-700">{{ 'account.reauth.password'|trans }}
+            <input type="password" name="password" autocomplete="current-password" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none">
+        </label>
+    {% else %}
+        <div class="space-y-1.5">
+            <label class="block text-[11px] font-semibold text-slate-700">{{ 'account.reauth.code'|trans }}
+                <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-center font-mono text-sm tracking-widest focus:border-slate-950 focus:outline-none">
+            </label>
+            <button type="button" data-send-code="{{ purpose }}" class="text-[11px] font-semibold text-emerald-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline">{{ 'account.reauth.send_code'|trans }}</button>
+        </div>
+    {% endif %}
+{% endmacro %}
+{% import _self as ui %}
 
 {% block body %}
-{% if user is null %}
-    {# Not logged in #}
-    <div class="mx-auto max-w-md space-y-4 p-8 text-center">
-        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">{{ ux_icon('tabler:shield-check', { class: 'h-8 w-8' }) }}</div>
-        <div>
-            <h2 class="text-base font-bold text-slate-900">Bienvenue sur GoBuy</h2>
-            <p class="mt-1 text-xs text-slate-500">Connectez-vous pour accéder à votre espace client, suivre vos commandes ou gérer votre boutique vendeur.</p>
-        </div>
-        <div class="space-y-2 pt-2">
-            <a href="{{ path('app_auth') }}" class="block w-full rounded-2xl bg-emerald-600 py-3 text-xs font-semibold text-white shadow-md transition-all hover:bg-emerald-700">Se connecter</a>
-            <a href="{{ path('app_auth', {mode: 'register'}) }}" class="block w-full rounded-2xl border border-slate-200 bg-white py-3 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-50">S'inscrire</a>
-        </div>
-    </div>
-{% else %}
-<div data-account data-account-initial="{{ section }}" class="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
+{% set initial = (isClient or section in ['main', 'info', 'security']) ? section : 'main' %}
+<div data-account data-account-initial="{{ initial }}" class="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
 
+    {# ---- Carte d'identité ---- #}
     <div class="flex items-center justify-between rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs">
         <div class="flex items-center gap-4">
             <div class="relative">
-                <span class="flex h-16 w-16 items-center justify-center rounded-full bg-black text-2xl font-black text-gobuy-green ring-4 ring-emerald-500/20">{{ user.fullName|first|upper }}</span>
-                {% if user.isEmailVerified %}<span class="absolute bottom-0 right-0 rounded-full bg-emerald-600 p-1 text-white ring-2 ring-white">{{ ux_icon('tabler:circle-check', { class: 'h-3 w-3' }) }}</span>{% endif %}
+                {% if user.hasAvatar %}
+                    <img src="{{ path('app_profile_photo', {v: user.avatarVersion}) }}" alt="" width="64" height="64" class="h-16 w-16 rounded-full object-cover ring-4 ring-emerald-500/20">
+                {% else %}
+                    <span class="flex h-16 w-16 items-center justify-center rounded-full bg-black text-2xl font-black text-gobuy-green ring-4 ring-emerald-500/20">{{ user.fullName|first|upper }}</span>
+                {% endif %}
+                {% if user.emailVerified %}<span class="absolute bottom-0 right-0 rounded-full bg-emerald-600 p-1 text-white ring-2 ring-white">{{ ux_icon('tabler:circle-check', { class: 'h-3 w-3' }) }}</span>{% endif %}
             </div>
-            <div>
-                <h2 class="text-base font-bold text-slate-900">{{ user.fullName }}</h2>
-                <p class="text-xs text-slate-500">{{ user.email }}</p>
+            <div class="min-w-0">
+                <h2 class="truncate text-base font-bold text-slate-900">{{ user.fullName }}</h2>
+                <p class="truncate text-xs text-slate-500">{{ user.email }}</p>
                 <div class="mt-1 flex items-center gap-2">
-                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-800">Client</span>
-                    {% if user.twoFactorEnabled %}<span class="flex items-center gap-0.5 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-800">{{ ux_icon('tabler:shield-check', { class: 'h-2.5 w-2.5' }) }} 2FA</span>{% endif %}
+                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-800">{{ ('account.type.' ~ user.accountType.value)|trans }}</span>
+                    <span data-twofa-chip class="{{ user.twoFactorEnabled ? 'flex' : 'hidden' }} items-center gap-0.5 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-800">{{ ux_icon('tabler:shield-check', { class: 'h-2.5 w-2.5' }) }} 2FA</span>
                 </div>
             </div>
         </div>
-        <button type="button" data-account-go="info" class="rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-100 hover:text-emerald-700">Modifier</button>
+        <button type="button" data-account-go="info" class="ml-3 shrink-0 rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-100 hover:text-emerald-700">{{ 'account.edit'|trans }}</button>
     </div>
 
-    {# ---- MAIN ---- #}
+    {# ============ ACCUEIL DU COMPTE ============ #}
     <div data-account-section="main" class="space-y-4">
         <div class="divide-y divide-slate-100 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xs">
+            {% if isClient %}
             <button type="button" data-account-go="favorites" class="group flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50">
                 <div class="flex items-center gap-3">
                     <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-500 transition-transform group-hover:scale-105">{{ ux_icon('tabler:heart-filled', { class: 'h-5 w-5' }) }}</span>
-                    <div><p class="text-xs font-bold text-slate-900">Mes Favoris</p><p class="text-[11px] text-slate-400">{{ favorites|length == 0 ? 'Aucun coup de cœur enregistré' : favorites|length ~ ' produit(s) sauvegardé(s)' }}</p></div>
+                    <div><p class="text-xs font-bold text-slate-900">{{ 'account.favorites.title'|trans }}</p><p class="text-[11px] text-slate-400" data-favorites-summary>{{ 'account.favorites.none'|trans }}</p></div>
                 </div>
                 {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-slate-400 group-hover:text-slate-900' }) }}
             </button>
             <button type="button" data-account-go="orders" class="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50">
                 <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">{{ ux_icon('tabler:package', { class: 'h-5 w-5' }) }}</span>
-                    <div><p class="text-xs font-bold text-slate-900">Mes commandes</p><p class="text-[11px] text-slate-400">{{ orders|length }} commande(s) passée(s)</p></div></div>
+                    <div><p class="text-xs font-bold text-slate-900">{{ 'account.orders.title'|trans }}</p><p class="text-[11px] text-slate-400">{{ 'account.orders.count'|trans({'%count%': orders|length}) }}</p></div></div>
                 {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-slate-400' }) }}
             </button>
             <button type="button" data-account-go="addresses" class="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50">
                 <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">{{ ux_icon('tabler:map-pin', { class: 'h-5 w-5' }) }}</span>
-                    <div><p class="text-xs font-bold text-slate-900">Mes adresses</p><p class="text-[11px] text-slate-400">{{ user.addresses|length }} adresse(s) enregistrée(s)</p></div></div>
+                    <div><p class="text-xs font-bold text-slate-900">{{ 'account.addresses.title'|trans }}</p><p class="text-[11px] text-slate-400">{{ 'account.addresses.count'|trans({'%count%': addresses|length}) }}</p></div></div>
                 {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-slate-400' }) }}
             </button>
+            {% endif %}
             <button type="button" data-account-go="info" class="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50">
                 <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">{{ ux_icon('tabler:user', { class: 'h-5 w-5' }) }}</span>
-                    <div><p class="text-xs font-bold text-slate-900">Mes informations</p><p class="text-[11px] text-slate-400">Coordonnées, téléphone, email</p></div></div>
+                    <div><p class="text-xs font-bold text-slate-900">{{ 'account.info.title'|trans }}</p><p class="text-[11px] text-slate-400">{{ 'account.info.sub'|trans }}</p></div></div>
                 {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-slate-400' }) }}
             </button>
             <button type="button" data-account-go="security" class="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50">
                 <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">{{ ux_icon('tabler:lock', { class: 'h-5 w-5' }) }}</span>
-                    <div><p class="text-xs font-bold text-slate-900">Sécurité &amp; 2FA</p><p class="text-[11px] text-slate-400">{{ user.twoFactorEnabled ? '2FA activée' : 'Renforcer la sécurité' }}</p></div></div>
+                    <div><p class="text-xs font-bold text-slate-900">{{ 'account.security.title_short'|trans }}</p><p class="text-[11px] text-slate-400" data-twofa-summary data-on="{{ 'account.security.sub_on'|trans }}" data-off="{{ 'account.security.sub_off'|trans }}">{{ (user.twoFactorEnabled ? 'account.security.sub_on' : 'account.security.sub_off')|trans }}</p></div></div>
                 {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-slate-400' }) }}
             </button>
             <div class="flex items-center justify-between p-4 text-left">
                 <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">{{ ux_icon('tabler:help-circle', { class: 'h-5 w-5' }) }}</span>
-                    <div><p class="text-xs font-bold text-slate-900">Aide et support</p><p class="text-[11px] text-slate-400">FAQ, contact support 24/7</p></div></div>
-                <button type="button" data-open-modal="company-info" data-info-section="faq" class="text-[11px] font-semibold text-emerald-600 hover:underline">Ouvrir l'aide</button>
+                    <div><p class="text-xs font-bold text-slate-900">{{ 'account.help.title'|trans }}</p><p class="text-[11px] text-slate-400">{{ 'account.help.sub'|trans }}</p></div></div>
+                <button type="button" data-open-modal="company-info" data-info-section="faq" class="text-[11px] font-semibold text-emerald-600 hover:underline">{{ 'account.help.open'|trans }}</button>
             </div>
+            {% if user.supplier %}
+            <a href="{{ path('app_supplier_dashboard') }}" class="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50">
+                <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">{{ ux_icon('tabler:building-store', { class: 'h-5 w-5' }) }}</span>
+                    <p class="text-xs font-bold text-slate-900">{{ 'header.supplier_space'|trans }}</p></div>
+                {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-slate-400' }) }}
+            </a>
+            {% endif %}
+            {% if user.admin %}
+            <a href="{{ path('app_admin_dashboard') }}" class="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50">
+                <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">{{ ux_icon('tabler:shield-check', { class: 'h-5 w-5' }) }}</span>
+                    <p class="text-xs font-bold text-slate-900">{{ 'header.admin_space'|trans }}</p></div>
+                {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-slate-400' }) }}
+            </a>
+            {% endif %}
         </div>
         <div class="space-y-2 pt-2">
-            <a href="#" class="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white p-3.5 text-xs font-semibold text-red-600 shadow-2xs transition-colors hover:border-red-200 hover:bg-red-50">{{ ux_icon('tabler:logout', { class: 'h-4 w-4' }) }}<span>Se déconnecter</span></a>
-            <button type="button" data-open-modal="delete-account" class="flex w-full items-center justify-center gap-1.5 p-3 text-[11px] font-medium text-slate-400 transition-colors hover:text-red-500">{{ ux_icon('tabler:trash', { class: 'h-3.5 w-3.5' }) }}<span>Supprimer définitivement mon compte</span></button>
+            <a href="{{ logout_path() }}" class="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white p-3.5 text-xs font-semibold text-red-600 shadow-2xs transition-colors hover:border-red-200 hover:bg-red-50">{{ ux_icon('tabler:logout', { class: 'h-4 w-4' }) }}<span>{{ 'account.logout'|trans }}</span></a>
+            {% if isClient %}
+            <button type="button" data-open-modal="delete-account" class="flex w-full items-center justify-center gap-1.5 p-3 text-[11px] font-medium text-slate-400 transition-colors hover:text-red-500">{{ ux_icon('tabler:trash', { class: 'h-3.5 w-3.5' }) }}<span>{{ 'account.delete.link'|trans }}</span></button>
+            {% endif %}
         </div>
     </div>
 
-    {# ---- FAVORITES ---- #}
+    {% if isClient %}
+    {# ============ FAVORIS (mémorisés dans le navigateur : voir assets/cart.js) ============ #}
     <div data-account-section="favorites" class="hidden space-y-4">
         <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2"><h3 class="text-base font-black tracking-tight text-slate-900">Mes Favoris</h3><span class="rounded-full bg-slate-950 px-2 py-0.5 font-mono text-[10px] font-bold text-[#00E5A3]">{{ favorites|length }}</span></div>
+            <div class="flex items-center gap-2"><h3 class="text-base font-black tracking-tight text-slate-900">{{ 'account.favorites.title'|trans }}</h3><span data-favorites-count class="rounded-full bg-slate-950 px-2 py-0.5 font-mono text-[10px] font-bold text-[#00E5A3]">0</span></div>
             <div class="flex items-center gap-2">
-                {% if favorites is not empty %}<button type="button" data-clear-favorites class="text-xs text-slate-400 transition-colors hover:text-red-600">Tout vider</button>{% endif %}
-                <button type="button" data-account-go="main" class="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-900 transition-colors hover:bg-slate-200 hover:underline">Retour au profil</button>
+                <button type="button" data-clear-favorites class="hidden text-xs text-slate-400 transition-colors hover:text-red-600">{{ 'account.favorites.clear'|trans }}</button>
+                <button type="button" data-account-go="main" class="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-900 transition-colors hover:bg-slate-200 hover:underline">{{ 'account.back_profile'|trans }}</button>
             </div>
         </div>
-        {% if favorites is empty %}
-            <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-10 text-center">
-                <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-400">{{ ux_icon('tabler:heart', { class: 'h-7 w-7' }) }}</span>
-                <div><h4 class="text-sm font-black text-slate-900">Votre liste d'envies est bien vide...</h4>
-                    <p class="mx-auto mt-1 max-w-sm text-xs text-slate-500">Un smartphone reconditionné certifié, un PC portable ou une paire d'écouteurs ? Cliquez sur l'icône cœur sur n'importe quel produit pour le garder sous la main.</p></div>
-                <a href="{{ path('app_home') }}" class="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-xs font-bold text-white hover:bg-neutral-800"><span>Explorer les pépites reconditionnées</span>{{ ux_icon('tabler:arrow-right', { class: 'h-3.5 w-3.5 text-gobuy-green' }) }}</a>
-            </div>
-        {% else %}
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">{% for product in favorites %}{{ include('product/_card.html.twig', {product: product}) }}{% endfor %}</div>
-        {% endif %}
+        <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-10 text-center">
+            <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-400">{{ ux_icon('tabler:heart', { class: 'h-7 w-7' }) }}</span>
+            <div><h4 class="text-sm font-black text-slate-900">{{ 'account.favorites.empty_title'|trans }}</h4>
+                <p class="mx-auto mt-1 max-w-sm text-xs text-slate-500">{{ 'account.favorites.empty_text'|trans }}</p></div>
+            <a href="{{ path('app_home') }}" class="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-xs font-bold text-white hover:bg-neutral-800"><span>{{ 'account.favorites.explore'|trans }}</span>{{ ux_icon('tabler:arrow-right', { class: 'h-3.5 w-3.5 text-gobuy-green' }) }}</a>
+        </div>
     </div>
 
-    {# ---- ORDERS ---- #}
+    {# ============ COMMANDES ============ #}
     <div data-account-section="orders" class="hidden space-y-4">
-        <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">Mes commandes</h3><button type="button" data-account-go="main" class="text-xs text-emerald-600 hover:underline">Retour</button></div>
+        <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">{{ 'account.orders.title'|trans }}</h3><button type="button" data-account-go="main" class="text-xs text-emerald-600 hover:underline">{{ 'common.back'|trans }}</button></div>
         {% if orders is empty %}
             <div class="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-400">
                 {{ ux_icon('tabler:package', { class: 'mx-auto mb-2 h-12 w-12 text-slate-300' }) }}
-                <p class="text-xs font-semibold text-slate-700">Aucune commande pour le moment</p>
-                <p class="mt-1 text-[11px]">Vos commandes apparaîtront ici avec leur suivi étape par étape.</p>
+                <p class="text-xs font-semibold text-slate-700">{{ 'account.orders.empty_title'|trans }}</p>
+                <p class="mt-1 text-[11px]">{{ 'account.orders.empty_text'|trans }}</p>
             </div>
         {% else %}
             <div class="space-y-3">
                 {% for order in orders %}
                     <a href="{{ path('app_order_tracking', {number: order.orderNumber}) }}" class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-xs transition-all hover:shadow-md">
-                        <img src="{{ order.items[0].product.images[0] }}" alt="preview" class="h-12 w-12 rounded-xl border border-slate-100 object-cover">
-                        <div class="flex-1"><div class="flex items-center gap-2"><span class="font-bold text-slate-900">#{{ order.orderNumber }}</span>
-                                <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">{{ order.status == 'delivered' ? 'Livrée' : order.status == 'preparing' ? 'En préparation' : order.status == 'shipped' ? 'Expédiée' : 'En attente' }}</span></div>
-                            <p class="mt-0.5 text-[11px] text-slate-500">{{ order.items|length }} article(s) • {{ order.total|number_format(0, ',', ' ') }} Ar</p></div>
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-500">{{ ux_icon('tabler:package', { class: 'h-5 w-5' }) }}</span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2"><span class="font-bold text-slate-900">#{{ order.orderNumber }}</span>
+                                <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">{{ order.statusLabel }}</span></div>
+                            <p class="mt-0.5 text-[11px] text-slate-500">{{ 'account.orders.line'|trans({'%count%': order.itemCount, '%total%': order.total|format_number}) }} • {{ order.createdAt|format_date('medium', '', 'Indian/Antananarivo') }}</p>
+                        </div>
                         {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-slate-400' }) }}
                     </a>
                 {% endfor %}
@@ -123,53 +160,221 @@
         {% endif %}
     </div>
 
-    {# ---- INFO ---- #}
-    <div data-account-section="info" class="hidden space-y-4">
-        <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">Mes informations</h3><button type="button" data-account-go="main" class="text-xs text-emerald-600 hover:underline">Retour</button></div>
-        <div class="divide-y divide-slate-100 rounded-3xl border border-slate-200 bg-white p-2 text-xs">
-            <div class="flex items-center justify-between p-3"><span class="text-slate-500">Nom complet</span><span class="font-bold text-slate-900">{{ user.fullName }}</span></div>
-            <div class="flex items-center justify-between p-3"><span class="text-slate-500">Adresse E-mail</span><span class="flex items-center gap-2"><span class="font-bold text-slate-900">{{ user.email }}</span><span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Vérifié</span></span></div>
-            <div class="flex items-center justify-between p-3"><span class="text-slate-500">Téléphone mobile</span><span class="flex items-center gap-2"><span class="font-bold text-slate-900">{{ user.phone|default('Non renseigné') }}</span>{% if user.isPhoneVerified %}<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Vérifié par SMS</span>{% else %}<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Non vérifié</span>{% endif %}</span></div>
-        </div>
-    </div>
+    {# ============ ADRESSES DE LIVRAISON : plusieurs adresses, une seule « par défaut » (assets/addresses.js) ============ #}
+    <div data-account-section="addresses" data-addresses class="hidden space-y-4">
+        <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">{{ 'account.addresses.title'|trans }}</h3><button type="button" data-account-go="main" class="text-xs text-emerald-600 hover:underline">{{ 'common.back'|trans }}</button></div>
+        <p class="text-[11px] text-slate-500">{{ 'account.addresses.intro'|trans({'%max%': 10}) }}</p>
 
-    {# ---- ADDRESSES ---- #}
-    <div data-account-section="addresses" class="hidden space-y-4">
-        <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">Mes adresses</h3><button type="button" data-account-go="main" class="text-xs text-emerald-600 hover:underline">Retour</button></div>
-        {% if user.addresses is empty %}
-            <div class="rounded-3xl border border-slate-200 bg-white p-10 text-center text-xs text-slate-400">Aucune adresse enregistrée.</div>
+        {% if addresses is empty %}
+            <div class="rounded-3xl border border-slate-200 bg-white p-10 text-center text-xs text-slate-400">{{ 'account.addresses.empty'|trans }}</div>
         {% else %}
-            {% for addr in user.addresses %}
-                <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 text-xs"><p class="font-bold text-slate-900">{{ addr.fullName }}</p><p class="text-slate-600">{{ addr.street }}, {{ addr.city }}</p><p class="text-slate-400">Tél: {{ addr.phone }}</p></div>
+            {% for addr in addresses %}
+                <div data-address-card data-address="{{ addr|json_encode|e('html_attr') }}" class="space-y-2 rounded-2xl border {{ addr.isDefault ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200' }} bg-white p-4 text-xs">
+                    <div class="flex flex-wrap items-center gap-2">
+                        {% if addr.label %}<span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">{{ addr.label }}</span>{% endif %}
+                        {% if addr.isDefault %}<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{{ 'account.addresses.default_badge'|trans }}</span>{% endif %}
+                    </div>
+                    <p class="font-bold text-slate-900">{{ addr.fullName }}</p>
+                    <p class="text-slate-600">{{ addr.street }}, {{ addr.city }}{% if addr.postalCode %} {{ addr.postalCode }}{% endif %}</p>
+                    {% if addr.phoneDisplay %}<p class="text-slate-400">{{ 'account.addresses.phone'|trans({'%phone%': addr.phoneDisplay}) }}</p>{% endif %}
+                    {% if addr.instructions %}<p class="text-slate-400">{{ addr.instructions }}</p>{% endif %}
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[11px] font-semibold">
+                        <button type="button" data-address-edit class="text-emerald-600 hover:underline disabled:opacity-50">{{ 'account.addresses.edit'|trans }}</button>
+                        {% if not addr.isDefault %}<button type="button" data-address-default class="text-slate-700 hover:underline disabled:opacity-50">{{ 'account.addresses.make_default'|trans }}</button>{% endif %}
+                        <button type="button" data-address-delete class="text-red-600 hover:underline disabled:opacity-50">{{ 'account.addresses.delete'|trans }}</button>
+                    </div>
+                </div>
             {% endfor %}
+        {% endif %}
+
+        {% if addresses|length < 10 %}
+            <button type="button" data-address-add class="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white p-3.5 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-950 hover:text-slate-950">{{ ux_icon('tabler:plus', { class: 'h-4 w-4' }) }}<span>{{ 'account.addresses.add'|trans }}</span></button>
+        {% else %}
+            <p class="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">{{ 'account.addresses.limit_reached'|trans({'%max%': 10}) }}</p>
+        {% endif %}
+
+        <form data-address-form-edit data-default-name="{{ user.fullName }}" data-default-city="Antananarivo" data-default-postal="101" novalidate class="hidden space-y-3 rounded-3xl border border-slate-200 bg-white p-4 text-xs">
+            <p data-address-form-title class="font-bold text-slate-900">{{ 'addresses.form.add'|trans({}, 'js') }}</p>
+            <label class="block text-[11px] font-semibold text-slate-700">{{ 'account.addresses.f_label'|trans }}
+                <input type="text" name="label" maxlength="40" placeholder="{{ 'account.addresses.f_label_ph'|trans }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none"></label>
+            <label class="block text-[11px] font-semibold text-slate-700">{{ 'checkout.f_name'|trans }}
+                <input type="text" name="fullName" autocomplete="name" maxlength="150" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none"></label>
+            <label class="block text-[11px] font-semibold text-slate-700">{{ 'checkout.f_phone'|trans }}
+                <input type="tel" name="phone" autocomplete="tel" placeholder="{{ 'checkout.f_phone_ph'|trans }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs focus:border-slate-950 focus:outline-none"></label>
+            <label class="block text-[11px] font-semibold text-slate-700">{{ 'checkout.f_street'|trans }}
+                <input type="text" name="street" autocomplete="street-address" maxlength="255" placeholder="{{ 'checkout.f_street_ph'|trans }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none"></label>
+            <div class="grid grid-cols-2 gap-2">
+                <label class="block text-[11px] font-semibold text-slate-700">{{ 'checkout.f_city'|trans }}
+                    <input type="text" name="city" maxlength="100" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none"></label>
+                <label class="block text-[11px] font-semibold text-slate-700">{{ 'checkout.f_postal'|trans }}
+                    <input type="text" name="postalCode" maxlength="10" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none"></label>
+            </div>
+            <label class="block text-[11px] font-semibold text-slate-700">{{ 'checkout.f_note'|trans }}
+                <textarea rows="2" name="instructions" maxlength="500" placeholder="{{ 'checkout.f_note_ph'|trans }}" class="mt-1 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none"></textarea></label>
+            <label class="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3 font-semibold text-slate-800">
+                <input type="checkbox" name="makeDefault" class="h-4 w-4 rounded border-slate-300 text-slate-950">
+                <span>{{ 'account.addresses.f_default'|trans }}</span></label>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 rounded-xl bg-slate-950 py-2.5 text-xs font-bold text-white transition-colors hover:bg-slate-800 disabled:opacity-50">{{ 'account.addresses.save'|trans }}</button>
+                <button type="button" data-address-cancel class="rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200">{{ 'account.delete.cancel'|trans }}</button>
+            </div>
+            <p data-form-message role="status" class="hidden rounded-xl p-2.5 text-[11px]"></p>
+        </form>
+    </div>
+    {% endif %}
+
+    {# ============ MES INFORMATIONS : photo, e-mail, téléphone ============ #}
+    <div data-account-section="info" class="hidden space-y-4">
+        <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">{{ 'account.info.title'|trans }}</h3><button type="button" data-account-go="main" class="text-xs text-emerald-600 hover:underline">{{ 'common.back'|trans }}</button></div>
+
+        {# ---- Photo de profil (tous les comptes) : réduite dans le navigateur, ré-encodée par le serveur (assets/avatar.js) ---- #}
+        <div data-avatar-panel class="space-y-3 rounded-3xl border border-slate-200 bg-white p-4 text-xs">
+            <div class="flex items-center gap-4">
+                {% if user.hasAvatar %}
+                    <img src="{{ path('app_profile_photo', {v: user.avatarVersion}) }}" alt="" width="56" height="56" class="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-slate-200">
+                {% else %}
+                    <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black text-xl font-black text-gobuy-green">{{ user.fullName|first|upper }}</span>
+                {% endif %}
+                <div class="min-w-0 flex-1">
+                    <p class="font-bold text-slate-900">{{ 'account.photo.title'|trans }}</p>
+                    <p class="mt-0.5 text-[11px] text-slate-500">{{ 'account.photo.hint'|trans }}</p>
+                    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-semibold">
+                        <input type="file" data-avatar-input accept="image/jpeg,image/png,image/webp,image/gif" class="sr-only" tabindex="-1">
+                        <button type="button" data-avatar-pick class="text-emerald-600 hover:underline disabled:opacity-50">{{ (user.hasAvatar ? 'account.photo.change' : 'account.photo.add')|trans }}</button>
+                        {% if user.hasAvatar %}<button type="button" data-avatar-remove class="text-red-600 hover:underline disabled:opacity-50">{{ 'account.photo.remove'|trans }}</button>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <p data-form-message role="status" class="hidden rounded-xl p-2.5 text-[11px]"></p>
+        </div>
+
+        {# ---- Coordonnées : e-mail et téléphone se changent avec une double confirmation (assets/contact.js) ---- #}
+        <div class="divide-y divide-slate-100 rounded-3xl border border-slate-200 bg-white p-2 text-xs">
+            <div class="flex items-center justify-between gap-3 p-3"><span class="text-slate-500">{{ 'account.info.full_name'|trans }}</span><span class="truncate font-bold text-slate-900">{{ user.fullName }}</span></div>
+            <div class="flex items-center justify-between gap-3 p-3"><span class="text-slate-500">{{ 'account.info.email'|trans }}</span>
+                <span class="flex min-w-0 items-center gap-2"><span class="truncate font-bold text-slate-900">{{ user.email }}</span>{% if user.emailVerified %}<span class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{{ 'account.info.verified'|trans }}</span>{% endif %}
+                    <button type="button" data-contact-open="email" class="shrink-0 text-[11px] font-semibold text-emerald-600 hover:underline">{{ 'account.contact.change'|trans }}</button></span></div>
+            <div class="flex items-center justify-between gap-3 p-3"><span class="text-slate-500">{{ 'account.info.phone'|trans }}</span>
+                <span class="flex flex-wrap items-center justify-end gap-2"><span class="font-bold text-slate-900" data-phone-display>{{ user.phone|default('account.info.phone_none'|trans) }}</span>
+                    {% if user.phone %}{% if user.phoneVerified %}<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{{ 'account.info.phone_verified'|trans }}</span>{% else %}<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">{{ 'account.info.phone_unverified'|trans }}</span>{% endif %}{% endif %}
+                    {# Numéro vérifié : le remplacer ou le retirer passe par la double confirmation. #}
+                    {% if user.phoneVerified %}
+                        <button type="button" data-contact-open="phone" class="text-[11px] font-semibold text-emerald-600 hover:underline">{{ 'account.contact.change'|trans }}</button>
+                        {% if not user.supplier %}<button type="button" data-contact-open="phone_remove" class="text-[11px] font-semibold text-red-600 hover:underline">{{ 'account.contact.remove'|trans }}</button>{% endif %}
+                    {% endif %}</span></div>
+        </div>
+
+        {# Panneau de changement (caché tant qu'on n'a pas cliqué sur « Modifier »). Les textes des étapes viennent du dictionnaire JS. #}
+        <form data-contact novalidate class="hidden space-y-3 rounded-3xl border border-emerald-200 bg-white p-4 text-xs">
+            <p data-contact-title class="font-bold text-slate-900"></p>
+            <p data-contact-intro class="rounded-xl bg-slate-50 p-3 text-[11px] text-slate-600"></p>
+            <div data-contact-stage="request" class="space-y-3">
+                <label data-contact-value-wrap class="block text-[11px] font-semibold text-slate-700"><span data-contact-label></span>
+                    <input type="text" name="value" maxlength="180" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none">
+                </label>
+            </div>
+            <div data-contact-stage="code" class="hidden space-y-3">
+                <p data-contact-hint class="text-[11px] text-slate-600"></p>
+                <label class="block text-[11px] font-semibold text-slate-700">{{ 'account.phone.code'|trans }}
+                    <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-center font-mono text-lg tracking-widest focus:border-slate-950 focus:outline-none">
+                </label>
+                <button type="button" data-contact-resend class="text-[11px] font-semibold text-emerald-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline">{{ 'contact.resend'|trans({}, 'js') }}</button>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" data-contact-submit class="flex-1 rounded-xl bg-slate-950 py-2.5 text-xs font-bold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"></button>
+                <button type="button" data-contact-cancel class="rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200">{{ 'account.delete.cancel'|trans }}</button>
+            </div>
+            <p data-form-message role="status" class="hidden rounded-xl p-2.5 text-[11px]"></p>
+        </form>
+
+        {# Aucun numéro, ou numéro pas encore vérifié : on l'ajoute / le corrige ici, puis on le valide par SMS (rien de sensible à protéger). #}
+        {% if not user.phoneVerified %}
+        <div class="space-y-3 rounded-3xl border border-slate-200 bg-white p-4 text-xs">
+            <form data-account-form="phone" novalidate class="space-y-3">
+                <p class="font-bold text-slate-900">{{ (user.phone ? 'account.phone.change' : 'account.phone.add')|trans }}</p>
+                <label class="block text-[11px] font-semibold text-slate-700">{{ 'account.phone.new'|trans }}
+                    <input type="tel" name="phone" autocomplete="tel" placeholder="{{ 'account.phone.placeholder'|trans }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs focus:border-slate-950 focus:outline-none">
+                </label>
+                <button type="submit" class="w-full rounded-xl bg-slate-950 py-2.5 text-xs font-bold text-white transition-colors hover:bg-slate-800 disabled:opacity-50">{{ 'account.phone.save'|trans }}</button>
+                {% if user.phone %}
+                    <button type="button" data-phone-resend data-phone="{{ user.phone }}" class="w-full text-[11px] font-semibold text-emerald-600 hover:underline">{{ 'account.phone.verify_now'|trans }}</button>
+                {% endif %}
+                <p data-form-message role="status" class="hidden rounded-xl p-2.5 text-[11px]"></p>
+            </form>
+            <form data-account-form="phone_verify" novalidate class="hidden space-y-3 border-t border-slate-100 pt-3">
+                <p data-phone-sent class="text-[11px] text-slate-600"></p>
+                <label class="block text-[11px] font-semibold text-slate-700">{{ 'account.phone.code'|trans }}
+                    <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-center font-mono text-lg tracking-widest focus:border-slate-950 focus:outline-none">
+                </label>
+                <button type="submit" class="w-full rounded-xl bg-slate-950 py-2.5 text-xs font-bold text-white transition-colors hover:bg-slate-800 disabled:opacity-50">{{ 'account.phone.confirm'|trans }}</button>
+                <p data-form-message role="status" class="hidden rounded-xl p-2.5 text-[11px]"></p>
+            </form>
+        </div>
         {% endif %}
     </div>
 
-    {# ---- SECURITY ---- #}
+    {# ============ SÉCURITÉ : 2FA + MOT DE PASSE ============ #}
     <div data-account-section="security" class="hidden space-y-4">
-        <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">Sécurité du compte &amp; 2FA</h3><button type="button" data-account-go="main" class="text-xs text-emerald-600 hover:underline">Retour</button></div>
-        <div class="flex items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-4">
-            <div><p class="text-xs font-bold text-slate-900">Authentification à deux facteurs (2FA)</p>
-                <p class="mt-0.5 text-[11px] text-slate-500">Exige un code de sécurité (OTP par E-mail ou SMS) lors de chaque tentative de connexion.</p></div>
-            <button type="button" data-toggle-2fa class="shrink-0 rounded-full bg-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-300">DÉSACTIVÉ</button>
-        </div>
-        <button type="button" class="w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">Changer le mot de passe</button>
+        <div class="flex items-center justify-between"><h3 class="text-sm font-bold text-slate-900">{{ 'account.security.title'|trans }}</h3><button type="button" data-account-go="main" class="text-xs text-emerald-600 hover:underline">{{ 'common.back'|trans }}</button></div>
+
+        <form data-account-form="two_factor" novalidate class="space-y-3 rounded-3xl border border-slate-200 bg-white p-4 text-xs">
+            <div><p class="font-bold text-slate-900">{{ 'account.security.twofa'|trans }}</p>
+                <p class="mt-0.5 text-[11px] text-slate-500">{{ 'account.security.twofa_text'|trans }}</p></div>
+            {% if user.admin %}
+                <p class="rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-[11px] text-indigo-800">{{ 'account.security.twofa_admin'|trans }}</p>
+            {% else %}
+                <label class="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3 font-semibold text-slate-800">
+                    <input type="checkbox" name="email" class="h-4 w-4 rounded border-slate-300 text-slate-950" {{ user.twoFactorEmailEnabled ? 'checked' : '' }}>
+                    <span>{{ 'account.security.twofa_email'|trans }}</span>
+                </label>
+                <label class="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3 font-semibold text-slate-800 {{ user.phoneVerified ? '' : 'opacity-60' }}">
+                    <input type="checkbox" name="sms" class="h-4 w-4 rounded border-slate-300 text-slate-950" {{ user.twoFactorSmsEnabled ? 'checked' : '' }} {{ user.phoneVerified ? '' : 'disabled' }}>
+                    <span>{{ 'account.security.twofa_sms'|trans }}</span>
+                </label>
+                {% if not user.phoneVerified %}<p class="text-[11px] text-slate-500">{{ 'account.security.twofa_sms_needs_phone'|trans }}</p>{% endif %}
+                {{ ui.reauth(user) }}
+                <button type="submit" class="w-full rounded-xl bg-slate-950 py-2.5 text-xs font-bold text-white transition-colors hover:bg-slate-800 disabled:opacity-50">{{ 'account.security.save'|trans }}</button>
+                <p data-form-message role="status" class="hidden rounded-xl p-2.5 text-[11px]"></p>
+            {% endif %}
+        </form>
+
+        {% if user.hasPassword %}
+            <form data-account-form="password" novalidate class="space-y-3 rounded-3xl border border-slate-200 bg-white p-4 text-xs">
+                <p class="font-bold text-slate-900">{{ 'account.security.change_password'|trans }}</p>
+                <label class="block text-[11px] font-semibold text-slate-700">{{ 'account.security.current_password'|trans }}
+                    <input type="password" name="current" autocomplete="current-password" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none">
+                </label>
+                <label class="block text-[11px] font-semibold text-slate-700">{{ 'account.security.new_password'|trans }}
+                    <input type="password" name="new" autocomplete="new-password" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-slate-950 focus:outline-none">
+                </label>
+                <button type="submit" class="w-full rounded-xl bg-slate-950 py-2.5 text-xs font-bold text-white transition-colors hover:bg-slate-800 disabled:opacity-50">{{ 'account.security.change_password'|trans }}</button>
+                <p data-form-message role="status" class="hidden rounded-xl p-2.5 text-[11px]"></p>
+            </form>
+        {% else %}
+            <p class="rounded-3xl border border-slate-200 bg-white p-4 text-[11px] text-slate-600">{{ 'account.security.no_password'|trans }}</p>
+        {% endif %}
     </div>
 </div>
 
-{# Delete account confirmation #}
-<div data-modal="delete-account" class="pointer-events-none fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs">
-    <div class="pointer-events-auto w-full max-w-sm space-y-4 rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-2xl">
+{% if isClient %}
+{# ============ SUPPRESSION DU COMPTE : gel immédiat, effacement définitif après 30 jours ============ #}
+<div data-modal="delete-account" class="pointer-events-none fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-xs">
+    <form data-account-form="delete" novalidate class="pointer-events-auto my-auto w-full max-w-sm space-y-4 rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-2xl">
         <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-500">{{ ux_icon('tabler:trash', { class: 'h-6 w-6' }) }}</span>
-        <div><h3 class="text-sm font-bold text-slate-900">Supprimer définitivement mon compte ?</h3>
-            <p class="mt-1 text-xs text-slate-500">Cette action est irréversible. Toutes vos commandes, adresses et préférences seront définitivement effacées de la base de données.</p></div>
-        <div class="space-y-1 text-left"><label class="block text-[11px] font-semibold text-slate-700">Tapez "SUPPRIMER" pour valider :</label>
-            <input type="text" data-delete-confirm placeholder="SUPPRIMER" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs focus:border-red-400 focus:outline-none"></div>
-        <div class="space-y-2">
-            <button type="button" data-delete-submit disabled class="w-full rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-40">Confirmer la suppression définitive</button>
-            <button type="button" data-modal-close class="w-full py-2 text-xs text-slate-500 hover:underline">Annuler</button>
+        <div><h3 class="text-sm font-bold text-slate-900">{{ 'account.delete.title'|trans }}</h3>
+            <p class="mt-1 text-xs text-slate-500">{{ 'account.delete.text'|trans }}</p></div>
+        <div class="space-y-3 text-left text-xs">
+            {{ ui.reauth(user, 'deletion') }}
+            <label class="block text-[11px] font-semibold text-slate-700">{{ 'account.delete.type_word'|trans({'%word%': 'account.delete.word'|trans}) }}
+                <input type="text" data-delete-confirm data-delete-word="{{ 'account.delete.word'|trans }}" autocomplete="off" placeholder="{{ 'account.delete.word'|trans }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs focus:border-red-400 focus:outline-none">
+            </label>
         </div>
-    </div>
+        <p data-form-message role="status" class="hidden rounded-xl p-2.5 text-left text-[11px]"></p>
+        <div class="space-y-2">
+            <button type="submit" data-delete-submit disabled class="w-full rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-40">{{ 'account.delete.submit'|trans }}</button>
+            <button type="button" data-modal-close class="w-full py-2 text-xs text-slate-500 hover:underline">{{ 'account.delete.cancel'|trans }}</button>
+        </div>
+    </form>
 </div>
 {% endif %}
 {% endblock %}

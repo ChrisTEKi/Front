@@ -1,0 +1,40 @@
+{# Dossier détaillé d'un fournisseur : réponses de l'assistant « Devenir partenaire » (colonne JSONB supplier_profiles.application).
+   Paramètre : `s` = ligne fournisseur de AdminDashboardProvider::supplierRow (s.application = tableau de CODES ou null).
+   Les valeurs sont des codes (« fashion », « 24_48h »…) : on les TRADUIT ici avec les textes du formulaire (domaine « messages »),
+   donc l'administrateur lit le dossier dans SA langue. Twig échappe tout le texte saisi par le candidat. #}
+{% trans_default_domain 'admin' %}
+{% macro row(label, value) %}
+    {% if value is not empty %}
+        <div class="flex flex-col gap-0.5 sm:flex-row sm:gap-2"><dt class="font-semibold text-slate-500 sm:w-48 sm:shrink-0">{{ label }}</dt><dd class="min-w-0 whitespace-pre-line break-words text-slate-800">{{ value }}</dd></div>
+    {% endif %}
+{% endmacro %}
+{% import _self as f %}
+
+{% set a = s.application %}
+{% if a is empty %}
+    <p class="text-[11px] text-slate-400">{{ 'application.none'|trans }}</p>
+{% else %}
+    {% set yes = 'vendor.form.answer_yes'|trans({}, 'messages') %}
+    {% set no = 'vendor.form.answer_no'|trans({}, 'messages') %}
+    {% set products = [] %}{% for c in a.productTypes|default([]) %}{% set products = products|merge([('vendor.form.product.' ~ c)|trans({}, 'messages')]) %}{% endfor %}
+    {% set points = [] %}{% for c in a.salesPoints|default([]) %}{% set points = points|merge([('vendor.form.sales.' ~ c)|trans({}, 'messages')]) %}{% endfor %}
+    {% set proofs = [] %}{% for c in a.proofs|default([]) %}{% set proofs = proofs|merge([('vendor.form.proof.' ~ c)|trans({}, 'messages')]) %}{% endfor %}
+    <dl class="mt-2 space-y-1 rounded-xl border border-slate-200 bg-white p-3 text-[11px]">
+        {{ f.row('vendor.form.role'|trans({}, 'messages'), a.contactRole|default('')) }}
+        {{ f.row('vendor.form.city'|trans({}, 'messages'), a.city|default('')) }}
+        {{ f.row('vendor.form.activity_type'|trans({}, 'messages'), a.activityType is defined ? ('vendor.form.activity.' ~ a.activityType)|trans({}, 'messages') : '') }}
+        {{ f.row('vendor.form.tax_id'|trans({}, 'messages'), a.taxId|default('')) }}
+        {{ f.row('vendor.form.category'|trans({}, 'messages'), a.mainCategory is defined ? ('vendor.cat.' ~ a.mainCategory|replace({'cat-': ''}))|trans({}, 'messages') : '') }}
+        {{ f.row('vendor.form.plan_label'|trans({}, 'messages'), a.plan is defined ? ('vendor.form.plan.' ~ a.plan)|trans({}, 'messages') : '') }}
+        {{ f.row('vendor.form.sector'|trans({}, 'messages'), a.sector|default('')) }}
+        {{ f.row('vendor.form.product_types'|trans({}, 'messages'), products|join(', ')) }}
+        {{ f.row('vendor.form.sku'|trans({}, 'messages'), a.skuRange|default('')) }}
+        {{ f.row('vendor.form.prep_label'|trans({}, 'messages'), a.prepTime is defined ? ('vendor.form.prep.' ~ a.prepTime)|trans({}, 'messages') : '') }}
+        {{ f.row('vendor.form.sales_points'|trans({}, 'messages'), points|join(', ')) }}
+        {{ f.row('vendor.form.own_delivery'|trans({}, 'messages'), a.ownDelivery is defined ? (a.ownDelivery ? yes : no) : '') }}
+        {{ f.row('vendor.form.stock_tool'|trans({}, 'messages'), a.stockTool|default('')) }}
+        {{ f.row('vendor.form.damage'|trans({}, 'messages'), a.damage is defined ? (a.damage ? yes : no) : '') }}
+        {{ f.row('vendor.form.proofs'|trans({}, 'messages'), proofs|join(', ')) }}
+        {{ f.row('vendor.form.expectations'|trans({}, 'messages'), a.expectations|default('')) }}
+    </dl>
+{% endif %}

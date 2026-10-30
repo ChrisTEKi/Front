@@ -1,11 +1,11 @@
-<section aria-label="Nos rayons spécialisés" class="space-y-4">
+<section aria-label="{{ 'home.rayons.aria'|trans }}" class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h3 class="text-base font-black tracking-tight text-black sm:text-xl">Nos Rayons Spécialisés</h3>
-            <p class="text-xs font-medium text-neutral-500">Chaque rayon dispose de sa propre boutique exclusive et de vendeurs vérifiés</p>
+            <h3 class="text-base font-black tracking-tight text-black sm:text-xl">{{ 'home.rayons.title'|trans }}</h3>
+            <p class="text-xs font-medium text-neutral-500">{{ 'home.rayons.subtitle'|trans }}</p>
         </div>
         <a href="{{ path('app_categories') }}" class="flex items-center gap-0.5 text-xs font-bold text-neutral-900 hover:text-gobuy-green">
-            <span>Tous les rayons</span>{{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4' }) }}
+            <span>{{ 'home.rayons.all'|trans }}</span>{{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4' }) }}
         </a>
     </div>
 
@@ -18,10 +18,10 @@
                 </span>
                 <div>
                     <h4 class="line-clamp-1 text-xs font-black text-black transition-colors group-hover:text-gobuy-green">{{ cat.name }}</h4>
-                    <p class="mt-0.5 text-[10px] font-medium text-neutral-500">Livraison 20–40 min</p>
+                    <p class="mt-0.5 text-[10px] font-medium text-neutral-500">{{ 'home.rayons.delivery'|trans }}</p>
                 </div>
                 <span class="flex items-center gap-1 text-[10px] font-bold text-gobuy-green transition-transform group-hover:translate-x-1">
-                    <span>Explorer</span>{{ ux_icon('tabler:arrow-right', { class: 'h-3 w-3' }) }}
+                    <span>{{ 'home.rayons.explore'|trans }}</span>{{ ux_icon('tabler:arrow-right', { class: 'h-3 w-3' }) }}
                 </span>
             </a>
         {% endfor %}

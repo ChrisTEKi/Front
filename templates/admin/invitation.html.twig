@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'admin' %}
+{% block title %}{{ 'invitation.title'|trans }} — GoBuy{% endblock %}
+{# Le jeton de l'invitation est dans l'URL : on empêche les moteurs de l'indexer. #}
+{% block stylesheets %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block body %}
+<div class="flex justify-center px-3 py-10 sm:py-16">
+    <div class="w-full max-w-md space-y-5 rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl">
+        <div class="flex items-center gap-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">{{ ux_icon('tabler:shield-check', {class: 'h-5 w-5'}) }}</span>
+            <div><h1 class="text-sm font-bold text-slate-900">{{ 'invitation.title'|trans }}</h1><p class="text-xs text-slate-500">{{ 'invitation.subtitle'|trans }}</p></div>
+        </div>
+
+        {# Le formulaire envoie un POST JSON vers la même adresse (voir assets/admin.js → initAdminInvitation). #}
+        <form data-admin-invitation action="{{ path('admin_invitation_submit', {userId: userId, token: token}) }}" method="post" data-network-error="{{ 'error.network'|trans }}" class="space-y-4" novalidate>
+            <div>
+                <label for="invitation-password" class="mb-1 block text-xs font-semibold text-slate-700">{{ 'invitation.password'|trans }}</label>
+                <div class="relative">{{ ux_icon('tabler:lock', {class: 'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400'}) }}
+                    <input id="invitation-password" type="password" name="password" required minlength="14" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs"></div>
+                <p class="mt-1 text-[11px] text-slate-400">{{ 'invitation.rules'|trans }}</p>
+            </div>
+            <div>
+                <label for="invitation-confirm" class="mb-1 block text-xs font-semibold text-slate-700">{{ 'invitation.confirm'|trans }}</label>
+                <div class="relative">{{ ux_icon('tabler:lock', {class: 'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400'}) }}
+                    <input id="invitation-confirm" type="password" name="passwordConfirm" required minlength="14" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs"></div>
+            </div>
+            <p data-dialog-error role="alert" class="hidden rounded-xl bg-rose-50 p-2 text-xs text-rose-700"></p>
+            <button type="submit" class="w-full rounded-2xl bg-indigo-600 py-3 text-xs font-semibold text-white shadow-md shadow-indigo-600/25 transition-all hover:bg-indigo-700 disabled:opacity-60">{{ 'invitation.submit'|trans }}</button>
+            <p class="text-center text-[11px] text-slate-400">{{ 'invitation.next_step'|trans }}</p>
+        </form>
+    </div>
+</div>
+{% endblock %}

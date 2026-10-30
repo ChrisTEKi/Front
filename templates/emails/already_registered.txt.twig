@@ -1,0 +1,13 @@
+{# Version texte brut de l'avis « adresse déjà inscrite ». #}
+{{ 'already_registered.title'|trans({}, 'emails') }}
+
+{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}
+
+{{ 'already_registered.intro'|trans({}, 'emails') }}
+
+{{ 'already_registered.login'|trans({}, 'emails') }} : {{ login_url }}
+{{ 'already_registered.reset'|trans({}, 'emails') }} : {{ reset_url }}
+
+{{ 'already_registered.ignore'|trans({}, 'emails') }}
+
+— {{ app_name }}

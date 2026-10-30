@@ -1,0 +1,115 @@
+# =============================================================================
+# rate_limiter.yaml — limites de débit anti force-brute / anti-spam / anti-fraude SMS.
+# Chaque limiteur devient un service injectable : `RateLimiterFactoryInterface $loginIpLimiter`
+# (le nom de l'argument = nom du limiteur en camelCase + "Limiter").
+#   sliding_window : fenêtre glissante (plus lisse)   fixed_window : compteur remis à zéro à chaque intervalle
+# =============================================================================
+framework:
+    lock: flock    # verrous nécessaires au rate-limiter (en production multi-serveurs : redis://…)
+
+    rate_limiter:
+        # --- Connexion ---------------------------------------------------------
+        # Par adresse IP : max 20 tentatives de connexion / 10 min.
+        login_ip:
+            policy: sliding_window
+            limit: 20
+            interval: '10 minutes'
+        # Par compte (e-mail) : max 5 échecs / 15 min, quelle que soit l'IP (bloque le force-brute distribué).
+        login_account:
+            policy: sliding_window
+            limit: 5
+            interval: '15 minutes'
+
+        # Retour Apple « form_post » : n'importe quel site peut y envoyer un formulaire ; chaque appel écrit dans le cache.
+        social_callback_ip:
+            policy: sliding_window
+            limit: 30
+            interval: '10 minutes'
+
+        # --- Inscription -------------------------------------------------------
+        register_ip:
+            policy: fixed_window
+            limit: 10
+            interval: '1 hour'
+
+        # --- Codes OTP : envoi (protège le budget SMS/e-mail, empêche le harcèlement) ---
+        otp_send_user:               # par utilisateur + finalité : 3 envois / 10 min
+            policy: sliding_window
+            limit: 3
+            interval: '10 minutes'
+        sms_send_ip:                 # par IP : 15 SMS / heure (un SMS coûte de l'argent : on borne l'abus depuis une même origine)
+            policy: sliding_window
+            limit: 15
+            interval: '1 hour'
+        sms_daily_user:              # par compte : 10 SMS / jour, toutes finalités confondues (anti « SMS pumping » via un compte jetable)
+            policy: fixed_window
+            limit: 10
+            interval: '1 day'
+        sms_daily_phone:             # par numéro de téléphone : 8 SMS / jour (anti "SMS pumping")
+            policy: fixed_window
+            limit: 8
+            interval: '1 day'
+
+        # --- Codes OTP : vérification (en plus du plafond de tentatives par code, en base) ---
+        otp_verify_ip:
+            policy: sliding_window
+            limit: 40
+            interval: '10 minutes'
+
+        # Échecs de saisie cumulés sur TOUS les codes d'une même finalité d'un compte : 15 / 6 h, puis blocage jusqu'à la fin
+        # de la fenêtre. Sans cela, demander un nouveau code remettrait le compteur « 5 essais » à zéro à chaque fois.
+        otp_fail_user:
+            policy: sliding_window
+            limit: 15
+            interval: '6 hours'
+
+        # --- Mot de passe oublié -----------------------------------------------
+        password_reset_email:
+            policy: fixed_window
+            limit: 3
+            interval: '1 hour'
+        password_reset_ip:
+            policy: fixed_window
+            limit: 10
+            interval: '1 hour'
+
+        # --- Actions sensibles de l'espace admin (création de compte, export…) --
+        admin_sensitive:
+            policy: sliding_window
+            limit: 20
+            interval: '10 minutes'
+
+        # --- Commandes : max 10 commandes / heure / client (anti-abus, anti-test de cartes volées) ---
+        order_place:
+            policy: sliding_window
+            limit: 10
+            interval: '1 hour'
+        # --- Réponses « mot de passe actuel » demandées pour les réglages sensibles du compte ---
+        account_sensitive:
+            policy: sliding_window
+            limit: 5
+            interval: '15 minutes'
+
+        # --- Changement d'e-mail / de téléphone : codes envoyés à la NOUVELLE destination ---
+        # Par adresse e-mail cible : 5 codes / jour, quel que soit le compte demandeur (empêche d'inonder la boîte d'un tiers).
+        contact_new_target:
+            policy: fixed_window
+            limit: 5
+            interval: '1 day'
+        # Avis « quelqu'un a voulu utiliser votre adresse » envoyé au titulaire d'un compte existant : 3 / jour par titulaire.
+        contact_change_notice:
+            policy: fixed_window
+            limit: 3
+            interval: '1 day'
+
+        # --- Photo de profil : 10 envois / heure / compte (le traitement d'une image coûte du processeur) ---
+        avatar_upload:
+            policy: sliding_window
+            limit: 10
+            interval: '1 hour'
+
+        # --- Formulaires du centre d'information (contact, réclamation, avis, candidature) : 5 envois / heure / IP ---
+        support_message_ip:
+            policy: sliding_window
+            limit: 5
+            interval: '1 hour'

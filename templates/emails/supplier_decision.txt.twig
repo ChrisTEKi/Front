@@ -1,0 +1,20 @@
+{# Version texte brut de la décision fournisseur. #}
+{% if approved %}
+{{ 'supplier_decision.approved.title'|trans({}, 'emails') }}
+
+{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}
+
+{{ 'supplier_decision.approved.body'|trans({}, 'emails') }}
+{{ dashboard_url }}
+{% else %}
+{{ 'supplier_decision.rejected.title'|trans({}, 'emails') }}
+
+{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}
+
+{{ 'supplier_decision.rejected.body'|trans({}, 'emails') }}
+{% if reason %}
+{{ reason }}
+{% endif %}
+{% endif %}
+
+— {{ app_name }}

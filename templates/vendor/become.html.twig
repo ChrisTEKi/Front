@@ -1,36 +1,37 @@
+{# Page « Devenir partenaire » : présentation du programme, simulateur de commissions, FAQ, puis assistant de candidature en 4 étapes.
+   - Tous les textes viennent de translations/messages.<langue>.yaml (clés « vendor.* ») : FR / EN / ES.
+   - L'assistant envoie ses réponses à l'inscription fournisseur (POST /auth/register/supplier, JSON) :
+       · les champs obligatoires du compte (nom, e-mail, téléphone, mot de passe, société, adresse) sont tous à l'ÉTAPE 1 ;
+       · les autres réponses partent dans l'objet « application » (colonne JSONB supplier_profiles.application) ;
+       · ensuite le visiteur vérifie son e-mail puis son téléphone (page /connexion), et un administrateur examine le dossier.
+   - Le comportement (étapes, simulateur, envoi) est dans assets/app.js → initVendorForm(). #}
 {% extends 'base.html.twig' %}
-{% block title %}Devenir Partenaire — GoBuy{% endblock %}
+{% block title %}{{ 'vendor.page_title'|trans }}{% endblock %}
 
 {% block body %}
-{% set commissionRates = [
-    {id: 'cat-alim', name: 'Alimentation & Épicerie', standard: 4, pro: 2, icon: '🌾'},
-    {id: 'cat-elec', name: 'Appareils & High-Tech', standard: 5, pro: 3, icon: '📱'},
-    {id: 'cat-enfants', name: 'Jouets & Enfants', standard: 6, pro: 4, icon: '🧸'},
-    {id: 'cat-electromenager', name: 'Électroménager', standard: 6, pro: 4, icon: '⚡'},
-    {id: 'cat-maison', name: 'Maison & Déco', standard: 7, pro: 5, icon: '🏠'},
-    {id: 'cat-sport', name: 'Sport & Loisirs', standard: 7, pro: 5, icon: '⚽'},
-    {id: 'cat-mode', name: 'Vêtements & Mode', standard: 8, pro: 6, icon: '👗'},
-    {id: 'cat-beaute', name: 'Beauté & Cosmétique', standard: 8, pro: 6, icon: '✨'},
-] %}
+{# `commissionRates` (barème par rayon) et `proRent` (loyer Pro) viennent de App\Supplier\CommissionSchedule via le contrôleur. #}
+{# Numéro WhatsApp du support : le bouton n'apparaît que s'il est configuré (GOBUY_SUPPORT_WHATSAPP). #}
+{% set whatsapp = support_whatsapp matches '/^\\+?[0-9]{8,15}$/' ? support_whatsapp|trim('+', 'left') : null %}
+{% set inputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2' %}
 
-<div data-vendor-page class="w-full">
+<div data-vendor-page data-vendor-endpoint="{{ path('auth_register_supplier') }}" data-vendor-next-url="{{ path('app_auth', {view: 'resume'}) }}" class="w-full">
 
-    {# ---------- Landing ---------- #}
+    {# ---------- Présentation ---------- #}
     <div data-vendor-view="landing" class="space-y-16 p-4 pb-20 sm:p-8 lg:p-12">
 
         <section class="relative overflow-hidden bg-gradient-to-b from-emerald-950 via-slate-900 to-slate-950 px-4 py-16 text-center text-white sm:px-8 sm:py-24">
             <div class="relative z-10 mx-auto max-w-5xl space-y-6">
-                <span class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-300">{{ ux_icon('tabler:sparkles', {class:'h-3.5 w-3.5 text-emerald-400'}) }}Programme Partenaire GoBuy Madagascar 2026</span>
-                <h1 class="mx-auto max-w-4xl text-3xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">Vendez vos produits à plus de <span class="text-emerald-400">150 000 clients</span> à Madagascar</h1>
-                <p class="mx-auto max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">Propulsez votre chiffre d'affaires sans contrainte technique ni risque d'impayé. GoBuy gère le site vitrine, les encaissements sécurisés par Mobile Money et les livraisons à Antananarivo et en provinces.</p>
+                <span class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-300">{{ ux_icon('tabler:sparkles', {class:'h-3.5 w-3.5 text-emerald-400'}) }}{{ 'vendor.hero.badge'|trans }}</span>
+                <h1 class="mx-auto max-w-4xl text-3xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">{{ 'vendor.hero.title_a'|trans }}<span class="text-emerald-400">{{ 'vendor.hero.title_hl'|trans }}</span>{{ 'vendor.hero.title_b'|trans }}</h1>
+                <p class="mx-auto max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">{{ 'vendor.hero.text'|trans }}</p>
                 <div class="flex flex-wrap items-center justify-center gap-4 pt-4">
-                    <button type="button" data-vendor-open-form="1" class="flex items-center gap-2 rounded-2xl bg-emerald-500 px-7 py-4 text-sm font-bold text-white shadow-xl shadow-emerald-500/30 transition-all hover:-translate-y-0.5 hover:bg-emerald-600">{{ ux_icon('tabler:sparkles', {class:'h-4 w-4'}) }}<span>Démarrer ma candidature</span>{{ ux_icon('tabler:arrow-right', {class:'h-4 w-4'}) }}</button>
-                    <button type="button" data-vendor-open-form="1" class="rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-sm font-bold text-white backdrop-blur-xs transition-all hover:bg-white/15">Je dépose mon dossier (2 min)</button>
-                    <a href="#simulateur-revenus" class="px-5 py-4 text-xs font-semibold text-slate-300 underline underline-offset-4 transition-colors hover:text-white">Calculer mes commissions &amp; gains</a>
+                    <button type="button" data-vendor-open-form="1" class="flex items-center gap-2 rounded-2xl bg-emerald-500 px-7 py-4 text-sm font-bold text-white shadow-xl shadow-emerald-500/30 transition-all hover:-translate-y-0.5 hover:bg-emerald-600">{{ ux_icon('tabler:sparkles', {class:'h-4 w-4'}) }}<span>{{ 'vendor.hero.cta_start'|trans }}</span>{{ ux_icon('tabler:arrow-right', {class:'h-4 w-4'}) }}</button>
+                    <button type="button" data-vendor-open-form="1" class="rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-sm font-bold text-white backdrop-blur-xs transition-all hover:bg-white/15">{{ 'vendor.hero.cta_file'|trans }}</button>
+                    <a href="#simulateur-revenus" class="px-5 py-4 text-xs font-semibold text-slate-300 underline underline-offset-4 transition-colors hover:text-white">{{ 'vendor.hero.cta_calc'|trans }}</a>
                 </div>
                 <div class="mx-auto grid max-w-4xl grid-cols-2 gap-4 pt-12 md:grid-cols-4">
-                    {% for m in [{v:'0 Ar', l:"Frais d'entrée ou création"}, {v:'48h max', l:'Reversement MVola / Banque'}, {v:'100%', l:'Paiements garantis sécurisés'}, {v:'24h / 48h', l:'Délai moyen de livraison'}] %}
-                        <div class="space-y-1 rounded-2xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-xs"><div class="text-2xl font-black text-emerald-400">{{ m.v }}</div><div class="text-xs font-medium text-slate-300">{{ m.l }}</div></div>
+                    {% for n in 1..4 %}
+                        <div class="space-y-1 rounded-2xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-xs"><div class="text-2xl font-black text-emerald-400">{{ ('vendor.hero.stat' ~ n ~ '_v')|trans }}</div><div class="text-xs font-medium text-slate-300">{{ ('vendor.hero.stat' ~ n ~ '_l')|trans }}</div></div>
                     {% endfor %}
                 </div>
             </div>
@@ -39,203 +40,198 @@
         <section class="relative z-10 mx-auto -mt-8 max-w-5xl px-4 sm:px-8">
             <div class="space-y-6 rounded-3xl border border-slate-200/90 bg-white p-6 shadow-xl sm:p-8">
                 <div class="mx-auto max-w-2xl space-y-2 text-center">
-                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800">Invitation Officielle Vendeurs</span>
-                    <h2 class="text-xl font-bold text-slate-900 sm:text-2xl">Rejoignez notre nouveau marketplace GoBuy</h2>
-                    <p class="text-xs leading-relaxed text-slate-600 sm:text-sm">Cette plateforme e-commerce innovante vous permettra de vendre directement à nos clients tout en bénéficiant d'un espace de gestion dédié et de solutions personnalisées.</p>
+                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800">{{ 'vendor.invite.badge'|trans }}</span>
+                    <h2 class="text-xl font-bold text-slate-900 sm:text-2xl">{{ 'vendor.invite.title'|trans }}</h2>
+                    <p class="text-xs leading-relaxed text-slate-600 sm:text-sm">{{ 'vendor.invite.text'|trans }}</p>
                 </div>
                 <div class="grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
-                    <div class="space-y-2 rounded-2xl border border-slate-200/80 bg-slate-50 p-4"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 font-bold text-emerald-800">{{ ux_icon('tabler:trending-up', {class:'h-5 w-5'}) }}</span><h3 class="text-sm font-bold text-slate-900">Un marché élargi</h3><p class="text-xs leading-relaxed text-slate-500">Accédez à une nouvelle clientèle et développez vos ventes sans frontières géographiques à Madagascar.</p></div>
-                    <div class="space-y-2 rounded-2xl border border-slate-200/80 bg-slate-50 p-4"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 font-bold text-blue-800">{{ ux_icon('tabler:file-spreadsheet', {class:'h-5 w-5'}) }}</span><h3 class="text-sm font-bold text-slate-900">Des outils de gestion efficaces</h3><p class="text-xs leading-relaxed text-slate-500">Pilotez vos produits, commandes, prix et stocks depuis une interface intuitive pensée pour votre commerce.</p></div>
-                    <div class="space-y-2 rounded-2xl border border-slate-200/80 bg-slate-50 p-4"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 font-bold text-purple-800">{{ ux_icon('tabler:shield-check', {class:'h-5 w-5'}) }}</span><h3 class="text-sm font-bold text-slate-900">Un support dédié</h3><p class="text-xs leading-relaxed text-slate-500">Profitez d'une assistance continue et d'un conseiller dédié pour garantir une expérience optimale.</p></div>
+                    <div class="space-y-2 rounded-2xl border border-slate-200/80 bg-slate-50 p-4"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 font-bold text-emerald-800">{{ ux_icon('tabler:trending-up', {class:'h-5 w-5'}) }}</span><h3 class="text-sm font-bold text-slate-900">{{ 'vendor.invite.c1_t'|trans }}</h3><p class="text-xs leading-relaxed text-slate-500">{{ 'vendor.invite.c1_d'|trans }}</p></div>
+                    <div class="space-y-2 rounded-2xl border border-slate-200/80 bg-slate-50 p-4"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 font-bold text-blue-800">{{ ux_icon('tabler:file-spreadsheet', {class:'h-5 w-5'}) }}</span><h3 class="text-sm font-bold text-slate-900">{{ 'vendor.invite.c2_t'|trans }}</h3><p class="text-xs leading-relaxed text-slate-500">{{ 'vendor.invite.c2_d'|trans }}</p></div>
+                    <div class="space-y-2 rounded-2xl border border-slate-200/80 bg-slate-50 p-4"><span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 font-bold text-purple-800">{{ ux_icon('tabler:shield-check', {class:'h-5 w-5'}) }}</span><h3 class="text-sm font-bold text-slate-900">{{ 'vendor.invite.c3_t'|trans }}</h3><p class="text-xs leading-relaxed text-slate-500">{{ 'vendor.invite.c3_d'|trans }}</p></div>
                 </div>
                 <div class="pt-2 text-center">
-                    <button type="button" data-vendor-open-form="1" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700"><span>Je dépose mon dossier maintenant</span>{{ ux_icon('tabler:arrow-right', {class:'h-4 w-4'}) }}</button>
+                    <button type="button" data-vendor-open-form="1" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700"><span>{{ 'vendor.invite.cta'|trans }}</span>{{ ux_icon('tabler:arrow-right', {class:'h-4 w-4'}) }}</button>
                 </div>
             </div>
         </section>
 
-        {# ---- Revenue simulator ---- #}
+        {# ---- Simulateur de revenus (calcul réel : voir initVendorForm) ---- #}
         <section id="simulateur-revenus" class="mx-auto max-w-4xl space-y-6 rounded-3xl border border-emerald-100 bg-mint p-6 sm:p-10">
             <div class="text-center">
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-black text-emerald-700">{{ ux_icon('tabler:percentage', {class:'h-3.5 w-3.5'}) }} Simulateur transparent</span>
-                <h2 class="mt-3 text-xl font-black text-slate-900 sm:text-2xl">Calculez vos revenus nets de vente</h2>
-                <p class="mt-1 text-xs text-slate-600 sm:text-sm">Découvrez combien vous touchez réellement selon votre chiffre d'affaires mensuel.</p>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-black text-emerald-700">{{ ux_icon('tabler:percentage', {class:'h-3.5 w-3.5'}) }} {{ 'vendor.sim.badge'|trans }}</span>
+                <h2 class="mt-3 text-xl font-black text-slate-900 sm:text-2xl">{{ 'vendor.sim.title'|trans }}</h2>
+                <p class="mt-1 text-xs text-slate-600 sm:text-sm">{{ 'vendor.sim.subtitle'|trans }}</p>
             </div>
 
-            <div data-simulator data-pro-rent="49000" class="space-y-5 rounded-2xl border border-white bg-white/70 p-5">
+            <div data-simulator data-pro-rent="{{ proRent }}" class="space-y-5 rounded-2xl border border-white bg-white/70 p-5">
                 <div>
-                    <label class="mb-2 block text-xs font-bold text-slate-700">Votre rayon d'activité :</label>
+                    <label class="mb-2 block text-xs font-bold text-slate-700">{{ 'vendor.sim.activity'|trans }}</label>
                     <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {% for c in commissionRates %}
-                            <button type="button" data-sim-category data-standard="{{ c.standard }}" data-pro="{{ c.pro }}" data-name="{{ c.name }}"
+                            <button type="button" data-sim-category data-standard="{{ c.standard }}" data-pro="{{ c.pro }}"
                                     class="rounded-xl border p-2.5 text-left text-xs transition-all {{ loop.first ? 'border-emerald-600 bg-emerald-50 font-bold text-emerald-950 shadow-xs' : 'border-slate-200 bg-slate-50/50 text-slate-600 hover:border-slate-300' }}">
-                                <span class="block text-base">{{ c.icon }}</span><span class="block font-semibold">{{ c.name }}</span><span class="block text-[10px] text-slate-400">{{ c.standard }}% com.</span>
+                                <span class="block text-base">{{ c.icon }}</span><span class="block font-semibold">{{ ('vendor.cat.' ~ c.key)|trans }}</span><span class="block text-[10px] text-slate-400">{{ 'vendor.sim.rate'|trans({'%rate%': c.standard}) }}</span>
                             </button>
                         {% endfor %}
                     </div>
                 </div>
                 <div>
-                    <div class="mb-1 flex items-center justify-between text-xs"><label class="font-bold text-slate-700">Chiffre d'affaires mensuel estimé :</label><span data-sim-revenue-label class="font-mono text-sm font-black text-emerald-700">3 000 000 Ar</span></div>
+                    <div class="mb-1 flex items-center justify-between text-xs"><label class="font-bold text-slate-700">{{ 'vendor.sim.revenue'|trans }}</label><span data-sim-revenue-label class="font-mono text-sm font-black text-emerald-700">{{ 3000000|format_number }} Ar</span></div>
                     <input type="range" min="500000" max="20000000" step="250000" value="3000000" data-sim-revenue class="w-full accent-emerald-600">
-                    <div class="mt-1 flex justify-between text-[10px] text-slate-400"><span>500 000 Ar</span><span>5 000 000 Ar</span><span>10 000 000 Ar</span><span>20 000 000 Ar</span></div>
+                    <div class="mt-1 flex justify-between text-[10px] text-slate-400"><span>{{ 500000|format_number }} Ar</span><span>{{ 5000000|format_number }} Ar</span><span>{{ 10000000|format_number }} Ar</span><span>{{ 20000000|format_number }} Ar</span></div>
                 </div>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div class="space-y-1.5 rounded-2xl border border-slate-200 bg-white p-4 text-xs">
-                        <div class="flex items-center justify-between font-bold text-slate-900"><span>Formule Standard (0 Ar)</span><span data-sim-standard-rate class="font-mono text-slate-500">4%</span></div>
-                        <div class="flex justify-between text-slate-500"><span>Commission GoBuy :</span><span data-sim-standard-commission class="font-mono text-red-500">-0 Ar</span></div>
-                        <div class="flex justify-between border-t border-slate-100 pt-1.5 font-black text-slate-950"><span>Net versé :</span><span data-sim-standard-net class="font-mono">0 Ar</span></div>
+                        <div class="flex items-center justify-between font-bold text-slate-900"><span>{{ 'vendor.sim.standard'|trans }}</span><span data-sim-standard-rate class="font-mono text-slate-500">{{ commissionRates[0].standard }}%</span></div>
+                        <div class="flex justify-between text-slate-500"><span>{{ 'vendor.sim.commission'|trans }}</span><span data-sim-standard-commission class="font-mono text-red-500">-0 Ar</span></div>
+                        <div class="flex justify-between border-t border-slate-100 pt-1.5 font-black text-slate-950"><span>{{ 'vendor.sim.net'|trans }}</span><span data-sim-standard-net class="font-mono">0 Ar</span></div>
                     </div>
                     <div class="relative space-y-1.5 rounded-2xl border-2 border-emerald-600 bg-white p-4 text-xs shadow-md">
-                        <span class="absolute -top-2.5 right-3 rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-black text-white">Recommandé</span>
-                        <div class="flex items-center justify-between font-bold text-slate-900"><span>Boutique Pro Certifiée</span><span data-sim-pro-rate class="font-mono text-emerald-600">2%</span></div>
-                        <div class="flex justify-between text-slate-500"><span>Commission GoBuy :</span><span data-sim-pro-commission class="font-mono text-red-500">-0 Ar</span></div>
-                        <div class="flex justify-between text-slate-500"><span>Loyer mensuel Pro :</span><span class="font-mono text-red-500">-49 000 Ar</span></div>
-                        <div class="flex justify-between border-t border-slate-100 pt-1.5 font-black text-slate-950"><span>Net versé :</span><span data-sim-pro-net class="font-mono">0 Ar</span></div>
+                        <span class="absolute -top-2.5 right-3 rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-black text-white">{{ 'vendor.sim.recommended'|trans }}</span>
+                        <div class="flex items-center justify-between font-bold text-slate-900"><span>{{ 'vendor.sim.pro'|trans }}</span><span data-sim-pro-rate class="font-mono text-emerald-600">{{ commissionRates[0].pro }}%</span></div>
+                        <div class="flex justify-between text-slate-500"><span>{{ 'vendor.sim.commission'|trans }}</span><span data-sim-pro-commission class="font-mono text-red-500">-0 Ar</span></div>
+                        <div class="flex justify-between text-slate-500"><span>{{ 'vendor.sim.rent'|trans }}</span><span class="font-mono text-red-500">-{{ proRent|format_number }} Ar</span></div>
+                        <div class="flex justify-between border-t border-slate-100 pt-1.5 font-black text-slate-950"><span>{{ 'vendor.sim.net'|trans }}</span><span data-sim-pro-net class="font-mono">0 Ar</span></div>
                         <div data-sim-pro-advantage class="hidden rounded-lg bg-emerald-50 px-2 py-1 text-center text-[10px] font-bold text-emerald-700"></div>
                     </div>
                 </div>
             </div>
             <div class="flex flex-col items-center justify-between gap-3 pt-1 text-center sm:flex-row sm:text-left">
-                <p class="text-[11px] text-slate-500">Aucun engagement de durée. Basculez d'une formule à l'autre à tout moment.</p>
-                <button type="button" data-vendor-open-form="1" class="shrink-0 rounded-full bg-black px-6 py-2.5 text-xs font-black text-white shadow-xs transition-colors hover:bg-neutral-800">Démarrer ma candidature</button>
+                <p class="text-[11px] text-slate-500">{{ 'vendor.sim.no_commit'|trans }}</p>
+                <button type="button" data-vendor-open-form="1" class="shrink-0 rounded-full bg-black px-6 py-2.5 text-xs font-black text-white shadow-xs transition-colors hover:bg-neutral-800">{{ 'vendor.sim.cta'|trans }}</button>
             </div>
         </section>
 
-        {# ---- Solidarity program ---- #}
+        {# ---- Programme de solidarité ---- #}
         <section class="mx-auto max-w-5xl space-y-6 rounded-3xl border border-amber-200 bg-[#FFF8EC] p-6 sm:p-10">
             <div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                 <div class="space-y-2">
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-black text-amber-700">{{ ux_icon('tabler:heart-handshake', {class:'h-3.5 w-3.5'}) }} Programme spécial relance &amp; solidarité</span>
-                    <h2 class="text-xl font-black text-slate-900 sm:text-2xl">Reconstruisons Ensemble 🤝</h2>
-                    <p class="max-w-xl text-xs text-slate-600 sm:text-sm">À vos côtés pour renaître et redonner vie à votre commerce après les pertes subies ou les dommages matériels.</p>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[11px] font-black text-amber-700">{{ ux_icon('tabler:heart-handshake', {class:'h-3.5 w-3.5'}) }} {{ 'vendor.solidarity.badge'|trans }}</span>
+                    <h2 class="text-xl font-black text-slate-900 sm:text-2xl">{{ 'vendor.solidarity.title'|trans }}</h2>
+                    <p class="max-w-xl text-xs text-slate-600 sm:text-sm">{{ 'vendor.solidarity.text'|trans }}</p>
                 </div>
-                <button type="button" data-vendor-open-form="4" data-vendor-solidarity="1" class="shrink-0 rounded-full bg-amber-500 px-5 py-2.5 text-xs font-black text-white shadow-xs transition-colors hover:bg-amber-600">Déposer un dossier de soutien 🤝</button>
+                <button type="button" data-vendor-open-form="4" data-vendor-solidarity="1" class="shrink-0 rounded-full bg-amber-500 px-5 py-2.5 text-xs font-black text-white shadow-xs transition-colors hover:bg-amber-600">{{ 'vendor.solidarity.cta'|trans }}</button>
             </div>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {% for a in [
-                    {icon: 'tabler:building-store', t: 'Boutique en ligne complète', d: 'Mise en ligne immédiate de votre vitrine avec gestion des fiches produits.'},
-                    {icon: 'tabler:currency-dollar', t: '100 000 Ar de publicité offerte', d: 'Campagnes sponsorisées sur les réseaux sociaux financées par GoBuy.'},
-                    {icon: 'tabler:package', t: '1 m³ de stockage gratuit', d: 'Entreposage sécurisé de vos marchandises dans nos hubs logistiques.'},
-                    {icon: 'tabler:user-check', t: 'Accompagnement commercial', d: 'Conseillers attitrés pour le service client et le suivi des commandes.'},
-                    {icon: 'tabler:trending-up', t: 'Visibilité sur les réseaux', d: 'Publications ciblées, bannières et pushs auprès de notre communauté active.'},
-                    {icon: 'tabler:award', t: 'Formation à votre back-office', d: 'Session de prise en main guidée pour vous et vos collaborateurs.'}
+                    {n: 1, icon: 'tabler:building-store'},
+                    {n: 2, icon: 'tabler:currency-dollar'},
+                    {n: 3, icon: 'tabler:package'},
+                    {n: 4, icon: 'tabler:user-check'},
+                    {n: 5, icon: 'tabler:trending-up'},
+                    {n: 6, icon: 'tabler:award'}
                 ] %}
-                    <div class="space-y-1.5 rounded-2xl border border-amber-100 bg-white p-4"><div class="flex items-center gap-2 font-bold text-slate-900">{{ ux_icon(a.icon, {class:'h-4 w-4 text-amber-600'}) }}<span class="text-xs">{{ a.t }}</span></div><p class="text-[11px] text-slate-500">{{ a.d }}</p></div>
+                    <div class="space-y-1.5 rounded-2xl border border-amber-100 bg-white p-4"><div class="flex items-center gap-2 font-bold text-slate-900">{{ ux_icon(a.icon, {class:'h-4 w-4 text-amber-600'}) }}<span class="text-xs">{{ ('vendor.solidarity.a' ~ a.n ~ '_t')|trans }}</span></div><p class="text-[11px] text-slate-500">{{ ('vendor.solidarity.a' ~ a.n ~ '_d')|trans }}</p></div>
                 {% endfor %}
             </div>
         </section>
 
         <section class="mx-auto max-w-3xl space-y-6 px-4 py-4 sm:px-8">
-            <div class="space-y-1 text-center"><h2 class="text-xl font-bold text-slate-900 sm:text-2xl">Questions fréquemment posées par les vendeurs</h2><p class="text-xs text-slate-500">Tout ce que vous devez savoir avant de commencer sur GoBuy</p></div>
+            <div class="space-y-1 text-center"><h2 class="text-xl font-bold text-slate-900 sm:text-2xl">{{ 'vendor.faq.title'|trans }}</h2><p class="text-xs text-slate-500">{{ 'vendor.faq.subtitle'|trans }}</p></div>
             <div class="space-y-3">
-                {% for qa in [
-                    {q: 'Quels sont les frais pour ouvrir ma boutique sur GoBuy ?', a: "Avec la Formule Standard, l'inscription est 100% gratuite et sans aucun loyer mensuel (0 Ar/mois). Vous ne payez une commission que lorsqu'une vente est effectivement conclue et livrée. Pour les marques établies souhaitant une visibilité maximale et une commission réduite de -2%, la Formule Pro est disponible à 49 000 Ar/mois sans engagement de durée."},
-                    {q: 'Comment et quand suis-je payé pour mes ventes ?', a: "Vos reversements sont effectués de façon bi-hebdomadaire (tous les mardis et vendredis). L'argent est transféré directement sur votre compte MVola, Orange Money, Airtel Money ou par virement bancaire (BNI, BMOI, Société Générale Madagascar, etc.), déduction faite de la commission convenue."},
-                    {q: 'Qui prend en charge la livraison aux clients ?', a: "GoBuy propose une solution logistique intégrée clé en main ! Dès qu'une commande est passée, vous recevez une notification pour préparer le colis. Un coursier GoBuy partenaire passe ensuite le récupérer à votre boutique ou domicile pour le livrer en 24h à Antananarivo ou en provinces. Si vous disposez déjà de votre propre flotte de livraison, vous pouvez également choisir de l'opérer directement."},
-                    {q: 'Faut-il obligatoirement une société immatriculée (NIF/STAT) ?', a: "Non ! Les particuliers, créateurs, agriculteurs et artisans indépendants peuvent vendre sous la formule Standard avec une simple pièce d'identité (CIN valide). Pour les entreprises et distributeurs officiels, la soumission du NIF et STAT permet d'obtenir le badge officiel « Entreprise Vérifiée »."},
-                    {q: 'En quoi consiste le programme « Reconstruisons Ensemble 🤝 » ?', a: "Ce programme spécial de relance solidaire a été conçu pour soutenir les commerces et entreprises ayant subi des pillages, des dégradations ou des sinistres matériels. GoBuy leur offre une boutique complète, 100 000 MGA de publicité offerte, 1 m³ de stockage gratuit, un accompagnement commercial, des campagnes réseaux sociaux et une formation personnalisée au back-office."}
-                ] %}
-                    <details class="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs"><summary class="flex cursor-pointer list-none items-center justify-between p-4 text-xs font-bold text-slate-800 marker:content-none group-open:text-emerald-700">{{ qa.q }}{{ ux_icon('tabler:chevron-down', {class:'h-4 w-4 text-slate-400 transition-transform group-open:rotate-180'}) }}</summary><p class="border-t border-slate-100 px-4 pb-4 pt-3 text-xs leading-relaxed text-slate-500">{{ qa.a }}</p></details>
+                {% for n in 1..5 %}
+                    <details class="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs"><summary class="flex cursor-pointer list-none items-center justify-between p-4 text-xs font-bold text-slate-800 marker:content-none group-open:text-emerald-700">{{ ('vendor.faq.q' ~ n)|trans }}{{ ux_icon('tabler:chevron-down', {class:'h-4 w-4 text-slate-400 transition-transform group-open:rotate-180'}) }}</summary><p class="border-t border-slate-100 px-4 pb-4 pt-3 text-xs leading-relaxed text-slate-500">{{ ('vendor.faq.a' ~ n)|trans }}</p></details>
                 {% endfor %}
             </div>
         </section>
 
         <div class="mx-auto max-w-4xl px-4 sm:px-8">
             <div class="flex flex-col items-center justify-between gap-6 rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:flex-row sm:p-8">
-                <div class="space-y-1 text-center sm:text-left"><h4 class="text-base font-bold">Prêt à vendre sur GoBuy Madagascar ?</h4><p class="text-xs text-slate-400">Déposez votre dossier en 2 minutes. Notre équipe vous accompagne à chaque étape.</p></div>
+                <div class="space-y-1 text-center sm:text-left"><h4 class="text-base font-bold">{{ 'vendor.final.title'|trans }}</h4><p class="text-xs text-slate-400">{{ 'vendor.final.text'|trans }}</p></div>
                 <div class="flex flex-wrap items-center justify-center gap-3">
-                    <button type="button" data-vendor-open-form="1" class="flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-600"><span>Démarrer</span>{{ ux_icon('tabler:arrow-right', {class:'h-4 w-4'}) }}</button>
-                    <a href="https://wa.me/261340000000" target="_blank" rel="noreferrer" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-xs font-bold text-white transition-colors hover:bg-white/15">WhatsApp Support</a>
+                    <button type="button" data-vendor-open-form="1" class="flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-600"><span>{{ 'vendor.final.start'|trans }}</span>{{ ux_icon('tabler:arrow-right', {class:'h-4 w-4'}) }}</button>
+                    {% if whatsapp %}
+                        <a href="https://wa.me/{{ whatsapp }}" target="_blank" rel="noreferrer" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-xs font-bold text-white transition-colors hover:bg-white/15">{{ 'vendor.final.whatsapp'|trans }}</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    {# ---------- 4-step application form ---------- #}
+    {# ---------- Assistant de candidature en 4 étapes ---------- #}
     <div data-vendor-view="form" class="hidden mx-auto max-w-2xl space-y-6 p-4 pb-20 sm:p-8">
-        <button type="button" data-vendor-back class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-black">{{ ux_icon('tabler:arrow-left', {class:'h-4 w-4'}) }}Retour à la présentation</button>
+        <button type="button" data-vendor-back class="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-black">{{ ux_icon('tabler:arrow-left', {class:'h-4 w-4'}) }}{{ 'vendor.form.back'|trans }}</button>
 
         <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
-            {% for s in [{n:1,l:'Identité'}, {n:2,l:'Activité'}, {n:3,l:'Logistique'}, {n:4,l:'Solidarité'}] %}
-                <div data-vendor-step-dot="{{ s.n }}" class="flex flex-1 flex-col items-center gap-1 {{ s.n == 1 ? 'text-slate-950' : '' }}">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-full {{ s.n == 1 ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500' }} font-mono text-[10px]">{{ s.n }}</span><span>{{ s.l }}</span>
+            {% for n in 1..4 %}
+                <div data-vendor-step-dot="{{ n }}" class="flex flex-1 flex-col items-center gap-1 {{ n == 1 ? 'text-slate-950' : '' }}">
+                    <span class="flex h-6 w-6 items-center justify-center rounded-full {{ n == 1 ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500' }} font-mono text-[10px]">{{ n }}</span><span>{{ ('vendor.form.step' ~ n)|trans }}</span>
                 </div>
             {% endfor %}
         </div>
 
-        <form data-vendor-form class="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            {# Step 1 #}
+        {# « novalidate » : la vérification des champs obligatoires se fait étape par étape en JavaScript (les champs d'une étape masquée ne bloquent pas l'envoi). #}
+        <form data-vendor-form novalidate class="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div data-vendor-error role="alert" class="hidden items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">{{ ux_icon('tabler:alert-circle', {class:'h-4 w-4 shrink-0'}) }}<span data-vendor-error-text></span></div>
+
+            {# Étape 1 : identité, contact, compte (tous les champs obligatoires du serveur sont ici) #}
             <div data-vendor-step="1" class="space-y-3">
-                <h3 class="text-sm font-black text-slate-900">Identification &amp; Contact</h3>
+                <h3 class="text-sm font-black text-slate-900">{{ 'vendor.form.s1_title'|trans }}</h3>
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div><label class="mb-1 block font-semibold text-slate-700">Nom du contact *</label><input type="text" required placeholder="RAKOTOMALALA Jean" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></div>
-                    <div><label class="mb-1 block font-semibold text-slate-700">Fonction / Rôle</label><input type="text" placeholder="Gérant, Responsable..." class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></div>
-                    <div><label class="mb-1 block font-semibold text-slate-700">E-mail professionnel *</label><input type="email" required placeholder="contact@entreprise.mg" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></div>
-                    <div><label class="mb-1 block font-semibold text-slate-700">Téléphone mobile *</label><input type="tel" required placeholder="034 12 345 67" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></div>
-                    <div><label class="mb-1 block font-semibold text-slate-700">Nom de l'entreprise / Boutique</label><input type="text" placeholder="StylePro Madagascar" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></div>
-                    <div><label class="mb-1 block font-semibold text-slate-700">Ville</label><input type="text" value="Antananarivo" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></div>
-                    <div><label class="mb-1 block font-semibold text-slate-700">Type d'activité</label>
-                        <select class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"><option>Particulier</option><option selected>Entreprise</option></select></div>
-                    <div><label class="mb-1 block font-semibold text-slate-700">NIF / STAT (si entreprise)</label><input type="text" placeholder="Numéro fiscal" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"></div>
+                    <div><label class="mb-1 block font-semibold text-slate-700">{{ 'vendor.form.contact_name'|trans }}</label><input type="text" name="fullName" required autocomplete="name" placeholder="{{ 'vendor.form.contact_name_ph'|trans }}" class="{{ inputClass }}"><p data-field-error="fullName" class="mt-1 hidden text-[11px] text-red-600"></p></div>
+                    <div><label class="mb-1 block font-semibold text-slate-700">{{ 'vendor.form.role'|trans }}</label><input type="text" name="contactRole" maxlength="100" placeholder="{{ 'vendor.form.role_ph'|trans }}" class="{{ inputClass }}"></div>
+                    <div><label class="mb-1 block font-semibold text-slate-700">{{ 'vendor.form.email'|trans }}</label><input type="email" name="email" required autocomplete="email" placeholder="{{ 'vendor.form.email_ph'|trans }}" class="{{ inputClass }}"><p data-field-error="email" class="mt-1 hidden text-[11px] text-red-600"></p></div>
+                    <div><label class="mb-1 block font-semibold text-slate-700">{{ 'vendor.form.phone'|trans }}</label><input type="tel" name="phone" required autocomplete="tel" placeholder="{{ 'vendor.form.phone_ph'|trans }}" class="{{ inputClass }}"><p data-field-error="phone" class="mt-1 hidden text-[11px] text-red-600"></p></div>
+                    <div><label class="mb-1 block font-semibold text-slate-700">{{ 'vendor.form.company'|trans }}</label><input type="text" name="companyName" required autocomplete="organization" placeholder="{{ 'vendor.form.company_ph'|trans }}" class="{{ inputClass }}"><p data-field-error="companyName" class="mt-1 hidden text-[11px] text-red-600"></p></div>
+                    <div><label class="mb-1 block font-semibold text-slate-700">{{ 'vendor.form.city'|trans }}</label><input type="text" name="city" maxlength="100" autocomplete="address-level2" placeholder="{{ 'vendor.form.city_ph'|trans }}" class="{{ inputClass }}"></div>
+                    <div class="col-span-2"><label class="mb-1 block font-semibold text-slate-700">{{ 'vendor.form.address'|trans }}</label><input type="text" name="companyAddress" required autocomplete="street-address" placeholder="{{ 'vendor.form.address_ph'|trans }}" class="{{ inputClass }}"><p data-field-error="companyAddress" class="mt-1 hidden text-[11px] text-red-600"></p></div>
+                    <div class="col-span-2"><label class="mb-1 block font-semibold text-slate-700">{{ 'auth.password_required'|trans }}</label><input type="password" name="password" required autocomplete="new-password" placeholder="{{ 'auth.password_placeholder_new'|trans }}" class="{{ inputClass }}"><p data-field-error="password" class="mt-1 hidden text-[11px] text-red-600"></p></div>
+                    <div><label class="mb-1 block font-semibold text-slate-700">{{ 'vendor.form.activity_type'|trans }}</label>
+                        <select name="activityType" class="{{ inputClass }}"><option value="individual">{{ 'vendor.form.activity.individual'|trans }}</option><option value="company" selected>{{ 'vendor.form.activity.company'|trans }}</option></select></div>
+                    <div><label class="mb-1 block font-semibold text-slate-700">{{ 'vendor.form.tax_id'|trans }}</label><input type="text" name="taxId" maxlength="50" placeholder="{{ 'vendor.form.tax_id_ph'|trans }}" class="{{ inputClass }}"></div>
                 </div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Rayon principal</label>
-                    <select class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">{% for c in commissionRates %}<option>{{ c.name }}</option>{% endfor %}</select></div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Formule souhaitée</label>
-                    <div class="grid grid-cols-2 gap-2 text-xs"><label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-2.5"><input type="radio" name="plan" checked><span>Standard (0 Ar)</span></label><label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-2.5"><input type="radio" name="plan"><span>Pro (49 000 Ar/mois)</span></label></div></div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Présentation de votre activité</label><textarea rows="2" placeholder="Décrivez vos produits, marques, garanties..." class="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"></textarea></div>
+                <p class="text-[11px] text-slate-400">{{ 'vendor.form.phone_hint'|trans }}</p>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.category'|trans }}</label>
+                    <select name="mainCategory" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">{% for c in commissionRates %}<option value="{{ c.id }}">{{ ('vendor.cat.' ~ c.key)|trans }}</option>{% endfor %}</select></div>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.plan_label'|trans }}</label>
+                    <div class="grid grid-cols-2 gap-2 text-xs"><label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-2.5"><input type="radio" name="plan" value="standard" checked><span>{{ 'vendor.form.plan.standard'|trans }}</span></label><label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-2.5"><input type="radio" name="plan" value="pro"><span>{{ 'vendor.form.plan.pro'|trans }}</span></label></div></div>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.description'|trans }}</label><textarea rows="2" name="companyDescription" maxlength="1000" placeholder="{{ 'vendor.form.description_ph'|trans }}" class="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"></textarea><p data-field-error="companyDescription" class="mt-1 hidden text-[11px] text-red-600"></p></div>
             </div>
 
-            {# Step 2 #}
+            {# Étape 2 : activité et produits #}
             <div data-vendor-step="2" class="hidden space-y-3">
-                <h3 class="text-sm font-black text-slate-900">Activité &amp; Produits</h3>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Secteur d'activité</label><input type="text" value="Technologie de l'information" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"></div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Types de produits proposés</label>
-                    <div class="flex flex-wrap gap-2">{% for t in ['Électronique','Mode','Épicerie','Maison','Beauté','Sport','Jouets'] %}<label class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-[11px]"><input type="checkbox"><span>{{ t }}</span></label>{% endfor %}</div></div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Nombre de références (SKU) estimé</label>
-                    <select class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"><option>1–10</option><option>11–50</option><option>51–200</option><option>200+</option></select></div>
+                <h3 class="text-sm font-black text-slate-900">{{ 'vendor.form.s2_title'|trans }}</h3>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.sector'|trans }}</label><input type="text" name="sector" maxlength="100" placeholder="{{ 'vendor.form.sector_ph'|trans }}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"></div>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.product_types'|trans }}</label>
+                    <div class="flex flex-wrap gap-2">{% for code in ['electronics', 'fashion', 'grocery', 'home', 'beauty', 'sport', 'toys'] %}<label class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-[11px]"><input type="checkbox" name="productTypes" value="{{ code }}"><span>{{ ('vendor.form.product.' ~ code)|trans }}</span></label>{% endfor %}</div></div>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.sku'|trans }}</label>
+                    <select name="skuRange" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"><option value="1-10">1–10</option><option value="11-50">11–50</option><option value="51-200">51–200</option><option value="200+">200+</option></select></div>
             </div>
 
-            {# Step 3 #}
+            {# Étape 3 : logistique et outils #}
             <div data-vendor-step="3" class="hidden space-y-3">
-                <h3 class="text-sm font-black text-slate-900">Logistique &amp; Outils</h3>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Délai de préparation moyen</label>
-                    <select class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"><option>Moins de 2h ouvrées</option><option>Le jour même</option><option>24h à 48h</option></select></div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Point(s) de vente</label>
-                    <div class="flex flex-wrap gap-2">{% for t in ['Boutique physique','Entrepôt','Vente en ligne uniquement','Marché / Étal'] %}<label class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-[11px]"><input type="checkbox"><span>{{ t }}</span></label>{% endfor %}</div></div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Disposez-vous de votre propre livraison ?</label>
-                    <div class="flex gap-2 text-xs"><label class="flex items-center gap-1.5"><input type="radio" name="hasOwnDelivery" checked><span>Oui</span></label><label class="flex items-center gap-1.5"><input type="radio" name="hasOwnDelivery"><span>Non, j'utiliserai les coursiers GoBuy</span></label></div></div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Outil de gestion des stocks utilisé</label><input type="text" placeholder="Ex: Sage, Excel, cahier papier..." class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"></div>
+                <h3 class="text-sm font-black text-slate-900">{{ 'vendor.form.s3_title'|trans }}</h3>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.prep_label'|trans }}</label>
+                    <select name="prepTime" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">{% for code in ['under_2h', 'same_day', '24_48h'] %}<option value="{{ code }}">{{ ('vendor.form.prep.' ~ code)|trans }}</option>{% endfor %}</select></div>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.sales_points'|trans }}</label>
+                    <div class="flex flex-wrap gap-2">{% for code in ['shop', 'warehouse', 'online_only', 'market'] %}<label class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-[11px]"><input type="checkbox" name="salesPoints" value="{{ code }}"><span>{{ ('vendor.form.sales.' ~ code)|trans }}</span></label>{% endfor %}</div></div>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.own_delivery'|trans }}</label>
+                    <div class="flex gap-2 text-xs"><label class="flex items-center gap-1.5"><input type="radio" name="ownDelivery" value="yes" checked><span>{{ 'vendor.form.own_delivery_yes'|trans }}</span></label><label class="flex items-center gap-1.5"><input type="radio" name="ownDelivery" value="no"><span>{{ 'vendor.form.own_delivery_no'|trans }}</span></label></div></div>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.stock_tool'|trans }}</label><input type="text" name="stockTool" maxlength="100" placeholder="{{ 'vendor.form.stock_tool_ph'|trans }}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"></div>
             </div>
 
-            {# Step 4 #}
+            {# Étape 4 : solidarité et attentes #}
             <div data-vendor-step="4" class="hidden space-y-3">
-                <h3 class="text-sm font-black text-slate-900">Solidarité &amp; Attentes</h3>
-                <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Cette section permet d'orienter les commerçants sinistrés vers le programme <strong>Reconstruisons Ensemble 🤝</strong>.</div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Avez-vous subi un pillage ou des dommages matériels ?</label>
-                    <div class="flex gap-2 text-xs"><label class="flex items-center gap-1.5"><input type="radio" name="damage" data-damage-yes><span>Oui</span></label><label class="flex items-center gap-1.5"><input type="radio" name="damage" data-damage-no checked><span>Non</span></label></div></div>
+                <h3 class="text-sm font-black text-slate-900">{{ 'vendor.form.s4_title'|trans }}</h3>
+                <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">{{ 'vendor.form.s4_notice'|trans|raw }}</div>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.damage'|trans }}</label>
+                    <div class="flex gap-2 text-xs"><label class="flex items-center gap-1.5"><input type="radio" name="damage" value="yes" data-damage-yes><span>{{ 'vendor.form.answer_yes'|trans }}</span></label><label class="flex items-center gap-1.5"><input type="radio" name="damage" value="no" data-damage-no checked><span>{{ 'vendor.form.answer_no'|trans }}</span></label></div></div>
                 <div data-damage-fields class="hidden space-y-2">
-                    <label class="mb-1 block text-xs font-semibold text-slate-700">Justificatifs disponibles</label>
-                    <div class="flex flex-wrap gap-2">{% for t in ['Photos des dommages','Dépôt de plainte','Constat / rapport'] %}<label class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-[11px]"><input type="checkbox"><span>{{ t }}</span></label>{% endfor %}</div>
+                    <label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.proofs'|trans }}</label>
+                    <div class="flex flex-wrap gap-2">{% for code in ['photos', 'police_report', 'assessment'] %}<label class="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-[11px]"><input type="checkbox" name="proofs" value="{{ code }}"><span>{{ ('vendor.form.proof.' ~ code)|trans }}</span></label>{% endfor %}</div>
                 </div>
-                <div><label class="mb-1 block text-xs font-semibold text-slate-700">Vos attentes vis-à-vis de GoBuy</label><textarea rows="3" placeholder="Qu'attendez-vous de votre partenariat avec GoBuy ?" class="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"></textarea></div>
+                <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.expectations'|trans }}</label><textarea rows="3" name="expectations" maxlength="1000" placeholder="{{ 'vendor.form.expectations_ph'|trans }}" class="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"></textarea></div>
+                <p class="text-[11px] leading-relaxed text-slate-400">{{ 'vendor.form.next_info'|trans }}</p>
             </div>
 
             <div class="flex items-center justify-between border-t border-slate-100 pt-4">
-                <button type="button" data-vendor-prev class="hidden text-xs font-bold text-slate-500 hover:text-black">← Précédent</button>
+                <button type="button" data-vendor-prev class="hidden text-xs font-bold text-slate-500 hover:text-black">{{ 'vendor.form.prev'|trans }}</button>
                 <div class="ml-auto flex gap-2">
-                    <button type="button" data-vendor-next class="rounded-full bg-slate-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Suivant →</button>
-                    <button type="submit" data-vendor-submit class="hidden rounded-full bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-700">Envoyer mon dossier</button>
+                    <button type="button" data-vendor-next class="rounded-full bg-slate-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800">{{ 'vendor.form.next'|trans }}</button>
+                    <button type="submit" data-vendor-submit class="hidden rounded-full bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60">{{ 'vendor.form.submit'|trans }}</button>
                 </div>
             </div>
         </form>
-    </div>
-
-    {# ---------- Success ---------- #}
-    <div data-vendor-view="success" class="hidden mx-auto max-w-md space-y-4 p-10 text-center">
-        <span class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">{{ ux_icon('tabler:circle-check', {class:'h-8 w-8'}) }}</span>
-        <h2 class="text-lg font-black text-slate-900">Dossier envoyé avec succès !</h2>
-        <p class="text-xs text-slate-500">Notre équipe examine votre candidature et revient vers vous sous 48h ouvrées à l'adresse e-mail indiquée.</p>
-        <a href="{{ path('app_home') }}" class="inline-block rounded-2xl bg-black px-5 py-2.5 text-xs font-bold text-white hover:bg-neutral-800">Retour à l'accueil</a>
     </div>
 </div>
 {% endblock %}

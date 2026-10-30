@@ -1,39 +1,74 @@
+# =============================================================================
+# security.yaml — authentification, hachage des mots de passe, contrôle d'accès.
+#
+# PRINCIPE DE CONNEXION GOBUY
+# ---------------------------
+# Un utilisateur n'est "connecté" (jeton Symfony créé) qu'une fois TOUTES les étapes exigées franchies :
+# mot de passe correct → e-mail/téléphone vérifié → (2FA si activée) → éventuellement restauration du compte.
+# Ces étapes sont pilotées par App\Auth\LoginFlow (état dans la session). Le dernier geste est un appel
+# à Security::login() avec l'authentificateur App\Security\FlowAuthenticator ci-dessous.
+# Résultat : aucun utilisateur « à moitié connecté » n'existe jamais côté Symfony.
+# =============================================================================
 security:
-    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    # --- Hachage des mots de passe : Argon2id (via libsodium), lauréat du concours Password Hashing Competition.
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+            algorithm: argon2id
+            time_cost: 4         # nombre d'itérations
+            memory_cost: 65536   # 64 Mio de mémoire par hachage (rend les attaques GPU très coûteuses)
 
-    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    # --- D'où viennent les utilisateurs : la table `users`, retrouvés par e-mail.
     providers:
-        users_in_memory: { memory: null }
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+
+    # --- Hiérarchie des rôles : un Super Admin possède aussi tous les droits d'un Admin.
+    role_hierarchy:
+        ROLE_SUPER_ADMIN: [ROLE_ADMIN]
 
     firewalls:
+        # Outils de développement et fichiers statiques : pas de sécurité (sinon la barre de debug est bloquée).
         dev:
-            # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
+
         main:
-            lazy: true
-            provider: users_in_memory
+            lazy: true                    # la session n'est lue que si une page a besoin de l'utilisateur
+            provider: app_user_provider
+            custom_authenticators:
+                - App\Security\FlowAuthenticator
+            # Dernier garde-fou (compte suspendu / non vérifié), indépendant de LoginFlow : voir App\Security\UserChecker.
+            user_checker: App\Security\UserChecker
+            # Que faire quand un visiteur NON connecté ouvre une page protégée : le rediriger vers /connexion.
+            entry_point: App\Security\LoginEntryPoint
+            # Déconnexion : lien généré par {{ logout_path() }} (contient un jeton CSRF → pas de déconnexion forcée par un tiers).
+            logout:
+                path: app_logout
+                target: app_home
+                enable_csrf: true
 
-            # Activate different ways to authenticate:
-            # https://symfony.com/doc/current/security.html#the-firewall
-
-            # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
-
-    # Note: Only the *first* matching rule is applied
+    # --- Contrôle d'accès par URL (la première règle qui correspond s'applique).
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        # L'invitation d'un nouvel admin est ouverte (le jeton du lien fait foi) : elle doit précéder la règle /admin.
+        - { path: '^/admin/invitation', roles: PUBLIC_ACCESS }
+        # Tout /admin exige d'être administrateur (les droits fins sont vérifiés dans chaque contrôleur).
+        - { path: '^/admin', roles: ROLE_ADMIN }
+        # Espace fournisseur.
+        - { path: '^/fournisseur', roles: ROLE_SUPPLIER }
+        # Espace client : compte, commande, paiement, suivi. (Le catalogue, le panier et les pages d'info restent PUBLICS.)
+        - { path: '^/commande', roles: ROLE_CLIENT }
+        - { path: '^/paiement', roles: ROLE_CLIENT }
+        - { path: '^/compte', roles: ROLE_USER }
+        - { path: '^/profil', roles: ROLE_USER }   # photo de profil de la personne connectée
+        - { path: '^/suivi', roles: ROLE_USER }
 
 when@test:
     security:
         password_hashers:
-            # Password hashers are resource-intensive by design to ensure security.
-            # In tests, it's safe to reduce their cost to improve performance.
+            # Coûts minimaux pour que les tests restent rapides (NE JAMAIS faire ça en production).
             Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
-                algorithm: auto
-                cost: 4 # Lowest possible value for bcrypt
-                time_cost: 3 # Lowest possible value for argon
-                memory_cost: 10 # Lowest possible value for argon
+                algorithm: argon2id
+                time_cost: 3
+                memory_cost: 10

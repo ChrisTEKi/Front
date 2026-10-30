@@ -1,0 +1,4 @@
+{# Page 403 (accès refusé) : même habillage que le site. #}
+{% extends 'base.html.twig' %}
+{% block title %}{{ 'error.forbidden.title'|trans }} — GoBuy{% endblock %}
+{% block body %}{{ include('@Twig/Exception/_error_card.html.twig', {kind: 'forbidden', code: 403}) }}{% endblock %}

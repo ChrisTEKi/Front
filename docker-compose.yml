@@ -1,0 +1,33 @@
+# =============================================================================
+# docker-compose.yml — services de DÉVELOPPEMENT uniquement.
+#   docker compose up -d
+#   php bin/console doctrine:migrations:migrate
+# =============================================================================
+services:
+  # Base de données PostgreSQL 16 (la même version que DATABASE_URL dans .env).
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: gobuy
+      POSTGRES_USER: gobuy
+      POSTGRES_PASSWORD: gobuy          # ⚠ dev uniquement
+    ports:
+      - "5432:5432"
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gobuy -d gobuy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Faux serveur SMTP : capte tous les e-mails (OTP, confirmations) sans rien envoyer.
+  # Interface web : http://localhost:8025
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # interface web
+
+volumes:
+  database_data:

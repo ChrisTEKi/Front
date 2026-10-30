@@ -1,2 +1,11 @@
+# =============================================================================
+# symfonycasts_tailwind.yaml — compilation de Tailwind CSS (sans Node.js).
+# Le binaire officiel de Tailwind est téléchargé une fois au premier « php bin/console tailwind:build »
+# (puis réutilisé). Fixer la version rend les builds reproductibles d'une machine à l'autre.
+#   Développement : php bin/console tailwind:build --watch
+#   Production    : php bin/console tailwind:build --minify && php bin/console asset-map:compile
+# =============================================================================
 symfonycasts_tailwind:
-    binary_version: v4.3.3
+    input_css:
+        - '%kernel.project_dir%/assets/styles/app.css'
+    binary_version: 'v4.2.4'

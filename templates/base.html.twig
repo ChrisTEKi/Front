@@ -1,16 +1,23 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ app.request.locale|default('fr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}GoBuy — Livraison express à Madagascar{% endblock %}</title>
+    {# Jeton CSRF lu par assets/app.js et envoyé dans l'en-tête X-CSRF-Token de chaque appel JSON POST (voir ApiCsrfSubscriber). #}
+    <meta name="csrf-token" content="{{ csrf_token('auth') }}">
+    <title>{% block title %}{{ 'meta.title'|trans }}{% endblock %}</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22black%22/><text x=%2216%22 y=%2272%22 font-size=%2260%22 font-weight=%22900%22 fill=%22%2306C167%22>G</text><text x=%2258%22 y=%2272%22 font-size=%2244%22 font-weight=%22900%22 fill=%22white%22>B</text></svg>">
+    {# Dictionnaire des textes du JavaScript (domaine « js »), dans la langue de la requête : lu par assets/i18n.js. Option 271 = JSON_HEX_TAG|HEX_AMP|HEX_APOS|HEX_QUOT|UNESCAPED_UNICODE : aucun texte ne peut fermer la balise script. #}
+    <script type="application/json" id="gb-i18n">{{ js_dictionary()|json_encode(271)|raw }}</script>
     {% block stylesheets %}{% endblock %}
-    {% block importmap %}
-        {{ importmap('app') }}
-    {% endblock %}
+    {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
-<body class="flex min-h-screen w-full flex-col bg-white font-sans text-gobuy-black antialiased selection:bg-gobuy-green selection:text-white">
+<body data-delivery-fee="{{ delivery_fee(1) }}" class="flex min-h-screen w-full flex-col bg-white font-sans text-gobuy-black antialiased selection:bg-gobuy-green selection:text-white">
+    {# Icônes réutilisées par le JavaScript (panier) : il les copie au lieu de dessiner des symboles à la main. #}
+    <template data-icon="plus">{{ ux_icon('tabler:plus') }}</template>
+    <template data-icon="minus">{{ ux_icon('tabler:minus') }}</template>
+    <template data-icon="x">{{ ux_icon('tabler:x') }}</template>
+
     {{ include('partials/_header.html.twig') }}
 
     <main class="flex-1 pb-24 sm:pb-16">
@@ -22,16 +29,13 @@
 
     {# ---- Overlays: drawers & modals (opened via data-open-modal / data-drawer-toggle) ---- #}
     {{ include('partials/_cart_drawer.html.twig') }}
-    {{ include('partials/_auth_modal.html.twig') }}
+    {# La page /connexion affiche déjà le formulaire : pas de seconde copie (cachée) dans une fenêtre. #}
+    {% block auth_modal %}{{ include('partials/_auth_modal.html.twig') }}{% endblock %}
     {{ include('partials/_onboarding_modal.html.twig') }}
     {{ include('partials/_how_it_works_modal.html.twig') }}
-    {{ include('partials/_notification_center_modal.html.twig') }}
-    {{ include('partials/_quick_tracking_modal.html.twig') }}
     {{ include('partials/_company_info_modal.html.twig') }}
     {{ include('partials/_feedback_drawer.html.twig') }}
-    {{ include('partials/_symfony_inspector_modal.html.twig') }}
 
     {% block javascripts %}{% endblock %}
-
 </body>
 </html>

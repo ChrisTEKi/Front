@@ -1,0 +1,3 @@
+# Symfony authentication errors (EN).
+account_not_active: "This account is not active."
+account_not_verified: "Please verify your email or phone first."

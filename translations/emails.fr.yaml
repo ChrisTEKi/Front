@@ -1,0 +1,124 @@
+# Contenu des e-mails et SMS (FR). %name%, %minutes%, %days%, %code% sont remplacés à l'envoi.
+greeting: "Bonjour %name%,"
+layout:
+    footer: "Vous recevez cet e-mail car une action a été effectuée avec votre adresse sur GoBuy. Ceci est un message automatique : merci de ne pas y répondre."
+sms:
+    otp: "GoBuy : votre code est %code%. Valable %minutes% min. Ne le communiquez à personne."
+otp:
+    validity: "Ce code est valable %minutes% minutes et ne peut être utilisé qu'une seule fois."
+    never_share: "Ne communiquez jamais ce code, même à une personne se présentant comme un conseiller GoBuy."
+    ignore: "Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet e-mail : votre compte reste protégé."
+    email_verification:
+        subject: "GoBuy : confirmez votre adresse e-mail"
+        title: "Confirmez votre adresse e-mail"
+        intro: "Saisissez ce code dans GoBuy pour vérifier votre adresse e-mail :"
+    phone_verification:
+        subject: "GoBuy : confirmez votre numéro de téléphone"
+        title: "Confirmez votre numéro de téléphone"
+        intro: "Saisissez ce code dans GoBuy pour vérifier votre numéro :"
+    two_factor:
+        subject: "GoBuy : votre code de connexion"
+        title: "Votre code de connexion"
+        intro: "Quelqu'un tente de se connecter à votre compte GoBuy. Pour confirmer que c'est bien vous, saisissez ce code :"
+    password_reset:
+        subject: "GoBuy : réinitialisation de votre mot de passe"
+        title: "Réinitialisation du mot de passe"
+        intro: "Vous avez demandé à réinitialiser votre mot de passe. Saisissez ce code, puis choisissez un nouveau mot de passe :"
+    payment_phone:
+        subject: "GoBuy : confirmez votre numéro de paiement"
+        title: "Confirmez votre numéro de paiement"
+        intro: "Saisissez ce code pour confirmer votre numéro Mobile Money :"
+    account_deletion:
+        subject: "GoBuy : confirmez la suppression de votre compte"
+        title: "Confirmez la suppression de votre compte"
+        intro: "Pour confirmer la suppression de votre compte, saisissez ce code :"
+    account_security:
+        subject: "GoBuy : confirmez cette modification de sécurité"
+        title: "Confirmez cette modification"
+        intro: "Pour confirmer la modification des réglages de sécurité de votre compte, saisissez ce code :"
+    contact_change_old:
+        subject: "GoBuy : confirmez le changement de vos coordonnées"
+        title: "Confirmez le changement de vos coordonnées"
+        intro: "Vous avez demandé à modifier votre adresse e-mail ou votre numéro de téléphone. Pour confirmer que c'est bien vous, saisissez ce code dans GoBuy :"
+    contact_change_new:
+        subject: "GoBuy : confirmez votre nouvelle adresse e-mail"
+        title: "Confirmez votre nouvelle adresse e-mail"
+        intro: "Cette adresse a été choisie comme nouvelle adresse de connexion d'un compte GoBuy. Pour la confirmer, saisissez ce code dans GoBuy :"
+admin_invitation:
+    subject: "GoBuy : invitation à rejoindre l'équipe d'administration"
+    title: "Vous êtes invité(e) à administrer GoBuy"
+    intro: "Un compte administrateur a été créé pour vous. Cliquez sur le bouton ci-dessous pour choisir votre mot de passe et activer votre accès."
+    button: "Activer mon compte"
+    validity: "Ce lien est valable %days% jours et ne peut être utilisé qu'une seule fois."
+    fallback: "Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :"
+    ignore: "Si vous n'attendiez pas cette invitation, ignorez cet e-mail : aucun accès ne sera ouvert."
+already_registered:
+    subject: "GoBuy : vous avez déjà un compte"
+    title: "Vous avez déjà un compte GoBuy"
+    intro: "Quelqu'un a tenté de créer un compte GoBuy avec cette adresse e-mail, mais un compte existe déjà. Vous pouvez simplement vous connecter, ou réinitialiser votre mot de passe si vous l'avez oublié."
+    login: "Me connecter"
+    reset: "Mot de passe oublié ?"
+    ignore: "Si ce n'était pas vous, vous pouvez ignorer cet e-mail : votre compte n'a pas été modifié."
+notice:
+    not_you: "Si vous n'êtes pas à l'origine de cette action, réinitialisez immédiatement votre mot de passe et contactez le support GoBuy."
+    password_changed:
+        subject: "GoBuy : votre mot de passe a été modifié"
+        title: "Mot de passe modifié"
+        body: "Le mot de passe de votre compte GoBuy vient d'être modifié. Vous avez été déconnecté(e) de vos autres appareils."
+    two_factor_changed:
+        subject: "GoBuy : double authentification modifiée"
+        title: "Double authentification modifiée"
+        body: "Les réglages de la double authentification de votre compte GoBuy viennent d'être modifiés."
+    deletion_scheduled:
+        subject: "GoBuy : suppression de votre compte programmée"
+        title: "Suppression de votre compte programmée"
+        body: "Votre compte sera définitivement supprimé le %date%. D'ici là, il suffit de vous reconnecter et de choisir « Restaurer mon compte » pour annuler la suppression."
+    account_restored:
+        subject: "GoBuy : votre compte a été restauré"
+        title: "Compte restauré"
+        body: "La suppression de votre compte GoBuy a été annulée : votre compte est de nouveau actif."
+    phone_changed:
+        subject: "GoBuy : votre numéro de téléphone a été modifié"
+        title: "Numéro de téléphone modifié"
+        body: "Le numéro de téléphone de votre compte GoBuy vient d'être modifié. Le nouveau numéro doit être vérifié par SMS, et la double authentification par SMS a été désactivée."
+    account_purged:
+        subject: "GoBuy : votre compte a été définitivement supprimé"
+        title: "Compte définitivement supprimé"
+        body: "Conformément à votre demande, votre compte GoBuy et vos données personnelles ont été définitivement effacés. Vos commandes passées sont conservées sans aucune information vous concernant, pour la comptabilité. Ceci est notre dernier message."
+    email_changed:
+        subject: "GoBuy : l'adresse e-mail de votre compte a changé"
+        title: "Adresse e-mail modifiée"
+        body: "L'adresse e-mail de connexion de votre compte GoBuy vient d'être remplacée par %detail%. Vous ne recevrez plus de messages de GoBuy à cette adresse, et vous avez été déconnecté de vos autres appareils."
+    email_in_use:
+        subject: "GoBuy : quelqu'un a voulu utiliser votre adresse"
+        title: "Votre adresse a été saisie sur un autre compte"
+        body: "Quelqu'un a demandé à utiliser votre adresse comme adresse de connexion d'un autre compte GoBuy. Comme elle est déjà rattachée à votre compte, rien n'a été modifié."
+supplier_decision:
+    approved:
+        subject: "GoBuy : votre compte fournisseur est approuvé"
+        title: "Bienvenue parmi les fournisseurs GoBuy"
+        body: "Bonne nouvelle : votre demande a été approuvée. Vous pouvez dès maintenant accéder à votre espace fournisseur."
+        button: "Accéder à mon espace"
+    rejected:
+        subject: "GoBuy : votre demande de compte fournisseur"
+        title: "Votre demande n'a pas pu être acceptée"
+        body: "Après examen, nous ne pouvons pas donner suite à votre demande de compte fournisseur pour le moment."
+order_confirmation:
+    subject: "GoBuy : commande %order% confirmée"
+    title: "Merci pour votre commande !"
+    intro: "Nous avons bien enregistré votre commande n° %order%. Voici le récapitulatif :"
+    items: "Articles"
+    amount: "Montant"
+    subtotal: "Sous-total"
+    delivery: "Livraison"
+    total: "Total"
+    address: "Adresse de livraison"
+    payment: "Paiement"
+    method:
+        mobile_money: "Mobile Money %carrier%"
+        card: "Carte bancaire"
+        cash_on_delivery: "Paiement à la livraison"
+    installments: "En %count% fois sans frais : %amount% Ar par échéance"
+    payment_pending: "Votre paiement est en cours de traitement : vous serez prévenu(e) dès qu'il sera confirmé."
+    button: "Suivre ma commande"
+    help: "Besoin d'aide ? Répondez depuis votre compte GoBuy, rubrique Aide."

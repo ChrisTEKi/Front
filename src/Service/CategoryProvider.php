@@ -2,82 +2,34 @@
 
 namespace App\Service;
 
+use Symfony\Contracts\Translation\TranslatorInterface;
+
 /**
- * Category taxonomy ("rayons"). This is site structure (navigation), NOT catalog data:
- * it mirrors initialCategories from the mockup. It will be replaced by a Doctrine
- * repository once the back-end exists — controllers only depend on this API.
+ * Taxonomie des rayons (catégories). C'est la STRUCTURE du site (navigation), pas des données de catalogue :
+ * elle reprend `initialCategories` de la maquette.
+ *
+ * Ce fichier ne contient que ce qui ne change pas d'une langue à l'autre (identifiant, adresse « slug », icône, couleur, image).
+ * Les TEXTES (nom, description, sous-rayons) sont dans translations/categories.<langue>.yaml (FR / EN / ES) et sont
+ * traduits ici, dans la langue de la requête en cours : les templates reçoivent déjà `name`, `description` et `subcategories`.
+ *
+ * Les sous-rayons « s1 … sN » de chaque rayon sont dans le fichier de traduction ; la liste commence toujours par « Tous ».
  */
 final class CategoryProvider
 {
+    /** Nombre de sous-rayons (hors « Tous ») de chaque rayon, dans l'ordre d'affichage. */
+    private const SUBCATEGORY_COUNT = [
+        'electronique' => 5, 'mode' => 4, 'electromenager' => 4, 'alimentation' => 4,
+        'jouets' => 4, 'maison' => 4, 'beaute' => 4, 'sport' => 4,
+    ];
+
+    public function __construct(private readonly TranslatorInterface $translator)
+    {
+    }
+
     /** @return list<array<string,mixed>> */
     public function all(): array
     {
-        return [
-            [
-                'id' => 'cat-elec', 'slug' => 'electronique', 'name' => 'Appareils & High-Tech',
-                'nameEn' => 'Electronics', 'nameEs' => 'Electrónica', 'icon' => 'tabler:device-mobile',
-                'color' => 'bg-blue-50 text-blue-600',
-                'bannerImage' => 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1600&auto=format&fit=crop&q=80',
-                'description' => 'Smartphones reconditionnés certifiés et neufs, PC portables, casques audio sans fil et montres connectées avec garantie.',
-                'subcategories' => ['Tous', 'Smartphones', 'Ordinateurs & PC', 'Audio & Casques', 'Montres connectées', 'Accessoires'],
-            ],
-            [
-                'id' => 'cat-mode', 'slug' => 'mode', 'name' => 'Vêtements & Mode',
-                'nameEn' => 'Clothing & Fashion', 'nameEs' => 'Moda', 'icon' => 'tabler:shirt',
-                'color' => 'bg-emerald-50 text-emerald-600',
-                'bannerImage' => 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1600&auto=format&fit=crop&q=80',
-                'description' => 'Les dernières tendances mode : robes bohèmes, baskets respirantes, vestes bomber et chemises élégantes livrées chez vous.',
-                'subcategories' => ['Tous', 'Robes & Jupes', 'Chaussures & Baskets', 'Vestes & Manteaux', 'Chemises & Hauts'],
-            ],
-            [
-                'id' => 'cat-electromenager', 'slug' => 'electromenager', 'name' => 'Électroménager',
-                'nameEn' => 'Home Appliances', 'nameEs' => 'Electrodomésticos', 'icon' => 'tabler:bolt',
-                'color' => 'bg-indigo-50 text-indigo-600',
-                'bannerImage' => 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1600&auto=format&fit=crop&q=80',
-                'description' => 'Appareils modernes pour équiper votre cuisine et faciliter votre quotidien : Air Fryer, robots multifonctions, blenders et machines expresso.',
-                'subcategories' => ['Tous', 'Cuisson & Air Fryer', 'Robots & Pâtisserie', 'Blenders & Mixeurs', 'Café & Expresso'],
-            ],
-            [
-                'id' => 'cat-alim', 'slug' => 'alimentation', 'name' => 'Alimentation & Épicerie',
-                'nameEn' => 'Groceries & Fresh', 'nameEs' => 'Alimentos', 'icon' => 'tabler:apple',
-                'color' => 'bg-orange-50 text-orange-600',
-                'bannerImage' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1600&auto=format&fit=crop&q=80',
-                'description' => 'Le meilleur du terroir malgache et produits frais : gousses de vanille Bourbon, miel d’eucalyptus, chocolats fins et paniers maraîchers.',
-                'subcategories' => ['Tous', 'Vanille & Épices', 'Chocolats & Douceurs', 'Miels & Confitures', 'Fruits & Légumes frais'],
-            ],
-            [
-                'id' => 'cat-enfants', 'slug' => 'jouets', 'name' => 'Jouets & Enfants',
-                'nameEn' => 'Toys & Kids', 'nameEs' => 'Juguetes', 'icon' => 'tabler:baby-carriage',
-                'color' => 'bg-pink-50 text-pink-600',
-                'bannerImage' => 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=1600&auto=format&fit=crop&q=80',
-                'description' => 'Jeux éducatifs, coffrets de construction créatifs, peluches hypoallergéniques et véhicules télécommandés pour petits et grands.',
-                'subcategories' => ['Tous', 'Blocs & Construction', 'Véhicules & Circuits', 'Peluches & Doudous', 'Plein air & Trottinettes'],
-            ],
-            [
-                'id' => 'cat-maison', 'slug' => 'maison', 'name' => 'Maison & Déco',
-                'nameEn' => 'Home & Living', 'nameEs' => 'Hogar', 'icon' => 'tabler:home',
-                'color' => 'bg-amber-50 text-amber-600',
-                'bannerImage' => 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1600&auto=format&fit=crop&q=80',
-                'description' => 'Décoration chaleureuse, artisanat malagasy en vannerie et rabane tressée, luminaires LED tactiles et parures de lit confort.',
-                'subcategories' => ['Tous', 'Luminaires & Lampes', 'Artisanat & Vannerie', 'Linge de maison', 'Miroirs & Déco'],
-            ],
-            [
-                'id' => 'cat-beaute', 'slug' => 'beaute', 'name' => 'Beauté & Santé',
-                'nameEn' => 'Beauty & Wellness', 'nameEs' => 'Belleza', 'icon' => 'tabler:sparkles',
-                'color' => 'bg-rose-50 text-rose-600',
-                'bannerImage' => 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=1600&auto=format&fit=crop&q=80',
-                'description' => 'Cosmétique naturelle et trésors botaniques de Madagascar : huiles essentielles de Ravintsara pures, sérums bio et soins réparateurs.',
-                'subcategories' => ['Tous', 'Huiles Essentielles', 'Soins Visage & Corps', 'Savons & Soins naturels', 'Huiles végétales'],
-            ],
-            [
-                'id' => 'cat-sport', 'slug' => 'sport', 'name' => 'Sport & Loisirs',
-                'nameEn' => 'Sports & Outdoors', 'nameEs' => 'Deportes', 'icon' => 'tabler:activity',
-                'color' => 'bg-teal-50 text-teal-600',
-                'bannerImage' => 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=1600&auto=format&fit=crop&q=80',
-                'description' => 'Équipements pour le fitness, vélos tout-terrain, matériel de camping et loisirs sportifs pour rester actif au quotidien.',
-                'subcategories' => ['Tous', 'Vélos & VTT', 'Fitness & Tapis', 'Camping & Randonnée', 'Ballons & Sports collectifs'],
-            ],
-        ];
+        return array_map($this->localize(...), self::definitions());
     }
 
     /** @return array<string,mixed>|null */
@@ -90,5 +42,82 @@ final class CategoryProvider
         }
 
         return null;
+    }
+
+    /**
+     * Ajoute les textes traduits (langue de la requête) à la définition d'un rayon.
+     *
+     * @param array<string,mixed> $category
+     *
+     * @return array<string,mixed>
+     */
+    private function localize(array $category): array
+    {
+        $slug = (string) $category['slug'];
+        $subcategories = [$this->translator->trans('sub.all', [], 'categories')];
+        for ($i = 1; $i <= (self::SUBCATEGORY_COUNT[$slug] ?? 0); ++$i) {
+            $subcategories[] = $this->translator->trans($slug.'.s'.$i, [], 'categories');
+        }
+
+        return $category + [
+            'name' => $this->translator->trans($slug.'.name', [], 'categories'),
+            'description' => $this->translator->trans($slug.'.description', [], 'categories'),
+            'subcategories' => $subcategories,
+        ];
+    }
+
+    /** @return list<array<string,mixed>> */
+    private static function definitions(): array
+    {
+        return [
+            [
+                'id' => 'cat-elec', 'slug' => 'electronique',
+                'icon' => 'tabler:device-mobile',
+                'color' => 'bg-blue-50 text-blue-600',
+                'bannerImage' => 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1600&auto=format&fit=crop&q=80',
+            ],
+            [
+                'id' => 'cat-mode', 'slug' => 'mode',
+                'icon' => 'tabler:shirt',
+                'color' => 'bg-emerald-50 text-emerald-600',
+                'bannerImage' => 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1600&auto=format&fit=crop&q=80',
+            ],
+            [
+                'id' => 'cat-electromenager', 'slug' => 'electromenager',
+                'icon' => 'tabler:bolt',
+                'color' => 'bg-indigo-50 text-indigo-600',
+                'bannerImage' => 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1600&auto=format&fit=crop&q=80',
+            ],
+            [
+                'id' => 'cat-alim', 'slug' => 'alimentation',
+                'icon' => 'tabler:apple',
+                'color' => 'bg-orange-50 text-orange-600',
+                'bannerImage' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1600&auto=format&fit=crop&q=80',
+            ],
+            [
+                'id' => 'cat-enfants', 'slug' => 'jouets',
+                'icon' => 'tabler:baby-carriage',
+                'color' => 'bg-pink-50 text-pink-600',
+                'bannerImage' => 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=1600&auto=format&fit=crop&q=80',
+            ],
+            [
+                'id' => 'cat-maison', 'slug' => 'maison',
+                'icon' => 'tabler:home',
+                'color' => 'bg-amber-50 text-amber-600',
+                'bannerImage' => 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=1600&auto=format&fit=crop&q=80',
+            ],
+            [
+                'id' => 'cat-beaute', 'slug' => 'beaute',
+                'icon' => 'tabler:sparkles',
+                'color' => 'bg-rose-50 text-rose-600',
+                'bannerImage' => 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=1600&auto=format&fit=crop&q=80',
+            ],
+            [
+                'id' => 'cat-sport', 'slug' => 'sport',
+                'icon' => 'tabler:activity',
+                'color' => 'bg-teal-50 text-teal-600',
+                'bannerImage' => 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=1600&auto=format&fit=crop&q=80',
+            ],
+        ];
     }
 }

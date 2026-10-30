@@ -1,27 +1,19 @@
-# Full configuration reference: https://symfony.com/bundles/ux-icons/current/index.html#configuration
+# =============================================================================
+# ux_icons.yaml — icônes Tabler : {{ ux_icon('tabler:nom') }}.
+#
+# Les 80 icônes utilisées par le site sont VERSIONNÉES dans assets/icons/tabler/*.svg : elles s'affichent
+# sans aucun appel réseau (ni en développement, ni en production, même hors ligne).
+#
+# Ajouter une nouvelle icône : l'utiliser dans un gabarit puis lancer
+#     php bin/console ux:icons:lock
+# (télécharge depuis Iconify les icônes manquantes et les enregistre dans assets/icons/).
+# =============================================================================
 ux_icons:
-
-    # Default HTML attributes to add to all icons
-    default_icon_attributes:
-
-        # Use current text color to fill the icon
-        fill: currentColor
-
-        # Default dimensions
-        height: '1em'
-        width: '1em'
-
-    # Throw an exception if an icon is not
-    ignore_not_found: false
-
-
-when@dev:
-    ux_icons:
-        iconify:
-            # Persist each on-demand icon to disk on first render, so you don't forget to commit it before deploying (like `ux:icons:lock`)
-            auto_lock: true
+    # Ne casse pas une page si une icône est introuvable (affiche simplement rien).
+    ignore_not_found: true
 
 when@prod:
     ux_icons:
-        # Suppress exceptions for missing icons in production
-        ignore_not_found: true
+        # En production : jamais de téléchargement à la volée (lenteur, panne réseau, dépendance externe).
+        iconify:
+            enabled: false

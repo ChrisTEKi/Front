@@ -1,0 +1,43 @@
+# Order texts: API errors, tracking and payment labels (EN).
+error:
+    account_not_allowed: "Only customer accounts can place orders."
+    phone_not_verified: "Please verify your phone number by SMS before ordering."
+    mobile_money_invalid: "Invalid Mobile Money number."
+    mobile_money_not_verified: "Please verify this Mobile Money number by SMS first."
+    empty_cart: "Your cart is empty."
+    invalid_quantity: "Invalid quantity (between 1 and 99 per item)."
+    too_many_lines: "Your cart contains too many different items."
+    unknown_product: "An item in your cart no longer exists. Please refresh your cart."
+    product_unavailable: "\"%name%\" is no longer available."
+    invalid_installments: "Invalid instalment plan."
+    too_many_orders: "Too many orders in a short time. Try again in %minutes% min."
+    order_closed: "This order is closed: its status can no longer change."
+    order_backwards: "An order cannot go back to a previous step."
+    validation: "Please fix the highlighted fields."
+    invalid_courier: "Invalid courier name or phone number."
+    not_found: "No order found with this reference."
+status:
+    confirmed: "Order confirmed"
+    preparing: "Being prepared"
+    out_for_delivery: "Out for delivery"
+    delivered: "Delivered"
+    cancelled: "Cancelled"
+tracking:
+    description:
+        confirmed: "Your order has been registered."
+        preparing: "Your parcel is being prepared."
+        out_for_delivery: "Your parcel is on its way to you."
+        delivered: "Your parcel has been handed over."
+        cancelled: "This order has been cancelled."
+    today: "Today"
+    nth_debit: "Payment no. %n%"
+payment:
+    installments: "Pay in %count% interest-free instalments"
+    mobile_money: "Mobile Money (%carrier%)"
+    card: "Bank card"
+    cash_on_delivery: "Cash on delivery"
+    status:
+        pending: "Pending"
+        paid: "Paid"
+        failed: "Failed"
+        refunded: "Refunded"

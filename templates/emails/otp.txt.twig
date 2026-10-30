@@ -1,0 +1,14 @@
+{# Version texte brut de l'e-mail à code (voir otp.html.twig). #}
+{{ ('otp.' ~ purpose ~ '.title')|trans({}, 'emails') }}
+
+{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}
+
+{{ ('otp.' ~ purpose ~ '.intro')|trans({}, 'emails') }}
+
+    {{ code }}
+
+{{ 'otp.validity'|trans({'%minutes%': minutes}, 'emails') }}
+{{ 'otp.never_share'|trans({}, 'emails') }}
+{{ 'otp.ignore'|trans({}, 'emails') }}
+
+— {{ app_name }}

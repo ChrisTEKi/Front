@@ -8,14 +8,14 @@
     <div class="border-b border-slate-200/80 bg-white px-4 py-3 sm:px-8 lg:px-12">
         <div class="flex w-full flex-wrap items-center justify-between gap-3 text-xs">
             <nav class="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 font-medium text-slate-500">
-                <a href="{{ path('app_home') }}" class="font-bold text-slate-700 transition-colors hover:text-emerald-800">Accueil</a>
+                <a href="{{ path('app_home') }}" class="font-bold text-slate-700 transition-colors hover:text-emerald-800">{{ 'dept.home'|trans }}</a>
                 {{ ux_icon('tabler:chevron-right', { class: 'h-3.5 w-3.5 shrink-0 text-slate-400' }) }}
-                <a href="{{ path('app_categories') }}" class="text-slate-400 hover:text-slate-700">Rayons</a>
+                <a href="{{ path('app_categories') }}" class="text-slate-400 hover:text-slate-700">{{ 'dept.rayons'|trans }}</a>
                 {{ ux_icon('tabler:chevron-right', { class: 'h-3.5 w-3.5 shrink-0 text-slate-400' }) }}
                 <span class="rounded-md bg-emerald-50 px-2 py-0.5 font-bold text-emerald-800">{{ department.name }}</span>
             </nav>
             <a href="{{ path('app_categories') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition-all hover:bg-emerald-50 hover:text-emerald-800">
-                {{ ux_icon('tabler:arrow-left', { class: 'h-3.5 w-3.5' }) }}<span>Tous les rayons</span>
+                {{ ux_icon('tabler:arrow-left', { class: 'h-3.5 w-3.5' }) }}<span>{{ 'dept.all'|trans }}</span>
             </a>
         </div>
     </div>
@@ -29,14 +29,14 @@
             <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/90 to-transparent"></div>
             <div class="relative z-10 max-w-3xl space-y-4 p-6 sm:p-10 lg:p-12">
                 <div class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-lime-400 backdrop-blur-md">
-                    {{ ux_icon('tabler:sparkles', { class: 'h-3.5 w-3.5' }) }}<span>Rayon Spécialisé certifié GoBuy</span>
+                    {{ ux_icon('tabler:sparkles', { class: 'h-3.5 w-3.5' }) }}<span>{{ 'dept.badge'|trans }}</span>
                 </div>
                 <h1 class="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">{{ department.name }}</h1>
                 <p class="max-w-2xl text-sm leading-relaxed text-slate-200 sm:text-base">{{ department.description }}</p>
                 <div class="flex flex-wrap items-center gap-3 pt-2 text-xs font-semibold">
-                    <span class="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/15 px-3 py-1.5 backdrop-blur-xs">{{ ux_icon('tabler:package', { class: 'h-3.5 w-3.5 text-lime-400' }) }}<span>{{ products|length }} articles disponibles</span></span>
-                    <span class="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/15 px-3 py-1.5 backdrop-blur-xs">{{ ux_icon('tabler:truck-delivery', { class: 'h-3.5 w-3.5 text-lime-400' }) }}<span>Livraison 24h à domicile</span></span>
-                    <span class="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/15 px-3 py-1.5 backdrop-blur-xs">{{ ux_icon('tabler:credit-card', { class: 'h-3.5 w-3.5 text-lime-400' }) }}<span>Mobile Money ou Espèces</span></span>
+                    <span class="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/15 px-3 py-1.5 backdrop-blur-xs">{{ ux_icon('tabler:package', { class: 'h-3.5 w-3.5 text-lime-400' }) }}<span>{{ 'dept.available'|trans({'%count%': products|length}) }}</span></span>
+                    <span class="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/15 px-3 py-1.5 backdrop-blur-xs">{{ ux_icon('tabler:truck-delivery', { class: 'h-3.5 w-3.5 text-lime-400' }) }}<span>{{ 'dept.delivery24'|trans }}</span></span>
+                    <span class="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/15 px-3 py-1.5 backdrop-blur-xs">{{ ux_icon('tabler:credit-card', { class: 'h-3.5 w-3.5 text-lime-400' }) }}<span>{{ 'dept.pay'|trans }}</span></span>
                 </div>
             </div>
         </div>
@@ -46,7 +46,7 @@
     {% if department.subcategories %}
         <div class="px-4 sm:px-8 lg:px-12">
             <div data-chip-group="subcategory" data-chip-active="bg-emerald-800 text-white shadow-sm ring-2 ring-emerald-500/20" data-chip-inactive="bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50" class="flex items-center gap-2 overflow-x-auto pb-2">
-                <span class="mr-1 flex shrink-0 items-center gap-1 text-xs font-bold uppercase tracking-wider text-slate-500">{{ ux_icon('tabler:stack-2', { class: 'h-3.5 w-3.5' }) }}Sous-rayons :</span>
+                <span class="mr-1 flex shrink-0 items-center gap-1 text-xs font-bold uppercase tracking-wider text-slate-500">{{ ux_icon('tabler:stack-2', { class: 'h-3.5 w-3.5' }) }}{{ 'dept.sub_label'|trans }}</span>
                 {% for sub in department.subcategories %}
                     <button type="button" data-chip-value="{{ sub }}" class="shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-150 {{ loop.first ? 'bg-emerald-800 text-white shadow-sm ring-2 ring-emerald-500/20' : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50' }}">{{ sub }}</button>
                 {% endfor %}
@@ -60,46 +60,46 @@
             <div class="flex flex-col items-stretch justify-between gap-3 lg:flex-row lg:items-center">
                 <div class="relative max-w-md flex-1">
                     {{ ux_icon('tabler:search', { class: 'pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400' }) }}
-                    <input type="search" data-search-input placeholder="Rechercher dans le rayon {{ department.name }}..."
+                    <input type="search" data-search-input placeholder="{{ 'dept.search'|trans({'%name%': department.name}) }}"
                            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-xs font-medium transition-all hover:bg-slate-100/80 focus:border-emerald-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-800/20">
                     <button type="button" data-search-clear class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600">{{ ux_icon('tabler:x', { class: 'h-3.5 w-3.5' }) }}</button>
                 </div>
                 <div class="flex items-center justify-between gap-2 text-xs lg:justify-end">
                     <label class="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5">
-                        <span class="font-medium text-slate-400">Trier :</span>
+                        <span class="font-medium text-slate-400">{{ 'dept.sort_label'|trans }}</span>
                         <select class="cursor-pointer bg-transparent text-xs font-bold text-slate-800 focus:outline-none">
-                            <option>Pertinence &amp; Populaires</option><option>Prix : croissant</option><option>Prix : décroissant</option>
-                            <option>Meilleures notes (★)</option><option>Plus fortes remises (%)</option>
+                            <option>{{ 'dept.sort_relevance'|trans }}</option><option>{{ 'dept.sort_price_asc'|trans }}</option><option>{{ 'dept.sort_price_desc'|trans }}</option>
+                            <option>{{ 'dept.sort_top'|trans }}</option><option>{{ 'dept.sort_discount'|trans }}</option>
                         </select>
                     </label>
                     <div data-view-toggle class="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1">
-                        <button type="button" data-view="grid" title="Vue grille" class="rounded-lg bg-white p-1.5 font-bold text-slate-900 shadow-xs transition-colors">{{ ux_icon('tabler:layout-grid', { class: 'h-4 w-4' }) }}</button>
-                        <button type="button" data-view="list" title="Vue liste" class="rounded-lg p-1.5 text-slate-400 transition-colors hover:text-slate-700">{{ ux_icon('tabler:list', { class: 'h-4 w-4' }) }}</button>
+                        <button type="button" data-view="grid" title="{{ 'dept.view_grid'|trans }}" class="rounded-lg bg-white p-1.5 font-bold text-slate-900 shadow-xs transition-colors">{{ ux_icon('tabler:layout-grid', { class: 'h-4 w-4' }) }}</button>
+                        <button type="button" data-view="list" title="{{ 'dept.view_list'|trans }}" class="rounded-lg p-1.5 text-slate-400 transition-colors hover:text-slate-700">{{ ux_icon('tabler:list', { class: 'h-4 w-4' }) }}</button>
                     </div>
                 </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2 text-xs">
                 <button type="button" data-toggle-chip data-active-class="bg-rose-50 text-rose-700 border-rose-200 ring-2 ring-rose-500/10" class="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 font-bold text-slate-600 transition-colors hover:bg-slate-100">
-                    {{ ux_icon('tabler:bolt', { class: 'h-3.5 w-3.5 text-rose-600' }) }}<span>Offres Flash &amp; Promos</span>
+                    {{ ux_icon('tabler:bolt', { class: 'h-3.5 w-3.5 text-rose-600' }) }}<span>{{ 'dept.chip_flash'|trans }}</span>
                 </button>
                 <button type="button" data-toggle-chip data-active-class="bg-emerald-50 text-emerald-800 border-emerald-200 ring-2 ring-emerald-500/10" class="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 font-bold text-slate-600 transition-colors hover:bg-slate-100">
-                    {{ ux_icon('tabler:check', { class: 'h-3.5 w-3.5 text-emerald-600' }) }}<span>En stock uniquement</span>
+                    {{ ux_icon('tabler:check', { class: 'h-3.5 w-3.5 text-emerald-600' }) }}<span>{{ 'dept.chip_stock'|trans }}</span>
                 </button>
                 {% if brands %}
                     <label class="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1">
-                        <span class="font-medium text-slate-400">Marque :</span>
+                        <span class="font-medium text-slate-400">{{ 'dept.brand'|trans }}</span>
                         <select class="cursor-pointer bg-transparent text-xs font-bold text-slate-800 focus:outline-none">
-                            <option value="all">Toutes les marques</option>
+                            <option value="all">{{ 'dept.all_brands'|trans }}</option>
                             {% for b in brands %}<option>{{ b }}</option>{% endfor %}
                         </select>
                     </label>
                 {% endif %}
                 <label class="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1">
-                    <span class="font-medium text-slate-400">État :</span>
+                    <span class="font-medium text-slate-400">{{ 'dept.condition'|trans }}</span>
                     <select class="cursor-pointer bg-transparent text-xs font-bold text-slate-800 focus:outline-none">
-                        <option value="all">Tous les états</option><option value="neuf">Neuf</option>
-                        <option value="comme_neuf">Comme neuf (reconditionné A+)</option><option value="tres_bon_etat">Très bon état</option>
+                        <option value="all">{{ 'dept.all_conditions'|trans }}</option><option value="neuf">{{ 'dept.cond_new'|trans }}</option>
+                        <option value="comme_neuf">{{ 'dept.cond_like_new'|trans }}</option><option value="tres_bon_etat">{{ 'dept.cond_very_good'|trans }}</option>
                     </select>
                 </label>
             </div>
@@ -109,17 +109,17 @@
     {# 5. Results #}
     <div class="space-y-4 px-4 sm:px-8 lg:px-12">
         <div class="flex items-center justify-between text-xs text-slate-500">
-            <span>Affichage de <strong class="text-slate-900">{{ products|length }}</strong> produit{{ products|length > 1 ? 's' : '' }} exclusif{{ products|length > 1 ? 's' : '' }} au rayon <strong>{{ department.name }}</strong></span>
-            <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">Rayon 100% Dédié</span>
+            <span>{{ 'dept.showing'|trans({'%count%': products|length, '%name%': department.name|e})|raw }}</span>
+            <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">{{ 'dept.dedicated'|trans }}</span>
         </div>
 
         {% if products is empty %}
             <div class="mx-auto max-w-lg space-y-4 rounded-3xl border border-slate-200/80 bg-white p-12 text-center shadow-xs">
                 <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-600">{{ ux_icon('tabler:tag', { class: 'h-8 w-8' }) }}</div>
-                <h3 class="text-lg font-black text-slate-900">Aucun produit dans ce rayon pour le moment</h3>
-                <p class="text-xs leading-relaxed text-slate-500">Les articles du rayon {{ department.name }} seront affichés ici dès que le catalogue sera connecté.</p>
+                <h3 class="text-lg font-black text-slate-900">{{ 'dept.empty_title'|trans }}</h3>
+                <p class="text-xs leading-relaxed text-slate-500">{{ 'dept.empty_text'|trans({'%name%': department.name}) }}</p>
                 <a href="{{ path('app_categories') }}" class="inline-flex items-center gap-2 rounded-2xl bg-emerald-800 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-900">
-                    {{ ux_icon('tabler:rotate', { class: 'h-3.5 w-3.5' }) }}<span>Explorer les autres rayons</span>
+                    {{ ux_icon('tabler:rotate', { class: 'h-3.5 w-3.5' }) }}<span>{{ 'dept.explore'|trans }}</span>
                 </a>
             </div>
         {% else %}
@@ -134,14 +134,14 @@
         <div class="rounded-3xl border border-stone-200/80 bg-[#FAF9F5] p-6 sm:p-8">
             <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
                 {% for r in [
-                    {icon: 'tabler:shield-check', title: 'Articles 100% Vérifiés', text: 'Sélectionnés et testés auprès de fournisseurs agréés à Madagascar.'},
-                    {icon: 'tabler:truck-delivery', title: 'Expédition Rapide 24h', text: 'Livraison directe à Antananarivo et vers les 6 provinces malgaches.'},
-                    {icon: 'tabler:credit-card', title: 'Paiement en Confiance', text: 'MVola, Airtel Money, Orange Money ou paiement espèces à la livraison.'},
-                    {icon: 'tabler:rotate', title: 'Retours Faciles 7 Jours', text: 'Remboursement ou échange garanti en cas de non-conformité.'}
+                    {n: 1, icon: 'tabler:shield-check'},
+                    {n: 2, icon: 'tabler:truck-delivery'},
+                    {n: 3, icon: 'tabler:credit-card'},
+                    {n: 4, icon: 'tabler:rotate'}
                 ] %}
                     <div class="flex items-start gap-3">
                         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-100/80 text-emerald-800">{{ ux_icon(r.icon, { class: 'h-5 w-5' }) }}</span>
-                        <div class="space-y-0.5"><h5 class="text-xs font-black text-slate-900">{{ r.title }}</h5><p class="text-[11px] leading-snug text-slate-500">{{ r.text }}</p></div>
+                        <div class="space-y-0.5"><h5 class="text-xs font-black text-slate-900">{{ ('dept.r' ~ r.n ~ '_title')|trans }}</h5><p class="text-[11px] leading-snug text-slate-500">{{ ('dept.r' ~ r.n ~ '_text')|trans }}</p></div>
                     </div>
                 {% endfor %}
             </div>
@@ -152,10 +152,10 @@
     <div class="space-y-4 px-4 pt-4 sm:px-8 lg:px-12">
         <div class="flex items-center justify-between">
             <div>
-                <h3 class="text-sm font-black text-slate-900 sm:text-base">Explorer nos autres rayons</h3>
-                <p class="text-xs text-slate-500">Trouvez tout ce dont vous avez besoin en un clic</p>
+                <h3 class="text-sm font-black text-slate-900 sm:text-base">{{ 'dept.other_title'|trans }}</h3>
+                <p class="text-xs text-slate-500">{{ 'dept.other_text'|trans }}</p>
             </div>
-            <a href="{{ path('app_categories') }}" class="text-xs font-bold text-emerald-800 hover:underline">Voir tous les rayons →</a>
+            <a href="{{ path('app_categories') }}" class="text-xs font-bold text-emerald-800 hover:underline">{{ 'dept.other_all'|trans }}</a>
         </div>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
             {% for cat in otherCategories %}
@@ -163,7 +163,7 @@
                     <span class="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold transition-transform group-hover:scale-110 {{ cat.color }}">{{ cat.name|first }}</span>
                     <div>
                         <h4 class="line-clamp-1 text-xs font-bold text-slate-900 group-hover:text-emerald-800">{{ cat.name }}</h4>
-                        <span class="text-[10px] font-medium text-slate-400">0 article</span>
+                        <span class="text-[10px] font-medium text-slate-400">{{ 'dept.other_count'|trans({'%count%': 0}) }}</span>
                     </div>
                 </a>
             {% endfor %}

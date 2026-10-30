@@ -1,0 +1,124 @@
+# Email and SMS content (EN). %name%, %minutes%, %days%, %code% are replaced when sending.
+greeting: "Hello %name%,"
+layout:
+    footer: "You are receiving this email because an action was taken with your address on GoBuy. This is an automated message: please do not reply."
+sms:
+    otp: "GoBuy: your code is %code%. Valid for %minutes% min. Never share it with anyone."
+otp:
+    validity: "This code is valid for %minutes% minutes and can only be used once."
+    never_share: "Never share this code, even with someone claiming to be a GoBuy agent."
+    ignore: "If you did not make this request, simply ignore this email: your account stays protected."
+    email_verification:
+        subject: "GoBuy: confirm your email address"
+        title: "Confirm your email address"
+        intro: "Enter this code in GoBuy to verify your email address:"
+    phone_verification:
+        subject: "GoBuy: confirm your phone number"
+        title: "Confirm your phone number"
+        intro: "Enter this code in GoBuy to verify your number:"
+    two_factor:
+        subject: "GoBuy: your sign-in code"
+        title: "Your sign-in code"
+        intro: "Someone is trying to sign in to your GoBuy account. To confirm it is you, enter this code:"
+    password_reset:
+        subject: "GoBuy: reset your password"
+        title: "Password reset"
+        intro: "You asked to reset your password. Enter this code, then choose a new password:"
+    payment_phone:
+        subject: "GoBuy: confirm your payment number"
+        title: "Confirm your payment number"
+        intro: "Enter this code to confirm your Mobile Money number:"
+    account_deletion:
+        subject: "GoBuy: confirm your account deletion"
+        title: "Confirm your account deletion"
+        intro: "To confirm the deletion of your account, enter this code:"
+    account_security:
+        subject: "GoBuy: confirm this security change"
+        title: "Confirm this change"
+        intro: "To confirm the change to your account's security settings, enter this code:"
+    contact_change_old:
+        subject: "GoBuy: confirm the change to your contact details"
+        title: "Confirm the change to your contact details"
+        intro: "You asked to change your email address or phone number. To confirm it is you, enter this code in GoBuy:"
+    contact_change_new:
+        subject: "GoBuy: confirm your new email address"
+        title: "Confirm your new email address"
+        intro: "This address was chosen as the new sign-in address of a GoBuy account. To confirm it, enter this code in GoBuy:"
+admin_invitation:
+    subject: "GoBuy: invitation to join the admin team"
+    title: "You have been invited to administer GoBuy"
+    intro: "An administrator account has been created for you. Click the button below to choose your password and activate your access."
+    button: "Activate my account"
+    validity: "This link is valid for %days% days and can only be used once."
+    fallback: "If the button does not work, copy this address into your browser:"
+    ignore: "If you were not expecting this invitation, ignore this email: no access will be opened."
+already_registered:
+    subject: "GoBuy: you already have an account"
+    title: "You already have a GoBuy account"
+    intro: "Someone tried to create a GoBuy account with this email address, but an account already exists. You can simply sign in, or reset your password if you forgot it."
+    login: "Sign in"
+    reset: "Forgot your password?"
+    ignore: "If this was not you, you can ignore this email: your account has not been changed."
+notice:
+    not_you: "If you did not do this, reset your password immediately and contact GoBuy support."
+    password_changed:
+        subject: "GoBuy: your password was changed"
+        title: "Password changed"
+        body: "The password of your GoBuy account has just been changed. You have been signed out of your other devices."
+    two_factor_changed:
+        subject: "GoBuy: two-factor authentication changed"
+        title: "Two-factor authentication changed"
+        body: "The two-factor authentication settings of your GoBuy account have just been changed."
+    deletion_scheduled:
+        subject: "GoBuy: your account deletion is scheduled"
+        title: "Account deletion scheduled"
+        body: "Your account will be permanently deleted on %date%. Until then, just sign in again and choose “Restore my account” to cancel the deletion."
+    account_restored:
+        subject: "GoBuy: your account has been restored"
+        title: "Account restored"
+        body: "The deletion of your GoBuy account has been cancelled: your account is active again."
+    phone_changed:
+        subject: "GoBuy: your phone number was changed"
+        title: "Phone number changed"
+        body: "The phone number on your GoBuy account has just been changed. The new number must be verified by SMS, and SMS two-factor authentication has been turned off."
+    account_purged:
+        subject: "GoBuy: your account has been permanently deleted"
+        title: "Account permanently deleted"
+        body: "As you requested, your GoBuy account and personal data have been permanently erased. Your past orders are kept for accounting purposes without any information about you. This is our last message."
+    email_changed:
+        subject: "GoBuy: the email address of your account was changed"
+        title: "Email address changed"
+        body: "The sign-in email address of your GoBuy account has just been replaced by %detail%. You will no longer receive GoBuy messages at this address, and you have been signed out of your other devices."
+    email_in_use:
+        subject: "GoBuy: someone tried to use your address"
+        title: "Your address was entered on another account"
+        body: "Someone asked to use your address as the sign-in address of another GoBuy account. Because it is already linked to your account, nothing was changed."
+supplier_decision:
+    approved:
+        subject: "GoBuy: your supplier account is approved"
+        title: "Welcome to GoBuy suppliers"
+        body: "Good news: your request has been approved. You can now access your supplier area."
+        button: "Go to my area"
+    rejected:
+        subject: "GoBuy: your supplier account request"
+        title: "Your request could not be accepted"
+        body: "After review, we are unable to proceed with your supplier account request at this time."
+order_confirmation:
+    subject: "GoBuy: order %order% confirmed"
+    title: "Thank you for your order!"
+    intro: "We have received your order no. %order%. Here is the summary:"
+    items: "Items"
+    amount: "Amount"
+    subtotal: "Subtotal"
+    delivery: "Delivery"
+    total: "Total"
+    address: "Delivery address"
+    payment: "Payment"
+    method:
+        mobile_money: "Mobile Money %carrier%"
+        card: "Bank card"
+        cash_on_delivery: "Cash on delivery"
+    installments: "In %count% interest-free instalments: %amount% Ar each"
+    payment_pending: "Your payment is being processed: you will be notified as soon as it is confirmed."
+    button: "Track my order"
+    help: "Need help? Contact us from your GoBuy account, Help section."

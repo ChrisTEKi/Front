@@ -1,6 +1,8 @@
+# =============================================================================
+# asset_mapper.yaml — publication de assets/ (JS, CSS) sans Node.js ni Webpack.
+# =============================================================================
 framework:
     asset_mapper:
-        # The paths to make available to the asset mapper.
         paths:
             - assets/
         missing_import_mode: strict

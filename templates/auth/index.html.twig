@@ -1,7 +1,9 @@
 {% extends 'base.html.twig' %}
-{% block title %}Connexion — GoBuy{% endblock %}
+{% block title %}{{ 'auth.page_title'|trans }}{% endblock %}
 {% block body %}
 <div class="flex justify-center px-3 py-10 sm:py-16">
-    {{ include('partials/_auth_form.html.twig', {initialMode: mode}) }}
+    {{ include('partials/_auth_form.html.twig', {initialMode: mode, resume: resume, flashError: flashError}) }}
 </div>
 {% endblock %}
+{# Cette page contient déjà le formulaire : on n'ajoute pas sa copie cachée (fenêtre « auth ») pour éviter les doublons de champs. #}
+{% block auth_modal %}{% endblock %}

@@ -1,0 +1,118 @@
+# Textes affichés par le JavaScript (messages, bulles, compteurs), envoyés au navigateur dans la page (voir JsDictionaryExtension) — français.
+net:
+    error: "Le serveur est injoignable. Vérifiez votre connexion puis réessayez."
+session:
+    expired: "Votre session a expiré. Veuillez recommencer."
+otp:
+    resend: "Renvoyer le code"
+    resend_in: "Renvoyer le code dans %seconds% s"
+    sent: "Un nouveau code vient d'être envoyé."
+    enter_code: "Saisissez le code à 6 chiffres."
+account:
+    delete_word_mismatch: "Tapez le mot demandé pour confirmer la suppression."
+    saved: "Modifications enregistrées."
+    reauth_code_sent: "Code envoyé à votre adresse e-mail."
+    phone_sent: "Code envoyé au %phone%."
+    phone_removed: "Numéro de téléphone retiré."
+    phone_verified_ok: "Numéro vérifié avec succès."
+cart:
+    added: "Article ajouté au panier"
+    removed: "Article retiré du panier"
+    items_count: "%count% articles"
+    increase: "Ajouter un exemplaire"
+    decrease: "Retirer un exemplaire"
+    remove: "Supprimer l'article"
+favorites:
+    added: "Ajouté à vos favoris"
+    removed: "Retiré de vos favoris"
+    confirm_clear: "Voulez-vous retirer tous vos produits favoris ?"
+    cleared: "Favoris vidés."
+    none: "Aucun coup de cœur enregistré"
+    count: "%count% produit(s) sauvegardé(s)"
+header:
+    city_updated: "Zone de livraison mise à jour : %city%"
+common:
+    copied: "Copié"
+    copied_bang: "Copié !"
+flash:
+    ends_in: "Fin dans %time%"
+momo:
+    err:
+        prefix: "Le numéro doit débuter par 03x ou +261"
+        length: "Le numéro doit comporter 10 chiffres (ex: 034 12 345 67)"
+        carrier: "Opérateur Mobile Money non reconnu (requis: 034, 038, 033, 032, 037)"
+    ok:
+        mvola: "Numéro Mvola (Telma) valide"
+        airtel: "Numéro Airtel Money valide"
+        orange: "Numéro Orange Money valide"
+checkout:
+    err:
+        address: "Renseignez au moins le nom, l'adresse et la ville de livraison."
+        momo: "Numéro Mobile Money invalide : %reason%"
+        phone: "Votre numéro de téléphone doit être vérifié par SMS avant de commander."
+    items: "Articles (%count%)"
+    today: "Aujourd'hui"
+    nth_debit: "%n%e prélèvement"
+    schedule_title: "Échéancier de remboursement (%count% mensualités)"
+    pay_today: "Payer %amount% aujourd'hui"
+    pay_amount: "Payer %amount%"
+    confirm: "Confirmer la commande"
+    no_phone: "Aucun téléphone renseigné"
+    phone_verified: "Tél. vérifié"
+    placed: "Commande enregistrée."
+    verify:
+        phone_title: "Validation mobile par SMS"
+        phone_text: "Un code de confirmation rapide vous sera envoyé pour sécuriser vos livraisons et prélèvements."
+        phone_label: "Votre numéro de téléphone mobile"
+        momo_title: "Vérification du numéro Mobile Money"
+        momo_text: "Pour votre sécurité, nous vérifions que ce numéro vous appartient avant de payer avec : un code SMS va lui être envoyé."
+        momo_label: "Numéro Mobile Money à vérifier"
+        sent: "Code SMS envoyé au %number% !"
+vendor:
+    sim:
+        advantage: "Avec la formule Pro, vous gagnez %amount% de plus par mois."
+    form:
+        sending: "Envoi en cours…"
+        fix: "Veuillez corriger les champs signalés."
+        required: "Ce champ est obligatoire."
+support:
+    network: "Le serveur est injoignable. Vérifiez votre connexion puis réessayez."
+contact:
+    title:
+        email: "Changer mon adresse e-mail"
+        phone: "Changer mon numéro de téléphone"
+        phone_remove: "Retirer mon numéro de téléphone"
+    intro:
+        email: "Pour votre sécurité, nous envoyons d'abord un code à votre adresse actuelle, puis un second code à la nouvelle adresse. Rien ne change avant la saisie du second code."
+        phone: "Pour votre sécurité, nous envoyons d'abord un code à votre adresse e-mail actuelle, puis un SMS au nouveau numéro. Rien ne change avant la saisie du code reçu par SMS."
+        phone_remove: "Pour confirmer que c'est bien vous, nous envoyons un code à votre adresse e-mail actuelle. Saisissez-le pour retirer votre numéro."
+    label:
+        email: "Nouvelle adresse e-mail"
+        phone: "Nouveau numéro de téléphone"
+    placeholder:
+        email: "nouvelle.adresse@exemple.com"
+        phone: "034 12 345 67"
+    send_old: "Recevoir le code sur mon adresse actuelle"
+    confirm: "Valider le code"
+    hint:
+        old: "Code envoyé à %target% (votre adresse actuelle). Saisissez-le pour confirmer que c'est bien vous."
+        new_email: "Second code envoyé à %target% (la nouvelle adresse). Saisissez-le pour la confirmer."
+        new_phone: "SMS envoyé au %target% (le nouveau numéro). Saisissez le code reçu pour le confirmer."
+    sent_old: "Code envoyé à votre adresse actuelle."
+    sent_new: "Adresse actuelle confirmée. Un second code vient d'être envoyé."
+    resent: "Nouveau code envoyé."
+    resend: "Renvoyer le code"
+    done:
+        email: "Votre adresse e-mail a été modifiée. Un avis a été envoyé à l'ancienne adresse."
+        phone: "Votre numéro de téléphone a été modifié et vérifié."
+        phone_removed: "Votre numéro de téléphone a été retiré."
+avatar:
+    unsupported: "Format non pris en charge. Choisissez une photo JPEG, PNG, WebP ou GIF."
+    saved: "Photo de profil enregistrée."
+    removed: "Photo de profil supprimée."
+addresses:
+    form:
+        add: "Nouvelle adresse"
+        edit: "Modifier l'adresse"
+    saved: "Adresse enregistrée."
+    confirm_delete: "Supprimer cette adresse ? Vos commandes passées ne sont pas modifiées."

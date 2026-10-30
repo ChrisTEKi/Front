@@ -1,14 +1,23 @@
 {# ============================================================
    Header — burger drawer, logo, delivery/pickup switch, city
    selector, search bar, favorites, cart, account menu.
-   Faithful port of the Marketoo/GoBuy Header.tsx component.
+   Port fidèle du composant d'en-tête (Header.tsx) de la maquette GoBuy.
+
+   Tous les textes viennent des fichiers translations/messages.{fr,en,es}.yaml (clés « header.* »).
+   Le menu du compte dépend du rôle de la personne connectée (app.user) :
+     - visiteur       : bouton « Connexion » ;
+     - client         : mon compte, mes commandes, déconnexion ;
+     - fournisseur    : mon compte, espace fournisseur, déconnexion ;
+     - administrateur : mon compte, espace administrateur, déconnexion.
+   Le lien de déconnexion (logout_path) contient un jeton CSRF : un site tiers ne peut pas déconnecter la personne de force.
 ============================================================ #}
+{% set me = app.user %}
 <header class="sticky top-0 z-40 w-full border-b border-neutral-200/80 bg-white font-sans">
     <div class="w-full px-4 sm:px-8 lg:px-12 xl:px-16">
         <div class="flex h-16 items-center justify-between gap-3 sm:h-20 sm:gap-6">
 
             <div class="flex shrink-0 items-center gap-2 sm:gap-4">
-                <button type="button" data-drawer-toggle="side-drawer" aria-expanded="false" aria-label="Menu principal"
+                <button type="button" data-drawer-toggle="side-drawer" aria-expanded="false" aria-label="{{ 'header.menu'|trans }}"
                         class="rounded-full p-2 text-neutral-800 transition-colors hover:bg-neutral-100 sm:p-2.5">
                     {{ ux_icon('tabler:menu-2', { class: 'h-5 w-5 sm:h-6 sm:w-6' }) }}
                 </button>
@@ -22,10 +31,10 @@
 
                 <div data-mode-toggle class="ml-1 hidden items-center rounded-full border border-neutral-200/60 bg-soft-gray p-1 text-xs font-bold md:flex">
                     <button type="button" aria-pressed="true" class="flex items-center gap-1.5 rounded-full bg-black px-3.5 py-1.5 text-white shadow-xs transition-all">
-                        {{ ux_icon('tabler:bike', { class: 'h-3.5 w-3.5' }) }} Livraison
+                        {{ ux_icon('tabler:bike', { class: 'h-3.5 w-3.5' }) }} {{ 'header.mode.delivery'|trans }}
                     </button>
                     <button type="button" aria-pressed="false" class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-neutral-600 transition-all hover:text-black">
-                        {{ ux_icon('tabler:shopping-bag', { class: 'h-3.5 w-3.5' }) }} À emporter
+                        {{ ux_icon('tabler:shopping-bag', { class: 'h-3.5 w-3.5' }) }} {{ 'header.mode.pickup'|trans }}
                     </button>
                 </div>
 
@@ -33,32 +42,25 @@
                     <button type="button" data-dropdown-toggle="city-menu" aria-expanded="false"
                             class="flex items-center gap-2 rounded-full border border-neutral-200/60 px-3.5 py-2 text-xs font-semibold text-neutral-800 transition-colors hover:bg-neutral-100">
                         {{ ux_icon('tabler:map-pin-filled', { class: 'h-3.5 w-3.5 text-gobuy-green' }) }}
-                        <span class="max-w-[140px] truncate" data-city-label>Antananarivo (Centre &amp; Banlieue)</span>
+                        <span class="max-w-[140px] truncate" data-city-label>{{ 'header.city.default'|trans }}</span>
                         <span class="text-neutral-400">•</span>
-                        <span class="font-medium text-neutral-500">Maintenant</span>
+                        <span class="font-medium text-neutral-500">{{ 'header.city.now'|trans }}</span>
                         {{ ux_icon('tabler:chevron-down', { class: 'h-3.5 w-3.5 text-neutral-400' }) }}
                     </button>
                     <div id="city-menu" class="hidden absolute left-0 top-full z-50 mt-2 w-80 rounded-2xl border border-neutral-200 bg-white py-2 shadow-xl">
                         <div class="border-b border-neutral-100 px-4 py-2">
-                            <p class="text-xs font-bold text-neutral-900">Zone de livraison à Madagascar</p>
-                            <p class="text-[11px] text-neutral-500">Sélectionnez votre commune ou province</p>
+                            <p class="text-xs font-bold text-neutral-900">{{ 'header.city.title'|trans }}</p>
+                            <p class="text-[11px] text-neutral-500">{{ 'header.city.subtitle'|trans }}</p>
                         </div>
                         <div class="max-h-64 overflow-y-auto py-1">
-                            {% for city in [
-                                {name: 'Antananarivo (Centre & Banlieue)', delay: '20–40 min'},
-                                {name: 'Antananarivo - Ankorondrano / Ivandry', delay: '15–30 min'},
-                                {name: 'Antananarivo - Analakely / Isoraka', delay: '20–35 min'},
-                                {name: 'Antananarivo - Bypass / Tanjombato', delay: '30–50 min'},
-                                {name: 'Tamatave (Toamasina)', delay: '24h - 48h'},
-                                {name: 'Majunga (Mahajanga)', delay: '48h'},
-                                {name: 'Antsirabe', delay: '24h'}
-                            ] %}
-                                <button type="button" data-city-option="{{ city.name }}" class="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs transition-colors hover:bg-neutral-50">
+                            {% for n in 1..7 %}
+                                {% set city = ('header.city.c' ~ n)|trans %}
+                                <button type="button" data-city-option="{{ city }}" class="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs transition-colors hover:bg-neutral-50">
                                     <span class="flex items-center gap-2 text-neutral-700">
                                         {{ ux_icon('tabler:map-pin', { class: 'h-3.5 w-3.5 text-neutral-400' }) }}
-                                        <span class="max-w-[180px] truncate">{{ city.name }}</span>
+                                        <span class="max-w-[180px] truncate">{{ city }}</span>
                                     </span>
-                                    <span class="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">{{ city.delay }}</span>
+                                    <span class="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">{{ ('header.city.d' ~ n)|trans }}</span>
                                 </button>
                             {% endfor %}
                         </div>
@@ -69,9 +71,9 @@
             <div class="hidden max-w-xl flex-1 sm:block">
                 <div class="relative w-full">
                     {{ ux_icon('tabler:search', { class: 'pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400' }) }}
-                    <input type="search" data-search-input placeholder="Plats, courses, épicerie, high-tech, mode..."
+                    <input type="search" data-search-input placeholder="{{ 'header.search'|trans }}"
                            class="w-full rounded-full border border-transparent bg-soft-gray py-2.5 pl-11 pr-10 text-xs font-medium text-black placeholder-neutral-500 transition-all hover:bg-neutral-200/60 focus:border-black focus:bg-white focus:outline-none focus:ring-1 focus:ring-black sm:text-sm">
-                    <button type="button" data-search-clear class="hidden absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-400 hover:bg-neutral-200 hover:text-black">
+                    <button type="button" data-search-clear aria-label="{{ 'header.search_clear'|trans }}" class="hidden absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-400 hover:bg-neutral-200 hover:text-black">
                         {{ ux_icon('tabler:x', { class: 'h-3.5 w-3.5' }) }}
                     </button>
                 </div>
@@ -79,31 +81,63 @@
 
             <div class="flex shrink-0 items-center gap-2 sm:gap-3">
                 <a href="{{ path('app_become_vendor') }}" class="hidden items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold text-neutral-800 transition-colors hover:bg-neutral-100 hover:text-black lg:flex">
-                    {{ ux_icon('tabler:building-store', { class: 'h-4 w-4 text-gobuy-green' }) }} Devenir Partenaire
+                    {{ ux_icon('tabler:building-store', { class: 'h-4 w-4 text-gobuy-green' }) }} {{ 'header.partner'|trans }}
                 </a>
 
-                <button type="button" data-open-modal="auth" data-auth-mode="login" title="Mes Favoris" aria-label="Favoris"
-                        class="relative rounded-full p-2.5 text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-black">
-                    {{ ux_icon('tabler:heart', { class: 'h-5 w-5' }) }}
-                </button>
+                {% if me %}
+                    <a href="{{ path('app_account', {section: 'favorites'}) }}" title="{{ 'header.favorites'|trans }}" aria-label="{{ 'header.favorites'|trans }}"
+                       class="relative rounded-full p-2.5 text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-black">
+                        {{ ux_icon('tabler:heart', { class: 'h-5 w-5' }) }}
+                    </a>
+                {% else %}
+                    <button type="button" data-open-modal="auth" data-auth-mode="login" title="{{ 'header.favorites'|trans }}" aria-label="{{ 'header.favorites'|trans }}"
+                            class="relative rounded-full p-2.5 text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-black">
+                        {{ ux_icon('tabler:heart', { class: 'h-5 w-5' }) }}
+                    </button>
+                {% endif %}
 
                 <button type="button" data-drawer-toggle="cart-drawer" aria-expanded="false"
                         class="flex items-center gap-2 rounded-full bg-black px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-neutral-800 sm:px-4 sm:py-2.5 sm:text-sm">
                     {{ ux_icon('tabler:shopping-cart', { class: 'h-4 w-4' }) }}
-                    <span>Panier</span>
+                    <span>{{ 'header.cart'|trans }}</span>
                     <span class="min-w-4 rounded-full bg-gobuy-green px-1.5 py-0.5 text-center font-mono text-xs font-bold" data-cart-count>0</span>
                 </button>
 
-                <a href="{{ path('app_auth') }}" class="rounded-full bg-soft-gray px-4 py-2 text-xs font-bold text-black transition-colors hover:bg-neutral-200 sm:px-5 sm:py-2.5 sm:text-sm">
-                    Connexion
-                </a>
+                {% if me %}
+                    {# Menu du compte : la photo de profil, ou à défaut l'initiale du nom, dans un rond. #}
+                    <div class="relative">
+                        <button type="button" data-dropdown-toggle="user-menu" aria-expanded="false" aria-label="{{ 'header.user_menu'|trans }}" title="{{ 'header.signed_in_as'|trans({'%name%': me.fullName}) }}"
+                                class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-black text-sm font-black text-gobuy-green ring-2 ring-transparent transition-all hover:ring-gobuy-green/40 sm:h-10 sm:w-10">{% if me.hasAvatar %}<img src="{{ path('app_profile_photo', {v: me.avatarVersion}) }}" alt="" width="40" height="40" class="h-full w-full object-cover">{% else %}{{ me.fullName|first|upper }}{% endif %}</button>
+                        <div id="user-menu" class="hidden absolute right-0 top-full z-50 mt-2 w-60 rounded-2xl border border-neutral-200 bg-white py-2 shadow-xl">
+                            <div class="border-b border-neutral-100 px-4 pb-2">
+                                <p class="truncate text-xs font-bold text-neutral-900">{{ me.fullName }}</p>
+                                <p class="truncate text-[11px] text-neutral-500">{{ me.email }}</p>
+                            </div>
+                            <a href="{{ path('app_account') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50">{{ ux_icon('tabler:user', { class: 'h-4 w-4 text-neutral-500' }) }} {{ 'header.my_account'|trans }}</a>
+                            {% if is_granted('ROLE_CLIENT') %}
+                                <a href="{{ path('app_account', {section: 'orders'}) }}" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50">{{ ux_icon('tabler:package', { class: 'h-4 w-4 text-neutral-500' }) }} {{ 'header.my_orders'|trans }}</a>
+                            {% endif %}
+                            {% if is_granted('ROLE_SUPPLIER') %}
+                                <a href="{{ path('app_supplier_dashboard') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50">{{ ux_icon('tabler:building-store', { class: 'h-4 w-4 text-neutral-500' }) }} {{ 'header.supplier_space'|trans }}</a>
+                            {% endif %}
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <a href="{{ path('app_admin_dashboard') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50">{{ ux_icon('tabler:shield-check', { class: 'h-4 w-4 text-neutral-500' }) }} {{ 'header.admin_space'|trans }}</a>
+                            {% endif %}
+                            <a href="{{ logout_path() }}" class="mt-1 flex items-center gap-2.5 border-t border-neutral-100 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50">{{ ux_icon('tabler:logout', { class: 'h-4 w-4' }) }} {{ 'header.logout'|trans }}</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ path('app_auth') }}" class="rounded-full bg-soft-gray px-4 py-2 text-xs font-bold text-black transition-colors hover:bg-neutral-200 sm:px-5 sm:py-2.5 sm:text-sm">
+                        {{ 'header.login'|trans }}
+                    </a>
+                {% endif %}
             </div>
         </div>
 
         <div class="pb-3 sm:hidden">
             <div class="relative w-full">
                 {{ ux_icon('tabler:search', { class: 'pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400' }) }}
-                <input type="search" data-search-input placeholder="Courses, plats, tech, mode..."
+                <input type="search" data-search-input placeholder="{{ 'header.search_short'|trans }}"
                        class="w-full rounded-full border border-transparent bg-soft-gray py-2 pl-10 pr-8 text-xs text-black placeholder-neutral-500 transition-all hover:bg-neutral-200/60 focus:border-black focus:bg-white focus:outline-none">
             </div>
         </div>
@@ -128,60 +162,65 @@
             </div>
 
             <div class="space-y-2.5">
-                <a href="{{ path('app_auth') }}" class="block w-full rounded-full bg-black py-3 text-center text-sm font-bold text-white shadow-xs transition-colors hover:bg-neutral-800">Connexion</a>
-                <a href="{{ path('app_auth') }}?mode=register" class="block w-full rounded-full bg-soft-gray py-3 text-center text-sm font-bold text-black transition-colors hover:bg-neutral-200">Créer un compte</a>
+                {% if me %}
+                    <a href="{{ path('app_account') }}" class="block w-full rounded-full bg-black py-3 text-center text-sm font-bold text-white shadow-xs transition-colors hover:bg-neutral-800">{{ 'header.my_account'|trans }}</a>
+                    <a href="{{ logout_path() }}" class="block w-full rounded-full bg-soft-gray py-3 text-center text-sm font-bold text-red-600 transition-colors hover:bg-red-50">{{ 'header.logout'|trans }}</a>
+                {% else %}
+                    <a href="{{ path('app_auth') }}" class="block w-full rounded-full bg-black py-3 text-center text-sm font-bold text-white shadow-xs transition-colors hover:bg-neutral-800">{{ 'header.login'|trans }}</a>
+                    <a href="{{ path('app_auth') }}?mode=register" class="block w-full rounded-full bg-soft-gray py-3 text-center text-sm font-bold text-black transition-colors hover:bg-neutral-200">{{ 'header.register'|trans }}</a>
+                {% endif %}
             </div>
 
             <div class="space-y-1 border-t border-neutral-100 pt-2 text-sm font-bold text-neutral-800">
                 <a href="{{ path('app_become_vendor') }}" class="flex items-center justify-between rounded-xl px-3 py-2.5 text-gobuy-green hover:bg-neutral-100">
-                    <span class="flex items-center gap-3">{{ ux_icon('tabler:building-store', { class: 'h-5 w-5 text-gobuy-green' }) }} Ajoutez votre restaurant ou boutique</span>
+                    <span class="flex items-center gap-3">{{ ux_icon('tabler:building-store', { class: 'h-5 w-5 text-gobuy-green' }) }} {{ 'header.drawer.add_shop'|trans }}</span>
                     {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-neutral-400' }) }}
                 </a>
+                {% if not me %}
                 <a href="{{ path('app_auth') }}?mode=register_supplier" class="flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-neutral-100">
-                    <span class="flex items-center gap-3">{{ ux_icon('tabler:shopping-bag', { class: 'h-5 w-5 text-neutral-600' }) }} Créer un compte professionnel</span>
+                    <span class="flex items-center gap-3">{{ ux_icon('tabler:shopping-bag', { class: 'h-5 w-5 text-neutral-600' }) }} {{ 'header.drawer.pro_account'|trans }}</span>
                     {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-neutral-400' }) }}
                 </a>
+                {% endif %}
                 <button type="button" data-open-modal="how-it-works" class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-neutral-100">
-                    <span class="flex items-center gap-3">{{ ux_icon('tabler:help-circle', { class: 'h-5 w-5 text-neutral-600' }) }} Comment ça marche ?</span>
+                    <span class="flex items-center gap-3">{{ ux_icon('tabler:help-circle', { class: 'h-5 w-5 text-neutral-600' }) }} {{ 'header.drawer.how'|trans }}</span>
                     {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-neutral-400' }) }}
                 </button>
                 <a href="{{ path('app_home') }}#catalog-section" class="flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-neutral-100">
-                    <span class="flex items-center gap-3">{{ ux_icon('tabler:truck-delivery', { class: 'h-5 w-5 text-neutral-600' }) }} Explorer le catalogue</span>
+                    <span class="flex items-center gap-3">{{ ux_icon('tabler:truck-delivery', { class: 'h-5 w-5 text-neutral-600' }) }} {{ 'header.drawer.catalog'|trans }}</span>
                     {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-neutral-400' }) }}
                 </a>
             </div>
 
-            <p class="mb-2 mt-6 px-2 text-xs font-semibold uppercase text-neutral-400">Aperçu des espaces internes</p>
+            {% if is_granted('ROLE_SUPPLIER') or is_granted('ROLE_ADMIN') %}
             <nav class="space-y-1">
+                {% if is_granted('ROLE_SUPPLIER') %}
                 <a href="{{ path('app_supplier_dashboard') }}" class="flex items-center justify-between rounded-xl px-2 py-2 text-sm font-medium hover:bg-soft-gray">
-                    <span class="flex items-center gap-3">{{ ux_icon('tabler:building-store', { class: 'h-5 w-5 text-neutral-500' }) }} Espace Fournisseur</span>
+                    <span class="flex items-center gap-3">{{ ux_icon('tabler:building-store', { class: 'h-5 w-5 text-neutral-500' }) }} {{ 'header.supplier_space'|trans }}</span>
                     {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-neutral-400' }) }}
                 </a>
+                {% endif %}
+                {% if is_granted('ROLE_ADMIN') %}
                 <a href="{{ path('app_admin_dashboard') }}" class="flex items-center justify-between rounded-xl px-2 py-2 text-sm font-medium hover:bg-soft-gray">
-                    <span class="flex items-center gap-3">{{ ux_icon('tabler:shield-check', { class: 'h-5 w-5 text-neutral-500' }) }} Espace Administrateur</span>
+                    <span class="flex items-center gap-3">{{ ux_icon('tabler:shield-check', { class: 'h-5 w-5 text-neutral-500' }) }} {{ 'header.admin_space'|trans }}</span>
                     {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-neutral-400' }) }}
                 </a>
+                {% endif %}
             </nav>
+            {% endif %}
 
             <div class="space-y-2 border-t border-neutral-100 pt-2">
-                <p class="px-3 text-xs font-black uppercase tracking-wider text-neutral-400">Rayons principaux</p>
+                <p class="px-3 text-xs font-black uppercase tracking-wider text-neutral-400">{{ 'header.drawer.departments'|trans }}</p>
                 <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
-                    {% for dept in [
-                        {slug: 'alimentation', label: '🛒 Courses & Épicerie'},
-                        {slug: 'electronique', label: '📱 High-Tech'},
-                        {slug: 'mode', label: '👗 Mode & Vêtements'},
-                        {slug: 'electromenager', label: '🔌 Électroménager'},
-                        {slug: 'maison', label: '🏠 Maison'},
-                        {slug: 'beaute', label: '💄 Beauté'}
-                    ] %}
-                        <a href="{{ path('app_department', {slug: dept.slug}) }}" class="truncate rounded-xl bg-soft-gray p-2.5 text-left transition-colors hover:bg-neutral-200">{{ dept.label }}</a>
+                    {% for slug in ['alimentation', 'electronique', 'mode', 'electromenager', 'maison', 'beaute'] %}
+                        <a href="{{ path('app_department', {slug: slug}) }}" class="truncate rounded-xl bg-soft-gray p-2.5 text-left transition-colors hover:bg-neutral-200">{{ ('header.drawer.dept.' ~ slug)|trans }}</a>
                     {% endfor %}
                 </div>
             </div>
         </div>
 
         <div class="space-y-3 border-t border-neutral-200 bg-soft-gray p-6">
-            <p class="text-xs font-bold text-neutral-900">Téléchargez l'application GoBuy</p>
+            <p class="text-xs font-bold text-neutral-900">{{ 'header.drawer.app'|trans }}</p>
             <div class="flex items-center gap-2">
                 <span class="flex h-9 items-center gap-2 rounded-lg bg-black px-3 text-[10px] font-bold text-white">{{ ux_icon('tabler:brand-apple', {class: 'h-4 w-4'}) }} App Store</span>
                 <span class="flex h-9 items-center gap-2 rounded-lg bg-black px-3 text-[10px] font-bold text-white">{{ ux_icon('tabler:brand-google-play', {class: 'h-4 w-4'}) }} Google Play</span>
