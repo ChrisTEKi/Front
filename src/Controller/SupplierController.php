@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\ProductRepository;
 use App\Supplier\SupplierDashboardProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,9 +17,9 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 final class SupplierController extends AbstractController
 {
     #[Route('/fournisseur', name: 'app_supplier_dashboard', methods: ['GET'])]
-    public function index(#[CurrentUser] User $user, SupplierDashboardProvider $provider): Response
+    public function index(#[CurrentUser] User $user, SupplierDashboardProvider $provider, ProductRepository $products): Response
     {
-        $response = $this->render('supplier/dashboard.html.twig', ['dashboard' => $provider->forSupplier($user)]);
+        $response = $this->render('supplier/dashboard.html.twig', ['dashboard' => $provider->forSupplier($user), 'productCount' => $products->countByOwner($user)]);
         // Données propres à la personne connectée : jamais mises en cache (navigateur, proxy).
         $response->headers->set('Cache-Control', 'no-store, private');
 

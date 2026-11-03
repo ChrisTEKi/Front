@@ -7,7 +7,7 @@ error:
     too_many_attempts: "Demasiados intentos. Inténtelo de nuevo en %minutes% min."
     too_soon: "Espere %seconds% s antes de pedir un nuevo código."
     delivery_failed: "No se pudo enviar el código. Inténtelo de nuevo en un momento."
-    phone_taken: "Este número ya está verificado en otra cuenta."
+    phone_taken: "Este número de teléfono ya está en uso en otra cuenta."
     cannot_skip: "Este paso no se puede omitir."
     unexpected_step: "Acción imposible en este paso."
     invalid_code: "Código incorrecto. Le quedan %attempts% intento(s)."
@@ -50,6 +50,11 @@ error:
     not_found: "Elemento no encontrado."
     address_limit: "Ya tienes %max% direcciones guardadas. Elimina una antes de añadir otra."
     addresses_not_available: "La libreta de direcciones solo está disponible para cuentas de cliente."
+    email_taken: "Esta dirección de correo ya está en uso en otra cuenta. Inicie sesión o use «¿Olvidó su contraseña?»."
+    registration_conflict: "No es posible registrarse: algunos datos ya están en uso en otra cuenta."
+    account_banned: "Esta cuenta ha sido cerrada definitivamente por GoBuy. Contacte con el soporte de GoBuy si cree que es un error."
+    registration_blocked: "No es posible registrarse. Contacte con el soporte de GoBuy si cree que es un error."
+    account_closing: "GoBuy ha decidido eliminar esta cuenta: está cerrada. Contacte con el soporte de GoBuy si cree que es un error."
 forgot:
     sent: "Si existe una cuenta con esta dirección, se le acaba de enviar un código."
 reset:
@@ -76,3 +81,4 @@ social:
         email_unverified: "El correo de esta cuenta no está verificado en el proveedor. Verifíquelo primero o regístrese con su correo."
         client_only: "El acceso con Google o Apple es solo para cuentas de cliente. Use su correo y su contraseña."
         blocked: "Esta cuenta no puede iniciar sesión por el momento. Contacte con el soporte de GoBuy."
+        registration_blocked: "No es posible registrarse. Contacte con el soporte de GoBuy si cree que es un error."

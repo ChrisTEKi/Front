@@ -12,7 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * Supprime DÉFINITIVEMENT les comptes clients dont le délai de grâce de 30 jours est écoulé.
+ * Supprime DÉFINITIVEMENT les comptes clients et fournisseurs dont l'échéance de suppression est atteinte.
  *
  * À planifier chaque jour (cron) :   15 3 * * *  php bin/console app:accounts:purge
  * Sans danger si lancée plusieurs fois : un compte déjà effacé n'est jamais retraité.
@@ -20,7 +20,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *   php bin/console app:accounts:purge --dry-run     → compte les comptes concernés sans rien modifier
  *   php bin/console app:accounts:purge --limit=500   → traite jusqu'à 500 comptes (200 par défaut)
  */
-#[AsCommand(name: 'app:accounts:purge', description: 'Supprime définitivement les comptes clients dont le délai de 30 jours est écoulé.')]
+#[AsCommand(name: 'app:accounts:purge', description: 'Supprime définitivement les comptes clients et fournisseurs dont l\'échéance de suppression est atteinte.')]
 final class PurgeAccountsCommand extends Command
 {
     public function __construct(

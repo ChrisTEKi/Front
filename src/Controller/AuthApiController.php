@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Auth\Dto\RegisterClientData;
 use App\Auth\Dto\RegisterSupplierData;
+use App\Auth\Exception\RegistrationBlockedException;
+use App\Auth\Exception\RegistrationConflictException;
 use App\Auth\FlowOutcome;
 use App\Auth\LoginFlow;
 use App\Auth\PasswordResetService;
@@ -68,7 +70,13 @@ final class AuthApiController extends AbstractController
             return $invalid;
         }
 
-        return $this->respond($this->registration->registerClient($dto, $request->getLocale()));
+        try {
+            return $this->respond($this->registration->registerClient($dto, $request->getLocale()));
+        } catch (RegistrationConflictException $conflict) {
+            return $this->registrationConflict($conflict);
+        } catch (RegistrationBlockedException) {
+            return $this->failure('registration_blocked', Response::HTTP_FORBIDDEN);
+        }
     }
 
     /** Inscription d'un fournisseur (e-mail + téléphone à vérifier, puis approbation par un administrateur). */
@@ -80,7 +88,13 @@ final class AuthApiController extends AbstractController
             return $invalid;
         }
 
-        return $this->respond($this->registration->registerSupplier($dto, $request->getLocale()));
+        try {
+            return $this->respond($this->registration->registerSupplier($dto, $request->getLocale()));
+        } catch (RegistrationConflictException $conflict) {
+            return $this->registrationConflict($conflict);
+        } catch (RegistrationBlockedException) {
+            return $this->failure('registration_blocked', Response::HTTP_FORBIDDEN);
+        }
     }
 
     /** Vérifie le code saisi pour l'étape en cours (l'étape est connue du SERVEUR, pas envoyée par le navigateur). */
@@ -176,6 +190,25 @@ final class AuthApiController extends AbstractController
         ], Response::HTTP_UNPROCESSABLE_ENTITY));
     }
 
+    /**
+     * Inscription refusée : l'e-mail et/ou le téléphone appartiennent déjà à un autre compte. Même forme que les erreurs de
+     * validation (« errors » par champ) pour que l'interface affiche le message sous le bon champ ; code 409 (conflit).
+     */
+    private function registrationConflict(RegistrationConflictException $conflict): JsonResponse
+    {
+        $errors = [];
+        foreach ($conflict->fields as $field) {
+            $errors[$field] = [$this->translator->trans('error.'.$field.'_taken', [], 'auth')];
+        }
+
+        return $this->noStore(new JsonResponse([
+            'ok' => false,
+            'error' => 'registration_conflict',
+            'message' => $this->translator->trans('error.registration_conflict', [], 'auth'),
+            'errors' => $errors,
+        ], Response::HTTP_CONFLICT));
+    }
+
     /** Convertit un résultat de LoginFlow en réponse JSON (message traduit + code HTTP adapté). */
     private function respond(FlowOutcome $outcome): JsonResponse
     {
@@ -222,7 +255,7 @@ final class AuthApiController extends AbstractController
     {
         return match ($error) {
             'invalid_credentials', 'session_expired' => Response::HTTP_UNAUTHORIZED,
-            'account_suspended', 'network_not_allowed' => Response::HTTP_FORBIDDEN,
+            'account_suspended', 'account_banned', 'account_closing', 'network_not_allowed', 'registration_blocked' => Response::HTTP_FORBIDDEN,
             'too_many_attempts', 'too_soon' => Response::HTTP_TOO_MANY_REQUESTS,
             'delivery_failed' => Response::HTTP_SERVICE_UNAVAILABLE,
             'phone_taken', 'cannot_skip', 'unexpected_step' => Response::HTTP_CONFLICT,

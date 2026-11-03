@@ -1,0 +1,10 @@
+{% trans_default_domain 'admin' %}
+{# Liens vers les pages d'administration à part (en plus des onglets du tableau de bord). Chaque lien n'apparaît que si
+   l'administrateur a le droit correspondant (variable `can`). Textes : translations/admin.<langue>.yaml (clés « tabs.* »). #}
+{% set linkClass = 'shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100' %}
+{% if can['products.view'] %}
+    <a href="{{ path('app_admin_products') }}" class="{{ linkClass }}">{{ 'tabs.products'|trans }}</a>
+{% endif %}
+{% if can['blacklist.manage'] %}
+    <a href="{{ path('app_admin_blacklist') }}" class="{{ linkClass }}">{{ 'tabs.blacklist'|trans }}</a>
+{% endif %}

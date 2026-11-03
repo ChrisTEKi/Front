@@ -16,6 +16,7 @@ error:
     validation: "Veuillez corriger les champs en erreur."
     invalid_courier: "Nom ou téléphone du livreur invalide."
     not_found: "Aucune commande trouvée avec cette référence."
+    funds_frozen: "Vos paiements sont gelés par l'équipe GoBuy : vous ne pouvez pas commander pour le moment. Contactez le support."
 status:
     confirmed: "Commande confirmée"
     preparing: "En préparation"

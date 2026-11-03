@@ -5,8 +5,13 @@
     <a href="{{ path('app_product', {id: product.id}) }}" class="absolute inset-0 z-0" aria-label="{{ product.name }}"></a>
 
     <div class="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden bg-soft-gray p-3 sm:aspect-square sm:p-4">
-        <img src="{{ product.images[0] }}" alt="{{ product.name }}" loading="lazy"
-             class="h-full w-full object-contain object-center mix-blend-multiply transition-transform duration-300 group-hover:scale-105">
+        {% if product.images|length %}
+            <img src="{{ product.images|first }}" alt="{{ product.name }}" loading="lazy"
+                 class="h-full w-full object-contain object-center mix-blend-multiply transition-transform duration-300 group-hover:scale-105">
+        {% else %}
+            {# Pas encore de photo de produit : un pictogramme à la place. #}
+            <span class="text-neutral-300" aria-hidden="true">{{ ux_icon('tabler:package', { class: 'h-14 w-14' }) }}</span>
+        {% endif %}
 
         <div class="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1">
             {% if discount > 0 %}
@@ -27,7 +32,9 @@
             {{ ux_icon('tabler:heart', { class: 'h-4 w-4' }) }}
         </button>
 
-        {% if product.stock <= 5 and product.stock > 0 %}
+        {% if product.featured|default(false) %}
+            <span class="absolute bottom-2 left-2.5 rounded-md bg-black px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-gobuy-green">★ {{ 'product.featured'|trans }}</span>
+        {% elseif product.stock is defined and product.stock <= 5 and product.stock > 0 %}
             <span class="absolute bottom-2 left-2.5 rounded-md bg-neutral-900/90 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-white">{{ 'product.only_left'|trans({'%count%': product.stock}) }}</span>
         {% endif %}
     </div>
@@ -40,9 +47,12 @@
             </div>
             <h3 class="mt-1 line-clamp-2 text-xs font-bold leading-snug text-black transition-colors group-hover:text-gobuy-green sm:text-sm">{{ product.name }}</h3>
             <div class="mt-1.5 flex items-center gap-1.5 text-xs text-neutral-600">
-                <span class="flex items-center font-bold text-black">{{ ux_icon('tabler:star-filled', { class: 'mr-0.5 h-3.5 w-3.5 text-gobuy-green' }) }}{{ product.rating|format_number({fraction_digit: 1}) }}</span>
-                <span class="text-[11px] text-neutral-400">({{ product.reviewsCount }})</span>
-                <span class="text-neutral-300">•</span>
+                {# Les étoiles n'apparaissent qu'avec de vrais avis (il n'y en a pas encore tant que personne n'a noté le produit). #}
+                {% if product.reviewsCount|default(0) > 0 %}
+                    <span class="flex items-center font-bold text-black">{{ ux_icon('tabler:star-filled', { class: 'mr-0.5 h-3.5 w-3.5 text-gobuy-green' }) }}{{ product.rating|format_number({fraction_digit: 1}) }}</span>
+                    <span class="text-[11px] text-neutral-400">({{ product.reviewsCount }})</span>
+                    <span class="text-neutral-300">•</span>
+                {% endif %}
                 <span class="flex items-center gap-1 text-[11px] text-neutral-500">{{ ux_icon('tabler:clock', { class: 'h-3 w-3 text-neutral-400' }) }}{{ 'product.eta'|trans }}</span>
             </div>
         </div>
@@ -59,7 +69,7 @@
                     <div class="mt-0.5 font-mono text-[10px] text-neutral-400 line-through">{{ product.originalPrice|format_number }} Ar</div>
                 {% endif %}
             </div>
-            <button type="button" data-add-to-cart="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-image="{{ product.images[0]|default('') }}" data-product-supplier="{{ product.supplierName }}" title="{{ 'product.add_cart'|trans }}" aria-label="{{ 'product.add'|trans }}"
+            <button type="button" data-add-to-cart="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-image="{{ product.images|first|default('') }}" data-product-supplier="{{ product.supplierName }}" title="{{ 'product.add_cart'|trans }}" aria-label="{{ 'product.add'|trans }}"
                     class="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black text-white shadow-xs transition-all duration-150 hover:bg-gobuy-green active:scale-90 sm:h-9 sm:w-9">
                 {{ ux_icon('tabler:plus', { class: 'h-4 w-4 sm:h-5 sm:w-5' }) }}
             </button>

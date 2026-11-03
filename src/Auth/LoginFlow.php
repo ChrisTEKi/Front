@@ -154,72 +154,6 @@ final class LoginFlow
         return $this->begin($user, $provider->value);
     }
 
-    /**
-     * Parcours « leurre » : quelqu'un s'est inscrit avec une adresse DÉJÀ utilisée. On affiche exactement le même
-     * écran que pour une vraie inscription (« saisissez le code reçu »), mais aucun code n'existe : toute saisie
-     * échoue. Le vrai titulaire a reçu un e-mail d'information (voir SecurityNotifier::alreadyRegistered).
-     */
-    public function startDecoy(string $email, string $fullName): FlowOutcome
-    {
-        // On mémorise le nom et l'e-mail SAISIS (pas ceux du vrai compte) : la réponse doit avoir exactement la même forme
-        // que celle d'une vraie inscription, champ « user » compris (sinon son absence trahirait que l'adresse existe).
-        $state = new FlowState('', 'registration', $this->now(), $this->now(), decoyTarget: Mask::email($email), decoyName: $fullName, decoyEmail: $email, decoySends: [$this->now()]);
-        $this->save($state);
-
-        return $this->decoyOutcome($state, $this->decoyResendIn($state));
-    }
-
-    /** Secondes avant le prochain « renvoi » du leurre : même délai de 30 s qu'un vrai code (app.otp.resend_cooldown). */
-    private function decoyResendIn(FlowState $state): int
-    {
-        $last = [] === $state->decoySends ? $state->startedAt : max($state->decoySends);
-
-        return max(0, 30 - ($this->now() - $last));
-    }
-
-    /**
-     * Imite resend() pour un leurre : mêmes refus qu'un vrai compte (« trop tôt » avant 30 s, puis 3 envois maximum
-     * par fenêtre de 10 minutes, comme le limiteur otp_send_user). Aucun code n'est évidemment envoyé.
-     */
-    private function decoyResend(FlowState $state): FlowOutcome
-    {
-        $now = $this->now();
-        $state->decoySends = array_values(array_filter($state->decoySends, static fn (int $t): bool => $now - $t < 600));
-
-        $wait = $this->decoyResendIn($state);
-        if ($wait <= 0 && \count($state->decoySends) >= 3) {
-            $wait = max(1, min($state->decoySends) + 600 - $now);
-        }
-        if ($wait > 0) {
-            $this->save($state);
-
-            return $this->decoyOutcome($state, $wait)->withError('too_soon', null, $wait);
-        }
-
-        $state->decoySends[] = $now;
-        $this->save($state);
-
-        return $this->decoyOutcome($state, $this->decoyResendIn($state));
-    }
-
-    /** Réponse « vérifiez votre e-mail » du leurre : mêmes champs qu'une vraie inscription (voir describe()). */
-    private function decoyOutcome(FlowState $state, int $resendIn): FlowOutcome
-    {
-        return new FlowOutcome(
-            FlowStep::VerifyEmail,
-            null,
-            $state->decoyTarget,
-            OtpChannel::Email->value,
-            [],
-            $resendIn,
-            0,
-            null,
-            false,
-            null,
-            ['name' => (string) $state->decoyName, 'email' => (string) $state->decoyEmail],
-        );
-    }
-
     // =========================================================================
     // ACTIONS : ce que l'utilisateur peut faire pendant le parcours
     // =========================================================================
@@ -230,9 +164,6 @@ final class LoginFlow
         $state = $this->state();
         if (null === $state) {
             return new FlowOutcome(FlowStep::Login);
-        }
-        if ($state->isDecoy()) {
-            return $this->decoyOutcome($state, 0);
         }
         $user = $this->loadUser($state);
         if (null === $user) {
@@ -256,15 +187,6 @@ final class LoginFlow
         $limit = $this->otpVerifyIpLimiter->create($ip)->consume();
         if (!$limit->isAccepted()) {
             return $this->tooManyAttempts($limit->getRetryAfter());
-        }
-
-        // Leurre : tout code est faux, avec le même décompte d'essais que la réalité.
-        if ($state->isDecoy()) {
-            ++$state->decoyAttempts;
-            $this->save($state);
-            $left = 5 - $state->decoyAttempts;
-
-            return $this->decoyOutcome($state, $this->decoyResendIn($state))->withError($left > 0 ? 'invalid_code' : 'code_locked', max(0, $left));
         }
 
         $user = $this->loadUser($state);
@@ -329,10 +251,6 @@ final class LoginFlow
         $state = $this->state();
         if (null === $state) {
             return new FlowOutcome(FlowStep::Login, 'session_expired');
-        }
-        if ($state->isDecoy()) {
-            // On simule un renvoi (même délai d'attente et mêmes plafonds qu'un vrai compte) : aucune différence visible.
-            return $this->decoyResend($state);
         }
         $user = $this->loadUser($state);
         if (null === $user) {
@@ -404,11 +322,18 @@ final class LoginFlow
     {
         $ip = $this->requestStack->getCurrentRequest()?->getClientIp();
 
-        // Compte suspendu : refus clair. (L'identité est prouvée à ce stade, rien n'est donc divulgué.)
-        if ($user->isSuspended()) {
-            $this->audit->record(AuditAction::LOGIN_BLOCKED, $user, 'user', $user->getId()->toRfc4122(), ['reason' => 'suspended']);
+        // Compte suspendu ou banni : refus clair. (L'identité est prouvée à ce stade, rien n'est donc divulgué.)
+        if ($user->isSuspended() || $user->isBanned()) {
+            $banned = $user->isBanned();
+            $this->audit->record(AuditAction::LOGIN_BLOCKED, $user, 'user', $user->getId()->toRfc4122(), ['reason' => $banned ? 'banned' : 'suspended']);
 
-            return new FlowOutcome(FlowStep::Blocked, 'account_suspended');
+            return new FlowOutcome(FlowStep::Blocked, $banned ? 'account_banned' : 'account_suspended');
+        }
+        // Suppression décidée par l'équipe : le compte est fermé, contrairement à une demande du titulaire (qui peut la restaurer).
+        if ($user->isDeletionByAdmin()) {
+            $this->audit->record(AuditAction::LOGIN_BLOCKED, $user, 'user', $user->getId()->toRfc4122(), ['reason' => 'closing']);
+
+            return new FlowOutcome(FlowStep::Blocked, 'account_closing');
         }
 
         // Administrateur hors du réseau autorisé : refus, même avec le bon mot de passe.
@@ -446,7 +371,7 @@ final class LoginFlow
      */
     public function nextStep(FlowState $state, User $user): FlowStep
     {
-        if ($user->isSuspended()) {
+        if ($user->isSuspended() || $user->isBanned() || $user->isDeletionByAdmin()) {
             return FlowStep::Blocked;
         }
 

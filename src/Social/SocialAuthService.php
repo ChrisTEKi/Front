@@ -5,7 +5,9 @@ namespace App\Social;
 use App\Audit\AuditAction;
 use App\Audit\AuditLogger;
 use App\Entity\SocialIdentity;
+use App\Auth\Exception\RegistrationBlockedException;
 use App\Entity\User;
+use App\Moderation\BlacklistService;
 use App\Repository\SocialIdentityRepository;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -37,6 +39,7 @@ final class SocialAuthService
         private readonly EntityManagerInterface $em,
         private readonly AuditLogger $audit,
         private readonly ClockInterface $clock,
+        private readonly BlacklistService $blacklist,
     ) {
     }
 
@@ -84,6 +87,12 @@ final class SocialAuthService
         } else {
             // 3) Nouveau compte client, sans mot de passe.
             $name = $claims->name ?? $fallbackName;
+            // Liste noire : une personne bannie ne se recrée pas un compte avec Google ou Apple.
+            try {
+                $this->blacklist->assertAllowed($claims->email, null, $name);
+            } catch (RegistrationBlockedException) {
+                throw new SocialAuthException('registration_blocked');
+            }
             $user = User::registerClient($claims->email, null !== $name && '' !== $name ? $name : $this->nameFromEmail($claims->email), null, $locale, $now);
             $user->markEmailVerified($now);
             $this->em->persist($user);

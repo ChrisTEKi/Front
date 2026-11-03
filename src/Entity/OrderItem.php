@@ -46,6 +46,10 @@ class OrderItem
     #[ORM\JoinColumn(name: 'supplier_id', nullable: true, onDelete: 'SET NULL')]
     private ?User $supplier;
 
+    /** Date du remboursement de cette ligne par l'équipe GoBuy (NULL = non remboursée). */
+    #[ORM\Column(name: 'refunded_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $refundedAt = null;
+
     public function __construct(Order $order, ?string $productRef, string $productName, int $unitPrice, int $quantity, ?User $supplier)
     {
         $this->id = Uuid::v7();
@@ -86,5 +90,20 @@ class OrderItem
     public function getSupplier(): ?User
     {
         return $this->supplier;
+    }
+
+    public function getRefundedAt(): ?\DateTimeImmutable
+    {
+        return $this->refundedAt;
+    }
+
+    public function isRefunded(): bool
+    {
+        return null !== $this->refundedAt;
+    }
+
+    public function markRefunded(\DateTimeImmutable $now): void
+    {
+        $this->refundedAt ??= $now;
     }
 }

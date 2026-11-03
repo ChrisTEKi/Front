@@ -19,4 +19,11 @@ enum AccountStatus: string
      * par la commande `app:accounts:purge`, sauf s'il se reconnecte et choisit de le restaurer.
      */
     case PendingDeletion = 'pending_deletion';
+
+    /**
+     * Compte BANNI DÉFINITIVEMENT par l'équipe GoBuy (clôture immédiate) : connexion impossible, aucune restauration en libre-service.
+     * Le compte reste en base (l'e-mail et le téléphone restent occupés : on ne peut pas se réinscrire avec) ;
+     * seul le Super Admin peut lever un bannissement.
+     */
+    case Banned = 'banned';
 }

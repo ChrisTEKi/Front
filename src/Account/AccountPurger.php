@@ -15,10 +15,11 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 
 /**
- * SUPPRESSION DÉFINITIVE des comptes clients dont le délai de grâce de 30 jours est écoulé.
+ * SUPPRESSION DÉFINITIVE des comptes CLIENTS et FOURNISSEURS dont l'échéance de suppression est atteinte : délai de grâce de 30 jours
+ * pour une demande du titulaire, délai choisi par l'administrateur pour une suppression décidée par l'équipe (voir DeletionDelay).
  *
- * Lancée chaque jour par la commande `app:accounts:purge` (cron). Pour chaque compte « en cours de suppression » dont la
- * date est dépassée, dans UNE transaction (tout ou rien) :
+ * Lancée chaque jour par la commande `app:accounts:purge` (cron), et tout de suite pour une suppression « immédiate » (purgeNow).
+ * Pour chaque compte « en cours de suppression » dont la date est dépassée, dans UNE transaction (tout ou rien) :
  *
  *   1. les COMMANDES du client sont anonymisées (nom, e-mail, téléphone, adresse, numéro Mobile Money effacés ; montants,
  *      articles et dates gardés : obligations comptables) ;
@@ -26,15 +27,17 @@ use Psr\Log\LoggerInterface;
  *      anonymes faites avec son e-mail), ainsi que les rares métadonnées personnelles. Les lignes elles-mêmes restent
  *      (« une commande a été passée », « un export a eu lieu ») : la traçabilité de la sécurité n'est pas perdue ;
  *   3. le compte est SUPPRIMÉ. La base fait le reste : adresses, comptes Mobile Money, identités Google/Apple et codes
- *      à usage unique sont supprimés en cascade (clés étrangères « ON DELETE CASCADE ») ;
+ *      à usage unique sont supprimés en cascade (clés étrangères « ON DELETE CASCADE »). Pour un FOURNISSEUR : son dossier, ses
+ *      contestations et pièces jointes, TOUS ses produits disparaissent aussi ; les commandes passées gardent leurs lignes (nom,
+ *      prix, quantité) mais sans lien vers lui (« ON DELETE SET NULL ») ;
  *   4. une ligne neutre « account.purged » est ajoutée au journal (identifiant du compte seulement : plus aucune donnée
  *      personnelle) ;
  *   5. APRÈS la validation de la transaction, un dernier e-mail prévient la personne.
  *
  * Garde-fous : le compte est relu SOUS VERROU juste avant l'effacement et revérifié (une personne qui vient de restaurer
  * son compte, ou qui a été réactivée, n'est pas effacée par une purge qui tournait en même temps) ; un compte qui a encore
- * une commande EN COURS est reporté au passage suivant ; seuls les comptes
- * CLIENTS sont concernés (jamais un fournisseur ni un administrateur) ; le mode « simulation » ne touche à rien.
+ * une commande EN COURS (client : sa commande ; fournisseur : une commande contenant un de ses articles non remboursés) est
+ * reporté au passage suivant ; jamais un administrateur ; le mode « simulation » ne touche à rien.
  */
 final class AccountPurger
 {
@@ -98,6 +101,22 @@ final class AccountPurger
     }
 
     /**
+     * Suppression IMMÉDIATE d'un compte déjà programmé à l'instant `$now` (suppression « immédiate » décidée par un administrateur).
+     * Même règles et mêmes garde-fous que la purge quotidienne. Renvoie vrai si le compte a bien été effacé.
+     */
+    public function purgeNow(string $id, \DateTimeImmutable $now): bool
+    {
+        $contact = $this->purgeOne($id, $now);
+        if (null === $contact) {
+            return false;
+        }
+        // Hors transaction : un serveur d'e-mails en panne ne doit pas annuler une suppression déjà validée.
+        $this->notifier->accountPurged($contact['email'], $contact['name'], $contact['locale']);
+
+        return true;
+    }
+
+    /**
      * Efface UN compte. Renvoie ses coordonnées (pour le dernier e-mail) ou null s'il n'est plus à purger.
      *
      * @return array{email: string, name: string, locale: string}|null
@@ -108,7 +127,9 @@ final class AccountPurger
             // Relecture SOUS VERROU (SELECT … FOR UPDATE) : personne ne peut modifier ce compte pendant qu'on décide.
             $user = $this->em->find(User::class, $id, LockMode::PESSIMISTIC_WRITE);
             if (!$user instanceof User
-                || !$user->isClient()
+                || $user->isAdmin()
+                // Un fournisseur ne supprime pas son compte lui-même : seule une décision de l'équipe peut l'effacer.
+                || ($user->isSupplier() && !$user->isDeletionByAdmin())
                 || !$user->isPendingDeletion()
                 || null === $user->getDeletionScheduledAt()
                 || $user->getDeletionScheduledAt() > $now
@@ -118,11 +139,12 @@ final class AccountPurger
             // Une commande est encore en cours (créée avant la demande de suppression, ou rouverte depuis) : on n'efface PAS
             // maintenant, sinon on couperait le lien entre un colis en route et son destinataire. Le compte reste « en cours de
             // suppression » et sera repris au prochain passage, une fois la commande livrée ou annulée.
-            if ($this->orders->countOpenForClient($user) > 0) {
+            if (($user->isSupplier() ? $this->orders->countOpenForSupplier($user) : $this->orders->countOpenForClient($user)) > 0) {
                 return null;
             }
 
             $contact = ['email' => $user->getEmail(), 'name' => $user->getFullName(), 'locale' => $user->getLocale()];
+            $type = $user->getAccountType()->value;
 
             // 1) Commandes : anonymisation (le lien vers le client est coupé, les montants et dates restent).
             foreach ($this->em->getRepository(Order::class)->findBy(['client' => $user]) as $order) {
@@ -138,7 +160,7 @@ final class AccountPurger
             $this->em->flush();
 
             // 4) Trace neutre : identifiant seulement.
-            $this->audit->record(AuditAction::ACCOUNT_PURGED, null, 'user', $id, ['type' => 'client']);
+            $this->audit->record(AuditAction::ACCOUNT_PURGED, null, 'user', $id, ['type' => $type]);
 
             return $contact;
         });

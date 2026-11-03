@@ -116,3 +116,13 @@ addresses:
         edit: "Modifier l'adresse"
     saved: "Adresse enregistrée."
     confirm_delete: "Supprimer cette adresse ? Vos commandes passées ne sont pas modifiées."
+products:
+    form:
+        add: "Ajouter un produit"
+        edit: "Modifier le produit"
+    confirm_delete: "Supprimer ce produit définitivement ?"
+    saved: "Produit enregistré."
+    fix: "Corrigez les champs en erreur."
+appeal:
+    sent: "Votre contestation a bien été envoyée. L'équipe GoBuy l'examinera."
+    files_too_big: "Trop de fichiers ou fichiers trop lourds : respectez les limites indiquées."

@@ -177,8 +177,9 @@ final class SupplierDashboardTest extends AppTestCase
         foreach (['data-plan-toggle', 'data-save-payout', 'data-modal="add-product"'] as $fake) {
             self::assertStringNotContainsString($fake, $html, $fake);
         }
-        // Le bouton « Ajouter un produit » est désactivé tant que le catalogue n'existe pas.
-        self::assertMatchesRegularExpression('/<button[^>]*disabled[^>]*>.*?Ajouter un produit/s', $html);
+        // Le catalogue existe désormais : « Ajouter un produit » est un vrai lien vers la gestion des produits (plus de bouton désactivé).
+        self::assertDoesNotMatchRegularExpression('/<button[^>]*disabled[^>]*>\s*(<[^>]+>\s*)*<span>Ajouter un produit/s', $html);
+        self::assertMatchesRegularExpression('~<a href="/fournisseur/produits"[^>]*>.*?Ajouter un produit~s', $html);
     }
 
     public function testExpectedCommissionRateFollowsTheApplication(): void

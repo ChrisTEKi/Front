@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\User;
 use App\Enum\AccountStatus;
 use App\Enum\AccountType;
+use App\Enum\DeletionOrigin;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
@@ -32,6 +33,23 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     public function findOneByEmail(string $email): ?User
     {
         return $this->findOneBy(['email' => mb_strtolower(trim($email))]);
+    }
+
+    /**
+     * Retrouve un compte qui porte ce numéro (E.164), VÉRIFIÉ OU NON, en ignorant éventuellement un compte
+     * (celui de la personne qui modifie son propre numéro). Sert à refuser qu'un numéro serve à deux comptes.
+     */
+    public function findOneByPhone(string $phoneE164, ?User $except = null): ?User
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->andWhere('u.phone = :phone')
+            ->setParameter('phone', $phoneE164)
+            ->setMaxResults(1);
+        if (null !== $except) {
+            $qb->andWhere('u != :except')->setParameter('except', $except);
+        }
+
+        return $qb->getQuery()->getOneOrNullResult();
     }
 
     /** Retrouve le compte qui possède ce numéro de téléphone VÉRIFIÉ (E.164), s'il existe. */
@@ -82,7 +100,9 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
-     * Identifiants des comptes CLIENTS dont la suppression est programmée et dont le délai de grâce (30 jours) est écoulé.
+     * Identifiants des comptes dont la suppression est programmée et dont l'échéance est atteinte : un CLIENT (demande du titulaire,
+     * délai de grâce de 30 jours, ou décision de l'équipe) ou un FOURNISSEUR (uniquement sur décision de l'équipe : un fournisseur
+     * ne supprime pas son compte lui-même). Jamais un administrateur.
      * Les plus anciennes demandes d'abord. On ne renvoie que les identifiants : la purge recharge chaque compte
      * elle-même, sous verrou, juste avant de l'effacer.
      *
@@ -93,11 +113,13 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $rows = $this->createQueryBuilder('u')
             ->select('u.id')
             ->andWhere('u.status = :status')
-            ->andWhere('u.accountType = :type')
+            ->andWhere('u.accountType = :client OR (u.accountType = :supplier AND u.deletionOrigin = :admin)')
             ->andWhere('u.deletionScheduledAt IS NOT NULL')
             ->andWhere('u.deletionScheduledAt <= :now')
             ->setParameter('status', AccountStatus::PendingDeletion)
-            ->setParameter('type', AccountType::Client)
+            ->setParameter('client', AccountType::Client)
+            ->setParameter('supplier', AccountType::Supplier)
+            ->setParameter('admin', DeletionOrigin::Admin)
             ->setParameter('now', $now)
             ->orderBy('u.deletionScheduledAt', 'ASC')
             ->setMaxResults(max(1, $limit))

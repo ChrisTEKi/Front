@@ -340,6 +340,7 @@ product:
     back_home: "Retour à l'accueil"
     reviews: "(%count% avis)"
     add_to_cart: "Ajouter au panier"
+    featured: "À la une"
 checkout:
     page_title: "Validation de la commande — GoBuy"
     back_address: "Retour à l'adresse"
@@ -640,6 +641,8 @@ supplier:
     products:
         none: "Aucun produit dans votre catalogue pour le moment."
         soon: "La publication de produits n'est pas encore ouverte : elle sera activée avec le catalogue GoBuy."
+        manage: "Gérer mes produits"
+        count: "%count% produit(s) dans votre catalogue."
     profile:
         no_description: "Aucune description de boutique renseignée pour le moment."
         no_phone: "Téléphone non renseigné"

@@ -60,7 +60,7 @@ abstract class AppTestCase extends WebTestCase
             $connection->executeStatement('TRUNCATE TABLE '.implode(', ', array_map(static fn (string $t): string => '"'.$t.'"', $tables)).' RESTART IDENTITY CASCADE');
         }
         // Les profils de droits créés par un test disparaissent ; ceux fournis par les migrations (Finance, Compta…) restent.
-        $connection->executeStatement("DELETE FROM admin_roles WHERE code NOT IN ('super_admin', 'finance', 'compta', 'support', 'moderation')");
+        $connection->executeStatement("DELETE FROM admin_roles WHERE code NOT IN ('super_admin', 'finance', 'compta', 'support', 'moderation', 'pdg', 'dg')");
         $this->em()->clear();
     }
 

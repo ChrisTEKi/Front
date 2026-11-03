@@ -17,8 +17,7 @@
             <h1 class="mt-2 text-xl font-black text-slate-950">{{ 'supplier.hello'|trans({'%company%': d.companyName}) }}</h1>
             <p class="text-xs text-slate-500">{{ 'supplier.subtitle'|trans }}</p>
         </div>
-        {# Pas de catalogue de produits en base pour l'instant : le bouton est volontairement inactif (pas de formulaire qui perdrait la saisie). #}
-        <button type="button" disabled title="{{ 'supplier.products.soon'|trans }}" class="flex cursor-not-allowed items-center gap-2 rounded-2xl bg-slate-200 px-4 py-2.5 text-xs font-bold text-slate-500">{{ ux_icon('tabler:plus', {class:'h-4 w-4'}) }}<span>{{ 'supplier.add_product'|trans }}</span><span class="rounded-full bg-white px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-500">{{ 'supplier.add_product_soon'|trans }}</span></button>
+        <a href="{{ path('app_supplier_products') }}" class="flex items-center gap-2 rounded-2xl bg-black px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-neutral-800">{{ ux_icon('tabler:plus', {class:'h-4 w-4'}) }}<span>{{ 'supplier.add_product'|trans }}</span></a>
     </div>
 
     {# Statut du dossier, décidé par un administrateur (pending | approved | rejected | suspended). #}
@@ -28,16 +27,29 @@
             <p class="font-bold">{{ ('supplier.status.' ~ d.status ~ '.title')|trans }}</p>
             {% if d.status in ['rejected', 'suspended'] %}
                 <p>{{ d.rejectionReason ? 'supplier.status.reason'|trans({'%reason%': d.rejectionReason}) : 'supplier.status.no_reason'|trans }}</p>
+                <a href="{{ path('app_supplier_appeal') }}" data-appeal-link class="inline-flex font-bold underline">{{ 'appeal.link'|trans({}, 'sanctions') }}</a>
             {% else %}
                 <p>{{ ('supplier.status.' ~ d.status ~ '.text')|trans }}</p>
             {% endif %}
         </div>
     </div>
 
+    {# Gel conservatoire décidé par l'équipe : plus de vente ni de versement tant que la mesure n'est pas levée. #}
+    {% if app.user and app.user.isFundsFrozen %}
+        <div data-funds-frozen class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+            {{ ux_icon('tabler:lock', {class: 'mt-0.5 h-4 w-4 shrink-0'}) }}
+            <div class="space-y-0.5">
+                <p class="font-bold">{{ 'frozen.title'|trans({}, 'sanctions') }}</p>
+                <p>{{ 'frozen.text'|trans({}, 'sanctions') }}</p>
+                {% if app.user.fundsFrozenReason %}<p>{{ 'frozen.reason'|trans({'%reason%': app.user.fundsFrozenReason}, 'sanctions') }}</p>{% endif %}
+            </div>
+        </div>
+    {% endif %}
+
     <div data-supplier-tabs class="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-2 text-xs font-semibold">
         {% for tab in [
             {id: 'dashboard', label: 'supplier.tab.dashboard'|trans},
-            {id: 'products', label: 'supplier.tab.products'|trans({'%count%': 0})},
+            {id: 'products', label: 'supplier.tab.products'|trans({'%count%': productCount|default(0)})},
             {id: 'orders', label: 'supplier.tab.orders'|trans({'%count%': d.stats.orders})},
             {id: 'finances', label: 'supplier.tab.finances'|trans, icon: 'tabler:currency-dollar'},
             {id: 'profile', label: 'supplier.tab.profile'|trans}
@@ -74,7 +86,7 @@
     {# ---- VUE D'ENSEMBLE ---- #}
     <div data-supplier-panel="dashboard" class="hidden space-y-6">
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-xs font-medium text-slate-500">{{ 'supplier.stat.products'|trans }}</span><div class="mt-1 text-2xl font-black text-slate-950">0</div></div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-xs font-medium text-slate-500">{{ 'supplier.stat.products'|trans }}</span><div class="mt-1 text-2xl font-black text-slate-950">{{ productCount|default(0) }}</div></div>
             <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-xs font-medium text-slate-500">{{ 'supplier.stat.orders'|trans }}</span><div class="mt-1 text-2xl font-black text-slate-950">{{ d.stats.orders }}</div></div>
             <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-xs font-medium text-slate-500">{{ 'supplier.stat.preparing'|trans }}</span><div class="mt-1 text-2xl font-black text-amber-600">{{ d.stats.preparing }}</div></div>
             <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-xs font-medium text-slate-500">{{ 'supplier.stat.delivered'|trans }}</span><div class="mt-1 text-2xl font-black text-slate-950">{{ d.stats.delivered }}</div></div>
@@ -132,12 +144,12 @@
         </div>
     </div>
 
-    {# ---- PRODUITS : pas encore de catalogue fournisseur en base ---- #}
+    {# ---- PRODUITS : la gestion complète est sur la page « Mes produits » ---- #}
     <div data-supplier-panel="products" class="hidden">
         <div class="rounded-3xl border border-slate-200 bg-white p-10 text-center text-xs text-slate-400">
             {{ ux_icon('tabler:package', {class:'mx-auto mb-2 h-10 w-10 text-slate-300'}) }}
-            <p class="font-semibold text-slate-500">{{ 'supplier.products.none'|trans }}</p>
-            <p class="mt-1">{{ 'supplier.products.soon'|trans }}</p>
+            <p class="font-semibold text-slate-500">{{ (productCount|default(0)) > 0 ? 'supplier.products.count'|trans({'%count%': productCount}) : 'supplier.products.none'|trans }}</p>
+            <a href="{{ path('app_supplier_products') }}" class="mt-3 inline-flex rounded-2xl bg-black px-4 py-2.5 text-xs font-bold text-white hover:bg-neutral-800">{{ 'supplier.products.manage'|trans }}</a>
         </div>
     </div>
 

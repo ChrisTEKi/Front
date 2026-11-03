@@ -270,7 +270,8 @@ final class AddressBookTest extends AppTestCase
 
         $this->api('POST', '/auth/register/client', self::SIGNUP + ['street' => 'Lot 1', 'city' => 'Antananarivo']);
 
-        self::assertSame(200, $this->httpStatus());
+        // Inscription refusée (e-mail déjà pris) : ni compte, ni adresse.
+        self::assertSame(409, $this->httpStatus());
         self::assertSame(0, $this->em()->getRepository(Address::class)->count([]));
     }
 }

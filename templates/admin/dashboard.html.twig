@@ -58,6 +58,7 @@
         {% if d.audit is not null %}
             <button type="button" data-admin-tab="audit" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.audit'|trans }}</button>
         {% endif %}
+        {{ include('admin/_tool_links.html.twig', {can: can}) }}
         {% if can['users.export'] or can['suppliers.export'] or can['admins.export'] or can['finance.view'] %}
             <button type="button" data-admin-tab="exports" class="shrink-0 rounded-xl px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100">{{ 'tabs.exports'|trans }}</button>
         {% endif %}
@@ -125,14 +126,14 @@
                                     <td class="px-3 py-2.5 font-semibold text-slate-900">{{ s.companyName }}<details class="font-normal"><summary class="cursor-pointer text-[11px] font-semibold text-emerald-700 marker:content-none">{{ 'application.show'|trans }}</summary>{{ include('admin/_supplier_application.html.twig', {s: s}) }}</details></td>
                                     <td class="px-3 py-2.5 text-slate-600">{{ s.managerName }}</td>
                                     <td class="px-3 py-2.5 text-slate-600"><div class="flex items-center gap-1">{{ ui.tick(s.emailVerified, 'verified.email'|trans) }}<span>{{ s.email }}</span></div><div class="flex items-center gap-1">{{ ui.tick(s.phoneVerified, 'verified.phone'|trans) }}<span>{{ s.phone|default('—') }}</span></div></td>
-                                    <td class="px-3 py-2.5">{{ ui.badge(('supplier_status.' ~ s.status)|trans, s.status == 'approved' ? 'green' : (s.status == 'pending' ? 'amber' : 'red')) }}</td>
+                                    <td class="px-3 py-2.5">{{ ui.badge(('supplier_status.' ~ s.status)|trans, s.status == 'approved' ? 'green' : (s.status == 'pending' ? 'amber' : 'red')) }}{% if s.openAppeals > 0 %} <a href="{{ path('app_admin_account', {id: s.id}) }}" class="mt-1 inline-flex">{{ ui.badge('applications.appeal_open'|trans, 'amber') }}</a>{% endif %}</td>
                                     <td class="px-3 py-2.5 text-slate-500">{{ s.submittedAt|format_date('medium', locale: app.request.locale) }}</td>
                                     {% if can['suppliers.approve'] %}
-                                        <td class="px-3 py-2.5 text-right">
+                                        <td class="px-3 py-2.5 text-right"><a href="{{ path('app_admin_account', {id: s.id}) }}" class="mr-1 inline-flex rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">{{ 'applications.account'|trans }}</a>
                                             {% if s.status == 'approved' %}
                                                 <button type="button" data-supplier-decision="suspend" data-id="{{ s.id }}" data-company="{{ s.companyName }}" class="rounded-lg border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ 'supplier.suspend'|trans }}</button>
-                                            {% elseif s.status == 'suspended' and s.approvable %}
-                                                <button type="button" data-supplier-decision="approve" data-id="{{ s.id }}" class="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50">{{ 'supplier.reapprove'|trans }}</button>
+                                            {% elseif s.status in ['suspended', 'rejected'] and s.approvable %}
+                                                <button type="button" data-supplier-decision="approve" data-id="{{ s.id }}" class="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50">{{ s.status == 'rejected' ? 'supplier.revalidate'|trans : 'supplier.reapprove'|trans }}</button>
                                             {% endif %}
                                         </td>
                                     {% endif %}
@@ -238,7 +239,7 @@
                             <td class="px-3 py-2.5">{{ u.twoFactor ? 'users.on'|trans : 'users.off'|trans }}</td>
                             <td class="px-3 py-2.5 text-slate-500">{{ u.createdAt|format_date('medium', locale: app.request.locale) }}</td>
                             {% if can['users.suspend'] and ul.type != 'admin' %}
-                                <td class="px-3 py-2.5 text-right">
+                                <td class="px-3 py-2.5 text-right"><a href="{{ path('app_admin_account', {id: u.id}) }}" class="mr-1 inline-flex rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">{{ 'applications.account'|trans }}</a>
                                     {% if u.status == 'active' %}
                                         <button type="button" data-user-status="suspend" data-id="{{ u.id }}" data-confirm="{{ 'users.confirm_suspend'|trans({'%name%': u.name}) }}" class="rounded-lg border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ 'users.suspend'|trans }}</button>
                                     {% elseif u.status == 'suspended' %}
@@ -301,14 +302,30 @@
             <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:shield-check', {class: 'h-4 w-4 text-indigo-600'}) }}{{ 'admins.title'|trans }}</h3><p class="text-xs text-slate-500">{{ 'admins.subtitle'|trans }}</p></div>
             {% if can['admins.manage'] %}<button type="button" data-admin-invite-open class="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700">{{ ux_icon('tabler:plus', {class: 'h-3.5 w-3.5'}) }}{{ 'admins.invite'|trans }}</button>{% endif %}
         </div>
+        {% if can['admins.manage'] %}
+            {# Actions groupées : visibles seulement quand au moins un administrateur est coché (mot de passe demandé une seule fois). #}
+            <div data-admin-bulk data-done="{{ 'bulk.done'|trans({'%count%': '__COUNT__'}) }}" data-skipped="{{ 'bulk.skipped'|trans({'%list%': '__LIST__'}) }}" class="hidden flex-wrap items-center justify-between gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-xs">
+                <span class="font-semibold text-indigo-900"><span data-admin-bulk-count>0</span> {{ 'bulk.selected'|trans }}</span>
+                <div class="flex flex-wrap gap-1.5">
+                    <button type="button" data-admin-bulk-action="suspend" class="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ 'bulk.suspend'|trans }}</button>
+                    <button type="button" data-admin-bulk-action="reactivate" class="rounded-lg border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50">{{ 'bulk.reactivate'|trans }}</button>
+                </div>
+            </div>
+        {% endif %}
         <div class="overflow-x-auto">
             <table class="w-full border-collapse text-left text-xs">
                 <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                    {% if can['admins.manage'] %}<th class="w-8 px-3 py-2.5"><input type="checkbox" data-admin-select-all aria-label="{{ 'bulk.select_all'|trans }}" class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600"></th>{% endif %}
                     <th class="px-3 py-2.5">{{ 'admins.col.admin'|trans }}</th><th class="px-3 py-2.5">{{ 'admins.col.profile'|trans }}</th><th class="px-3 py-2.5">{{ 'admins.col.status'|trans }}</th><th class="px-3 py-2.5">{{ 'admins.col.last_login'|trans }}</th>{% if can['admins.manage'] %}<th class="px-3 py-2.5"></th>{% endif %}
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
                     {% for a in d.admins %}
                         <tr>
+                            {% if can['admins.manage'] %}
+                                <td class="px-3 py-2.5">
+                                    {% if not a.isSuper %}<input type="checkbox" data-admin-select value="{{ a.id }}" data-name="{{ a.name }}"{% if a.invited %} disabled title="{{ 'bulk.invited_hint'|trans }}"{% endif %} aria-label="{{ 'bulk.select_one'|trans({'%name%': a.name}) }}" class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 disabled:opacity-40">{% endif %}
+                                </td>
+                            {% endif %}
                             <td class="px-3 py-2.5"><div class="font-semibold text-slate-900">{{ a.name }}</div><div class="text-slate-500">{{ a.email }}</div></td>
                             <td class="px-3 py-2.5"><div class="text-slate-700">{{ a.roleLabel }}</div>{% if a.extra or a.denied %}<div class="text-[10px] text-slate-400">{{ 'admins.overrides'|trans({'%extra%': a.extra|length, '%denied%': a.denied|length}) }}</div>{% endif %}</td>
                             <td class="px-3 py-2.5">
@@ -480,6 +497,8 @@
 <dialog data-dialog="confirm" data-titles="{{ {
     suspend: 'dialog.confirm_password.title_suspend'|trans,
     reactivate: 'dialog.confirm_password.title_reactivate'|trans,
+    suspend_many: 'dialog.confirm_password.title_suspend_many'|trans({'%number%': '__NAME__'}),
+    reactivate_many: 'dialog.confirm_password.title_reactivate_many'|trans({'%number%': '__NAME__'}),
     resend: 'dialog.confirm_password.title_resend'|trans,
     reset_access: 'dialog.confirm_password.title_reset_access'|trans,
     role_delete: 'dialog.confirm_password.title_role_delete'|trans({'%name%': '__NAME__'})
@@ -560,6 +579,7 @@
     adminInvite: path('admin_api_admin_invite'),
     adminAccess: path('admin_api_admin_access', {id: '__ID__'}),
     adminStatus: path('admin_api_admin_status', {id: '__ID__'}),
+    adminStatusBulk: path('admin_api_admin_status_bulk'),
     adminResend: path('admin_api_admin_resend', {id: '__ID__'}),
     adminResetAccess: path('admin_api_admin_reset_access', {id: '__ID__'}),
     roleSave: path('admin_api_role_save'),

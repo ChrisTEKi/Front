@@ -6,6 +6,7 @@ use App\Entity\Order;
 use App\Entity\User;
 use App\Enum\OrderStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -124,6 +125,103 @@ class OrderRepository extends ServiceEntityRepository
             ->setParameter('closed', [OrderStatus::Delivered->value, OrderStatus::Cancelled->value])
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /**
+     * Nombre de commandes EN COURS (ni livrées ni annulées) qui contiennent encore un article NON remboursé d'un fournisseur.
+     * Tant qu'il y en a, son compte ne peut pas être supprimé : le colis est en route, l'acheteur attend sa marchandise.
+     */
+    public function countOpenForSupplier(User $supplier): int
+    {
+        return (int) $this->getEntityManager()->getConnection()->fetchOne(
+            "SELECT COUNT(*) FROM orders o
+              WHERE o.status NOT IN ('delivered', 'cancelled')
+                AND EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id AND i.supplier_id = :supplier AND i.refunded_at IS NULL)",
+            ['supplier' => $supplier->getId()->toRfc4122()],
+        );
+    }
+
+    /** Nombre de commandes d'un client (toutes, quel que soit leur état). */
+    public function countForClient(User $client): int
+    {
+        return (int) $this->createQueryBuilder('o')->select('COUNT(o.id)')
+            ->andWhere('o.client = :client')->setParameter('client', $client)
+            ->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Identifiants des commandes dont au moins une ligne d'UN fournisseur n'a pas encore été remboursée (plus anciennes d'abord).
+     * Les commandes annulées sont exclues ; les commandes livrées ne comptent que si `$includeDelivered`.
+     *
+     * @return list<string>
+     */
+    public function idsRefundableForSupplier(User $supplier, bool $includeDelivered, int $limit): array
+    {
+        return array_values(array_map('strval', $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            'SELECT o.id FROM orders o
+              WHERE o.status IN ('.$this->statusList($includeDelivered).')
+                AND EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id AND i.supplier_id = :supplier AND i.refunded_at IS NULL)
+              ORDER BY o.created_at ASC, o.id ASC
+              LIMIT '.max(1, $limit),
+            ['supplier' => $supplier->getId()->toRfc4122()],
+        )));
+    }
+
+    public function countRefundableForSupplier(User $supplier, bool $includeDelivered): int
+    {
+        return (int) $this->getEntityManager()->getConnection()->fetchOne(
+            'SELECT COUNT(*) FROM orders o
+              WHERE o.status IN ('.$this->statusList($includeDelivered).')
+                AND EXISTS (SELECT 1 FROM order_items i WHERE i.order_id = o.id AND i.supplier_id = :supplier AND i.refunded_at IS NULL)',
+            ['supplier' => $supplier->getId()->toRfc4122()],
+        );
+    }
+
+    /**
+     * Commandes EN COURS d'un client (ni livrées ni annulées), lignes comprises, plus anciennes d'abord.
+     *
+     * @return list<Order>
+     */
+    public function findOpenForClient(User $client, int $limit): array
+    {
+        return $this->createQueryBuilder('o')
+            ->leftJoin('o.items', 'i')->addSelect('i')
+            ->andWhere('o.client = :client')->setParameter('client', $client->getId(), 'uuid')
+            ->andWhere('o.status NOT IN (:closed)')->setParameter('closed', [OrderStatus::Delivered->value, OrderStatus::Cancelled->value])
+            ->orderBy('o.createdAt', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()->getResult();
+    }
+
+    /**
+     * Commandes chargées avec TOUTES leurs lignes (pour décider si la commande est remboursée en entier).
+     *
+     * @param list<string> $ids
+     *
+     * @return list<Order>
+     */
+    public function findWithItems(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('o')
+            ->leftJoin('o.items', 'i')->addSelect('i')
+            ->andWhere('o.id IN (:ids)')->setParameter('ids', $ids, ArrayParameterType::STRING)
+            ->orderBy('o.createdAt', 'ASC')
+            ->getQuery()->getResult();
+    }
+
+    /** Liste SQL des statuts de commande concernés par un remboursement (constantes de l'enum : aucune saisie utilisateur). */
+    private function statusList(bool $includeDelivered): string
+    {
+        $statuses = [OrderStatus::Confirmed, OrderStatus::Preparing, OrderStatus::OutForDelivery];
+        if ($includeDelivered) {
+            $statuses[] = OrderStatus::Delivered;
+        }
+
+        return implode(', ', array_map(static fn (OrderStatus $s): string => "'".$s->value."'", $statuses));
     }
 
     /** Nombre total de commandes (tableau de bord admin). */

@@ -17,6 +17,8 @@ tabs:
     admins: "Administradores (%count%)"
     roles: "Perfiles y permisos"
     audit: "Registro de auditoría"
+    products: "Productos"
+    blacklist: "Lista negra"
 overview:
     clients: "Clientes registrados"
     suppliers_active: "Proveedores activos"
@@ -38,6 +40,8 @@ applications:
         contact: "Contacto"
         status: "Estado"
         date: "Envío"
+    appeal_open: "Impugnación pendiente"
+    account: "Ficha"
 payouts:
     sales_total: "Ventas totales de vendedores"
     commissions: "Comisiones GoBuy"
@@ -57,6 +61,7 @@ approval:
 supplier:
     suspend: "Retirar la aprobación"
     reapprove: "Aprobar de nuevo"
+    revalidate: "Revalidar"
 supplier_status:
     pending: "Pendiente"
     approved: "Aprobado"
@@ -78,8 +83,8 @@ users:
     filter_placeholder: "Filtrar por nombre o correo..."
     search: "Buscar"
     none: "Aún no hay usuarios registrados."
-    "True": "Activada"
-    "False": "Desactivada"
+    "on": "Activada"
+    "off": "Desactivada"
     suspend: "Suspender"
     reactivate: "Reactivar"
     confirm_suspend: "¿Suspender la cuenta de %name%? Esta persona ya no podrá iniciar sesión."
@@ -161,6 +166,21 @@ perm:
         view: "Ver administradores"
         manage: "Gestionar administradores"
         export: "Exportar administradores"
+    products:
+        view: "Ver todos los productos (proveedores y GoBuy)"
+        manage: "Crear / editar los productos de GoBuy"
+        flag: "Señalar productos"
+        feature: "Destacar productos"
+        remove: "Retirar / restablecer productos o un catálogo entero"
+        delete: "Eliminar productos definitivamente"
+    sanctions:
+        ban: "Banear definitivamente una cuenta de cliente o proveedor"
+        freeze: "Congelar los fondos y pagos de una cuenta"
+        refund: "Reembolsar a los compradores perjudicados"
+    blacklist:
+        manage: "Gestionar la lista negra"
+    accounts:
+        delete: "Eliminar definitivamente una cuenta (inmediata o programada)"
 audit:
     title: "Registro de auditoría"
     subtitle: "Rastro de cada conexión, decisión y exportación. Nunca figura ninguna contraseña ni código."
@@ -220,6 +240,8 @@ dialog:
         title_role_delete: "Eliminar el perfil «%name%»"
         help: "Por seguridad, vuelva a escribir su contraseña para confirmar esta acción sensible."
         title_reset_access: "¿Restablecer el acceso de este administrador? Se eliminará su contraseña y se le enviará un nuevo enlace de activación."
+        title_suspend_many: "¿Suspender a %number% administrador(es)?"
+        title_reactivate_many: "¿Reactivar a %number% administrador(es)?"
     admin:
         title_invite: "Invitar a un administrador"
         title_edit: "Accesos de %name%"
@@ -284,6 +306,24 @@ error:
     delivery_failed: "No se pudo enviar el correo. Inténtelo de nuevo en unos instantes."
     not_activated: "Esta cuenta aún no está activada: usa «Reenviar invitación»."
     account_not_active: "Solo se puede restablecer una cuenta activa: reactívala primero."
+    bulk_empty: "Seleccione al menos un administrador."
+    bulk_too_many: "Una acción masiva se limita a %max% administradores a la vez."
 application:
     show: "Ver la solicitud detallada"
     none: "Sin detalle (registro simple, sin el asistente «Hazte socio»)."
+bulk:
+    selected: "seleccionado(s)"
+    suspend: "Suspender la selección"
+    reactivate: "Reactivar la selección"
+    select_all: "Seleccionar todo"
+    select_one: "Seleccionar a %name%"
+    invited_hint: "Invitación aún no aceptada: no hay nada que suspender ni reactivar."
+    done: "%count% administrador(es) actualizado(s)."
+    skipped: "Omitidos: %list%."
+    skip:
+        not_found: "no encontrado"
+        cannot_modify_super_admin: "Super Admin protegido"
+        cannot_suspend_self: "su propia cuenta"
+        bulk_invited: "invitación aún no aceptada"
+        bulk_already_suspended: "ya suspendido"
+        bulk_already_active: "ya activo"

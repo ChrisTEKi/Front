@@ -340,6 +340,7 @@ product:
     back_home: "Back to the home page"
     reviews: "(%count% reviews)"
     add_to_cart: "Add to cart"
+    featured: "Featured"
 checkout:
     page_title: "Order checkout — GoBuy"
     back_address: "Back to address"
@@ -640,6 +641,8 @@ supplier:
     products:
         none: "No products in your catalogue yet."
         soon: "Product publishing is not open yet: it will be enabled together with the GoBuy catalogue."
+        manage: "Manage my products"
+        count: "%count% product(s) in your catalogue."
     profile:
         no_description: "No shop description provided yet."
         no_phone: "Phone number not provided"

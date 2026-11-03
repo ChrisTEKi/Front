@@ -122,3 +122,65 @@ order_confirmation:
     payment_pending: "Votre paiement est en cours de traitement : vous serez prévenu(e) dès qu'il sera confirmé."
     button: "Suivre ma commande"
     help: "Besoin d'aide ? Répondez depuis votre compte GoBuy, rubrique Aide."
+moderation:
+    contact: "Une question ? Répondez à cet e-mail ou contactez le support GoBuy."
+    product_removed:
+        subject: "GoBuy : un de vos produits a été retiré de la vente"
+        title: "Produit retiré de la vente"
+        body: "Votre produit « %product% » a été retiré de la boutique par l'équipe GoBuy.\nMotif : %detail%"
+    product_restored:
+        subject: "GoBuy : votre produit est de nouveau en vente"
+        title: "Produit rétabli"
+        body: "Votre produit « %product% » a été rétabli par l'équipe GoBuy : il est de nouveau visible dans la boutique."
+    product_deleted:
+        subject: "GoBuy : un de vos produits a été supprimé"
+        title: "Produit supprimé"
+        body: "Votre produit « %product% » a été supprimé définitivement du catalogue par l'équipe GoBuy."
+    catalog_removed:
+        subject: "GoBuy : votre catalogue a été retiré de la vente"
+        title: "Catalogue retiré de la vente"
+        body: "%count% produit(s) de votre catalogue ont été retirés de la boutique par l'équipe GoBuy.\nMotif : %detail%"
+    supplier_revalidated:
+        subject: "GoBuy : votre dossier fournisseur est re-validé"
+        title: "Dossier re-validé"
+        body: "Bonne nouvelle : après réexamen, le dossier de « %company% » est de nouveau approuvé. Vous pouvez vendre sur GoBuy."
+    supplier_revalidated_note:
+        subject: "GoBuy : votre dossier fournisseur est re-validé"
+        title: "Dossier re-validé"
+        body: "Bonne nouvelle : après réexamen, le dossier de « %company% » est de nouveau approuvé. Vous pouvez vendre sur GoBuy.\nMessage de l'équipe : %detail%"
+    appeal_received:
+        subject: "GoBuy : nous avons reçu votre contestation"
+        title: "Contestation reçue"
+        body: "Votre contestation et vos pièces ont bien été transmises à l'équipe GoBuy. Nous l'examinons et vous répondons par e-mail."
+    appeal_dismissed:
+        subject: "GoBuy : réponse à votre contestation"
+        title: "Décision maintenue"
+        body: "Après examen, l'équipe GoBuy maintient sa décision.\nExplication : %detail%"
+    account_banned:
+        subject: "GoBuy : votre compte a été clos définitivement"
+        title: "Compte clos définitivement"
+        body: "L'équipe GoBuy a clos votre compte définitivement. Vous ne pouvez plus vous connecter.\nMotif : %detail%"
+    account_unbanned:
+        subject: "GoBuy : votre compte est de nouveau actif"
+        title: "Compte rétabli"
+        body: "Le bannissement de votre compte a été levé par l'équipe GoBuy : vous pouvez de nouveau vous connecter.\nMessage de l'équipe : %detail%"
+    funds_frozen:
+        subject: "GoBuy : vos fonds et paiements sont gelés"
+        title: "Gel conservatoire de vos fonds"
+        body: "L'équipe GoBuy a gelé vos fonds et vos paiements à titre conservatoire : plus de vente ni de versement pour un fournisseur, plus de commande pour un client, tant que la mesure n'est pas levée.\nMotif : %detail%"
+    funds_unfrozen:
+        subject: "GoBuy : vos fonds et paiements sont dégelés"
+        title: "Fonds dégelés"
+        body: "Le gel de vos fonds et de vos paiements a été levé par l'équipe GoBuy : votre compte fonctionne de nouveau normalement."
+    order_refunded:
+        subject: "GoBuy : remboursement de votre commande"
+        title: "Commande remboursée"
+        body: "Suite à une décision de GoBuy concernant le vendeur, votre commande %orders% est remboursée à hauteur de %amount%. Si un paiement avait été encaissé, il vous sera restitué par l'équipe GoBuy."
+    deletion_scheduled:
+        subject: "GoBuy : la suppression de votre compte est programmée"
+        title: "Suppression de votre compte"
+        body: "L'équipe GoBuy a décidé de supprimer définitivement votre compte le %date%. Il est fermé dès maintenant : vous ne pouvez plus vous connecter.\nMotif : %detail%"
+    deletion_cancelled:
+        subject: "GoBuy : la suppression de votre compte est annulée"
+        title: "Suppression annulée"
+        body: "L'équipe GoBuy a annulé la suppression programmée de votre compte. Il retrouve le statut qu'il avait avant la décision."

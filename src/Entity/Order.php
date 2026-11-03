@@ -125,6 +125,13 @@ class Order
     #[ORM\Column(name: 'idempotency_key', type: Types::STRING, length: 64, nullable: true, options: ['comment' => 'Jeton anti-doublon généré par le navigateur à chaque tentative de paiement (unique par client)'])]
     private ?string $idempotencyKey = null;
 
+    /** Montant remboursé à l'acheteur par l'équipe GoBuy (Ariary). 0 = aucun remboursement. */
+    #[ORM\Column(name: 'refunded_amount', type: Types::INTEGER, options: ['default' => 0, 'comment' => 'Montant remboursé (Ariary) suite à une décision de l\'équipe ; jamais supérieur au total'])]
+    private int $refundedAmount = 0;
+
+    #[ORM\Column(name: 'refunded_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $refundedAt = null;
+
     #[ORM\Column(name: 'created_at', type: Types::DATETIMETZ_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
@@ -339,6 +346,65 @@ class Order
         $this->trackingEvents->add($event);
 
         return $event;
+    }
+
+    public function getRefundedAmount(): int
+    {
+        return $this->refundedAmount;
+    }
+
+    public function getRefundedAt(): ?\DateTimeImmutable
+    {
+        return $this->refundedAt;
+    }
+
+    public function isFullyRefunded(): bool
+    {
+        return $this->refundedAmount >= $this->total;
+    }
+
+    /**
+     * Rembourse des lignes de la commande (décision de l'équipe : fournisseur banni, compte clos…). Les lignes déjà remboursées sont
+     * ignorées. Quand TOUTES les lignes le sont, les frais de livraison sont remboursés aussi : le total est alors rendu en entier.
+     * Une commande non livrée dont tout est remboursé est ANNULÉE ; un paiement déjà encaissé passe à « remboursé ».
+     * Retourne le montant remboursé par cet appel (0 si rien à faire).
+     *
+     * @param list<OrderItem> $items lignes à rembourser (de CETTE commande)
+     */
+    public function refundItems(array $items, ?User $by, \DateTimeImmutable $now): int
+    {
+        $before = $this->refundedAmount;
+        $lines = 0;
+        foreach ($items as $item) {
+            if ($item->isRefunded()) {
+                continue;
+            }
+            $item->markRefunded($now);
+            $lines += $item->getLineTotal();
+        }
+        if (0 === $lines) {
+            return 0;
+        }
+
+        $allRefunded = true;
+        foreach ($this->items as $item) {
+            $allRefunded = $allRefunded && $item->isRefunded();
+        }
+        // Toutes les lignes remboursées : les frais de livraison suivent, le total est rendu en entier.
+        $this->refundedAmount = $allRefunded ? $this->total : min($this->total, $this->refundedAmount + $lines);
+        $this->refundedAt = $now;
+        $this->updatedAt = $now;
+
+        if ($allRefunded) {
+            if (!\in_array($this->status, [OrderStatus::Delivered, OrderStatus::Cancelled], true)) {
+                $this->advanceTo(OrderStatus::Cancelled, null, $by, $now);
+            }
+            if (PaymentStatus::Paid === $this->paymentStatus) {
+                $this->paymentStatus = PaymentStatus::Refunded;
+            }
+        }
+
+        return $this->refundedAmount - $before;
     }
 
     public function markConfirmationEmailSent(\DateTimeImmutable $now): void

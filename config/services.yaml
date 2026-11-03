@@ -43,10 +43,10 @@ services:
             - '../src/Enum/'
             - '../src/Kernel.php'
 
-    # Catalogue produits : vide tant que la table des produits n'existe pas. À remplacer par votre implémentation
-    # (voir App\Order\CatalogInterface) : App\Order\CatalogInterface: '@App\Catalog\DoctrineCatalog'
+    # Catalogue produits : la table `products` (voir App\Catalog\DoctrineCatalog). EmptyCatalog (toujours vide) reste disponible
+    # pour un déploiement sans catalogue : remplacez simplement l'alias ci-dessous par App\Order\EmptyCatalog.
     App\Order\CatalogInterface:
-        alias: App\Order\EmptyCatalog
+        alias: App\Catalog\DoctrineCatalog
 
 # --- Tests : les codes OTP ne partent pas vers de vrais e-mails/SMS, ils sont gardés en mémoire pour être relus par les tests.
 when@test:
@@ -65,6 +65,13 @@ when@test:
             public: true
         App\Order\CatalogInterface:
             alias: App\Tests\Support\InMemoryCatalog
+            public: true
+        # Le vrai catalogue (table `products`) est testé directement : en test, l'alias ci-dessus garde le catalogue en mémoire.
+        App\Catalog\DoctrineCatalog:
+            autowire: true
+            public: true
+        App\Catalog\ProductService:
+            autowire: true
             public: true
         # Faux Google/Apple : aucun appel réseau, jetons signés avec une clé de test (voir tests/Support/FakeOidcProvider.php).
         App\Tests\Support\FakeOidcProvider:

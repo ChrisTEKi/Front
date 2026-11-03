@@ -19,3 +19,5 @@ password:
     compromised: "Ce mot de passe est apparu dans une fuite de données publique. Choisissez-en un autre."
 contact:
     invalid: "Saisissez une adresse e-mail ou un numéro de téléphone valide."
+price:
+    invalid: "Saisissez un montant valide (ex : 12500, ou 12,50 pour l'euro et le dollar)."

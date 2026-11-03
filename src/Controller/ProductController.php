@@ -2,19 +2,25 @@
 
 namespace App\Controller;
 
+use App\Catalog\ProductPresenter;
+use App\Repository\ProductRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Fiche produit publique. Seul un produit « vendable » est affiché (actif, et vendu par GoBuy ou par un fournisseur
+ * approuvé dont le compte est actif : voir ProductRepository::findSellable). Un produit masqué, retiré ou d'un fournisseur
+ * suspendu donne la même page « introuvable » qu'un identifiant inconnu.
+ */
 final class ProductController extends AbstractController
 {
     #[Route('/produit/{id}', name: 'app_product', methods: ['GET'])]
-    public function show(string $id): Response
+    public function show(string $id, ProductRepository $products, ProductPresenter $presenter): Response
     {
-        // No catalog yet: `product` is always null so the template shows its
-        // "not found" state. Swap this for a real repository lookup once the
-        // back-end (Doctrine entity) exists — the template already expects a
-        // `product` array shaped like the mockup's Product interface.
-        return $this->render('product/show.html.twig', ['product' => null]);
+        $product = $products->findSellable($id);
+        $card = null === $product ? null : $presenter->storefrontOne($product, $presenter->companyNames([$product]));
+
+        return $this->render('product/show.html.twig', ['product' => $card], null !== $card ? null : new Response('', Response::HTTP_NOT_FOUND));
     }
 }

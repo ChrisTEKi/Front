@@ -17,6 +17,8 @@ tabs:
     admins: "Administrators (%count%)"
     roles: "Profiles & rights"
     audit: "Audit log"
+    products: "Products"
+    blacklist: "Blacklist"
 overview:
     clients: "Registered customers"
     suppliers_active: "Active suppliers"
@@ -38,6 +40,8 @@ applications:
         contact: "Contact"
         status: "Status"
         date: "Submitted"
+    appeal_open: "Appeal pending"
+    account: "Account"
 payouts:
     sales_total: "Total vendor sales"
     commissions: "GoBuy commissions"
@@ -57,6 +61,7 @@ approval:
 supplier:
     suspend: "Withdraw approval"
     reapprove: "Approve again"
+    revalidate: "Re-validate"
 supplier_status:
     pending: "Pending"
     approved: "Approved"
@@ -78,8 +83,8 @@ users:
     filter_placeholder: "Filter by name or e-mail..."
     search: "Search"
     none: "No registered users yet."
-    "True": "Enabled"
-    "False": "Disabled"
+    "on": "Enabled"
+    "off": "Disabled"
     suspend: "Suspend"
     reactivate: "Reactivate"
     confirm_suspend: "Suspend %name%'s account? They will no longer be able to sign in."
@@ -161,6 +166,21 @@ perm:
         view: "View administrators"
         manage: "Manage administrators"
         export: "Export administrators"
+    products:
+        view: "View all products (suppliers and GoBuy)"
+        manage: "Create / edit GoBuy's own products"
+        flag: "Flag products"
+        feature: "Feature products"
+        remove: "Remove / restore products or a whole catalogue"
+        delete: "Permanently delete products"
+    sanctions:
+        ban: "Permanently ban a customer or supplier account"
+        freeze: "Freeze an account's funds and payments"
+        refund: "Refund harmed buyers"
+    blacklist:
+        manage: "Manage the blacklist"
+    accounts:
+        delete: "Permanently delete an account (immediate or scheduled)"
 audit:
     title: "Audit log"
     subtitle: "A trace of every sign-in, decision and export. No password or code is ever recorded."
@@ -220,6 +240,8 @@ dialog:
         title_role_delete: "Delete the profile \"%name%\""
         help: "For security, re-enter your password to confirm this sensitive action."
         title_reset_access: "Reset this administrator's access? Their password will be removed and a new activation link will be sent to them."
+        title_suspend_many: "Suspend %number% administrator(s)?"
+        title_reactivate_many: "Reactivate %number% administrator(s)?"
     admin:
         title_invite: "Invite an administrator"
         title_edit: "%name%'s access"
@@ -284,6 +306,24 @@ error:
     delivery_failed: "The e-mail could not be sent. Try again in a few moments."
     not_activated: "This account is not activated yet: use \"Resend invitation\"."
     account_not_active: "Only an active account can be reset: reactivate it first."
+    bulk_empty: "Select at least one administrator."
+    bulk_too_many: "A bulk action is limited to %max% administrators at a time."
 application:
     show: "View the detailed application"
     none: "No detail (plain sign-up, without the “Become a partner” wizard)."
+bulk:
+    selected: "selected"
+    suspend: "Suspend selection"
+    reactivate: "Reactivate selection"
+    select_all: "Select all"
+    select_one: "Select %name%"
+    invited_hint: "Invitation not accepted yet: nothing to suspend or reactivate."
+    done: "%count% administrator(s) updated."
+    skipped: "Skipped: %list%."
+    skip:
+        not_found: "not found"
+        cannot_modify_super_admin: "Super Admin is protected"
+        cannot_suspend_self: "your own account"
+        bulk_invited: "invitation not accepted yet"
+        bulk_already_suspended: "already suspended"
+        bulk_already_active: "already active"

@@ -1,0 +1,330 @@
+{# Fiche d'un compte client ou fournisseur (/admin/comptes/{id}) : identité, état, dossier fournisseur, contestations, catalogue, commandes,
+   historique des décisions, et les actions de modération permises à l'administrateur (variable `can`, droits fins).
+   Les formulaires [data-account-form] sont envoyés par assets/admin-account.js à l'API /admin/api/… ; le serveur décide de tout.
+   Textes : translations/sanctions.<langue>.yaml (FR / EN / ES). #}
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'sanctions' %}
+{% block title %}{{ 'account.page_title'|trans({'%name%': a.name}) }}{% endblock %}
+
+{% block body %}
+{% set statusTones = {active: 'bg-emerald-100 text-emerald-800', suspended: 'bg-amber-100 text-amber-800', banned: 'bg-rose-100 text-rose-800', pending_deletion: 'bg-slate-200 text-slate-700'} %}
+{% set dossierTones = {pending: 'bg-amber-100 text-amber-800', approved: 'bg-emerald-100 text-emerald-800', rejected: 'bg-rose-100 text-rose-800', suspended: 'bg-rose-100 text-rose-800'} %}
+{% set inputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs' %}
+{% set labelClass = 'mb-1 block text-[11px] font-semibold text-slate-600' %}
+{% set card = 'space-y-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs' %}
+
+<div data-admin-account class="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+
+    <div class="flex flex-col justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
+        <div>
+            <a href="{{ path('app_admin_dashboard', {tab: a.type == 'supplier' ? 'vendor_applications' : 'users_table'}) }}" class="text-[11px] font-semibold text-slate-500 hover:text-black">← {{ 'account.back'|trans }}</a>
+            <h1 class="mt-1 text-xl font-bold text-slate-900">{{ a.name }}</h1>
+            <p class="text-xs text-slate-500">{{ a.email }}{% if a.phone %} · {{ a.phone }}{% endif %}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700">{{ ('account.type.' ~ a.type)|trans }}</span>
+            <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold {{ statusTones[a.status]|default('bg-slate-100 text-slate-700') }}">{{ ('status.' ~ a.status)|trans }}</span>
+        </div>
+    </div>
+
+    <p data-account-notice role="status" class="hidden rounded-2xl border p-3 text-xs"></p>
+
+    {# ---------------------------------------------------------------- Identité #}
+    <div class="{{ card }}">
+        <h2 class="text-sm font-bold text-slate-900">{{ 'account.identity'|trans }}</h2>
+        <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
+            <div class="flex justify-between gap-3"><dt class="text-slate-500">{{ 'account.email_verified'|trans }}</dt><dd class="font-semibold text-slate-900">{{ a.emailVerified ? 'account.yes'|trans : 'account.no'|trans }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-slate-500">{{ 'account.phone_verified'|trans }}</dt><dd class="font-semibold text-slate-900">{{ a.phoneVerified ? 'account.yes'|trans : 'account.no'|trans }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-slate-500">{{ 'account.twofa'|trans }}</dt><dd class="font-semibold text-slate-900">{{ a.twoFactor ? 'account.yes'|trans : 'account.no'|trans }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-slate-500">{{ 'account.created'|trans }}</dt><dd class="font-semibold text-slate-900">{{ a.createdAt|format_date('medium', locale: app.request.locale) }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-slate-500">{{ 'account.last_login'|trans }}</dt><dd class="font-semibold text-slate-900">{{ a.lastLoginAt ? a.lastLoginAt|format_datetime('medium', 'short', locale: app.request.locale) : '—' }}</dd></div>
+        </dl>
+    </div>
+
+    {# ---------------------------------------------------------------- Sanctions #}
+    {% set passwordField %}
+        <div>
+            <label class="{{ labelClass }}" for="__ID__">{{ 'sanction.password'|trans }}</label>
+            <input id="__ID__" type="password" name="password" autocomplete="current-password" required class="{{ inputClass }}">
+        </div>
+    {% endset %}
+    {% if a.ban %}
+        <div data-ban-banner class="rounded-3xl border border-rose-200 bg-rose-50 p-5 text-xs text-rose-900">
+            <p class="font-bold">{{ 'sanction.banned_banner'|trans({'%date%': a.ban.at ? a.ban.at|format_date('medium', locale: app.request.locale) : '—', '%who%': a.ban.by|default('—')}) }}</p>
+            {% if a.ban.reason %}<p class="mt-1">{{ a.ban.reason }}</p>{% endif %}
+        </div>
+    {% endif %}
+    {% if a.frozen %}
+        <div data-frozen-banner class="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-xs text-amber-900">
+            <p class="font-bold">{{ 'sanction.frozen_banner'|trans({'%date%': a.frozen.at ? a.frozen.at|format_date('medium', locale: app.request.locale) : '—', '%who%': a.frozen.by|default('—')}) }}</p>
+            {% if a.frozen.reason %}<p class="mt-1">{{ a.frozen.reason }}</p>{% endif %}
+        </div>
+    {% endif %}
+
+    {% if a.deletion %}
+        <div data-deletion-banner class="rounded-3xl border border-slate-300 bg-slate-100 p-5 text-xs text-slate-800">
+            <p class="font-bold">{{ (a.deletion.byAdmin ? 'sanction.deletion_banner_admin' : 'sanction.deletion_banner_owner')|trans({'%date%': a.deletion.at ? a.deletion.at|format_datetime('medium', 'short', locale: app.request.locale) : '—', '%who%': a.deletion.by|default('—')}) }}</p>
+            {% if a.deletion.reason %}<p class="mt-1">{{ a.deletion.reason }}</p>{% endif %}
+        </div>
+    {% endif %}
+
+    {% if can['sanctions.ban'] or can['sanctions.freeze'] or can['sanctions.refund'] or can['blacklist.manage'] or can['accounts.delete'] %}
+        <div class="{{ card }}" data-sanctions>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="text-sm font-bold text-slate-900">{{ 'sanction.title'|trans }}</h2>
+                {% if can['blacklist.manage'] %}<a href="{{ path('app_admin_blacklist') }}" class="text-xs font-semibold text-indigo-700 hover:underline">{{ 'sanction.blacklist_link'|trans }}</a>{% endif %}
+            </div>
+
+            {# ---- Gel des fonds #}
+            {% if can['sanctions.freeze'] %}
+                <details class="rounded-2xl border border-amber-200 bg-amber-50/60 p-4" data-panel="freeze">
+                    <summary class="cursor-pointer text-xs font-semibold text-amber-800 marker:content-none">{{ (a.frozen ? 'sanction.unfreeze.summary' : 'sanction.freeze.summary')|trans }}</summary>
+                    <form data-account-form data-endpoint="{{ path('admin_api_account_freeze', {id: a.id}) }}" data-done="{{ 'sanction.done'|trans }}" class="mt-3 space-y-2" novalidate>
+                        {% if a.frozen %}
+                            <input type="hidden" name="action" value="unfreeze">
+                        {% else %}
+                            <input type="hidden" name="action" value="freeze">
+                            <p class="text-[11px] text-slate-600">{{ (a.type == 'supplier' ? 'sanction.freeze.help_supplier' : 'sanction.freeze.help_client')|trans }}</p>
+                            <label class="{{ labelClass }}" for="freeze-reason">{{ 'sanction.reason'|trans }}</label>
+                            <textarea id="freeze-reason" name="reason" rows="2" maxlength="500" required class="{{ inputClass }}"></textarea>
+                        {% endif %}
+                        {{ passwordField|replace({'__ID__': 'freeze-password'})|raw }}
+                        <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                        <button type="submit" class="rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">{{ (a.frozen ? 'sanction.unfreeze.submit' : 'sanction.freeze.submit')|trans }}</button>
+                    </form>
+                </details>
+            {% endif %}
+
+            {# ---- Remboursement des acheteurs d'un fournisseur #}
+            {% if can['sanctions.refund'] and a.type == 'supplier' %}
+                <details class="rounded-2xl border border-slate-200 bg-slate-50 p-4" data-panel="refund">
+                    <summary class="cursor-pointer text-xs font-semibold text-slate-800 marker:content-none">{{ 'sanction.refund.summary'|trans }}</summary>
+                    <form data-account-form data-endpoint="{{ path('admin_api_account_refund', {id: a.id}) }}" data-done="{{ 'sanction.done'|trans }}" data-confirm="{{ 'sanction.refund.confirm'|trans }}" class="mt-3 space-y-2" novalidate>
+                        <p class="text-[11px] text-slate-600">{{ 'sanction.refund.help'|trans }}</p>
+                        <p class="text-[11px] font-semibold text-slate-700">{{ 'sanction.refund.counts'|trans({'%open%': a.refundable.open, '%all%': a.refundable.all}) }}</p>
+                        <label class="{{ labelClass }}" for="refund-scope">{{ 'sanction.refund.scope'|trans }}</label>
+                        <select id="refund-scope" name="scope" class="{{ inputClass }}">
+                            <option value="open">{{ 'sanction.ban.refund_open'|trans }}</option>
+                            <option value="all">{{ 'sanction.ban.refund_all'|trans }}</option>
+                        </select>
+                        <label class="{{ labelClass }}" for="refund-reason">{{ 'sanction.reason'|trans }}</label>
+                        <textarea id="refund-reason" name="reason" rows="2" maxlength="500" required class="{{ inputClass }}"></textarea>
+                        {{ passwordField|replace({'__ID__': 'refund-password'})|raw }}
+                        <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                        <button type="submit" class="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-black">{{ 'sanction.refund.submit'|trans }}</button>
+                    </form>
+                </details>
+            {% endif %}
+
+            {# ---- Suppression définitive (immédiate ou programmée) #}
+            {% if can['accounts.delete'] %}
+                <details class="rounded-2xl border border-slate-300 bg-slate-50 p-4" data-panel="deletion">
+                    <summary class="cursor-pointer text-xs font-semibold text-slate-800 marker:content-none">{{ (a.deletion and a.deletion.byAdmin ? 'sanction.deletion.cancel_summary' : 'sanction.deletion.summary')|trans }}</summary>
+                    <form data-account-form data-endpoint="{{ path('admin_api_account_deletion', {id: a.id}) }}" data-done="{{ 'sanction.done'|trans }}" data-confirm="{{ (a.deletion and a.deletion.byAdmin ? 'sanction.deletion.cancel_confirm' : 'sanction.deletion.confirm')|trans }}" class="mt-3 space-y-2" novalidate>
+                        {% if a.deletion and a.deletion.byAdmin %}
+                            <input type="hidden" name="action" value="cancel">
+                            <p class="text-[11px] text-slate-600">{{ 'sanction.deletion.cancel_help'|trans }}</p>
+                        {% else %}
+                            <input type="hidden" name="action" value="schedule">
+                            <p class="text-[11px] text-slate-600">{{ 'sanction.deletion.help'|trans }}</p>
+                            {% if a.orders and a.type == 'supplier' and a.refundable and a.refundable.open > 0 %}
+                                <p class="rounded-xl bg-amber-50 p-2 text-[11px] font-semibold text-amber-900">{{ 'sanction.deletion.open_orders_supplier'|trans({'%count%': a.refundable.open}) }}</p>
+                            {% elseif a.orders and a.type == 'client' and a.orders.open > 0 %}
+                                <p class="rounded-xl bg-amber-50 p-2 text-[11px] font-semibold text-amber-900">{{ 'sanction.deletion.open_orders_client'|trans({'%count%': a.orders.open}) }}</p>
+                            {% endif %}
+                            <label class="{{ labelClass }}" for="delete-delay">{{ 'sanction.deletion.delay'|trans }}</label>
+                            <select id="delete-delay" name="delay" class="{{ inputClass }}">
+                                {% for d in delays %}<option value="{{ d.value }}" {{ d.value == '30d' ? 'selected' }}>{{ ('sanction.delay.' ~ d.value)|trans }}</option>{% endfor %}
+                            </select>
+                            <label class="{{ labelClass }}" for="delete-reason">{{ 'sanction.deletion.reason'|trans }}</label>
+                            <textarea id="delete-reason" name="reason" rows="2" maxlength="500" required class="{{ inputClass }}"></textarea>
+                        {% endif %}
+                        {{ passwordField|replace({'__ID__': 'delete-password'})|raw }}
+                        <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                        <button type="submit" class="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-black">{{ (a.deletion and a.deletion.byAdmin ? 'sanction.deletion.cancel_submit' : 'sanction.deletion.submit')|trans }}</button>
+                    </form>
+                </details>
+            {% endif %}
+
+            {# ---- Bannissement / levée #}
+            {% if a.ban %}
+                {% if isSuperAdmin %}
+                    <details class="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4" data-panel="unban">
+                        <summary class="cursor-pointer text-xs font-semibold text-emerald-800 marker:content-none">{{ 'sanction.unban.summary'|trans }}</summary>
+                        <form data-account-form data-endpoint="{{ path('admin_api_account_ban', {id: a.id}) }}" data-done="{{ 'sanction.done'|trans }}" data-confirm="{{ 'sanction.unban.confirm'|trans }}" class="mt-3 space-y-2" novalidate>
+                            <input type="hidden" name="action" value="unban">
+                            <p class="text-[11px] text-slate-600">{{ 'sanction.unban.help'|trans }}</p>
+                            <label class="{{ labelClass }}" for="unban-reason">{{ 'sanction.unban.reason'|trans }}</label>
+                            <textarea id="unban-reason" name="reason" rows="2" maxlength="500" required class="{{ inputClass }}"></textarea>
+                            {{ passwordField|replace({'__ID__': 'unban-password'})|raw }}
+                            <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                            <button type="submit" class="rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">{{ 'sanction.unban.submit'|trans }}</button>
+                        </form>
+                    </details>
+                {% else %}
+                    <p class="text-[11px] text-slate-500">{{ 'sanction.unban.super_only'|trans }}</p>
+                {% endif %}
+            {% elseif can['sanctions.ban'] %}
+                <details class="rounded-2xl border border-rose-200 bg-rose-50/60 p-4" data-panel="ban">
+                    <summary class="cursor-pointer text-xs font-semibold text-rose-700 marker:content-none">{{ 'sanction.ban.summary'|trans }}</summary>
+                    <form data-account-form data-endpoint="{{ path('admin_api_account_ban', {id: a.id}) }}" data-done="{{ 'sanction.done'|trans }}" data-confirm="{{ 'sanction.ban.confirm'|trans }}" class="mt-3 space-y-3" novalidate>
+                        <input type="hidden" name="action" value="ban">
+                        <p class="text-[11px] text-slate-600">{{ 'sanction.ban.help'|trans }}</p>
+                        <div>
+                            <label class="{{ labelClass }}" for="ban-reason">{{ 'sanction.reason'|trans }}</label>
+                            <textarea id="ban-reason" name="reason" rows="2" maxlength="500" required class="{{ inputClass }}"></textarea>
+                        </div>
+                        {% if a.type == 'supplier' and (can['products.remove'] or can['products.delete']) %}
+                            <div>
+                                <label class="{{ labelClass }}" for="ban-catalog">{{ 'sanction.ban.catalog'|trans }}</label>
+                                <select id="ban-catalog" name="catalog" class="{{ inputClass }}">
+                                    <option value="none">{{ 'sanction.ban.catalog_none'|trans }}</option>
+                                    {% if can['products.remove'] %}<option value="remove">{{ 'sanction.ban.catalog_remove'|trans }}</option>{% endif %}
+                                    {% if can['products.delete'] %}<option value="delete">{{ 'sanction.ban.catalog_delete'|trans }}</option>{% endif %}
+                                </select>
+                            </div>
+                        {% endif %}
+                        {% if can['sanctions.refund'] %}
+                            <div>
+                                <label class="{{ labelClass }}" for="ban-refund">{{ 'sanction.ban.refund'|trans }}</label>
+                                <select id="ban-refund" name="refund" class="{{ inputClass }}">
+                                    <option value="none">{{ 'sanction.ban.refund_none'|trans }}</option>
+                                    <option value="open">{{ 'sanction.ban.refund_open'|trans }}</option>
+                                    {% if a.type == 'supplier' %}<option value="all">{{ 'sanction.ban.refund_all'|trans }}</option>{% endif %}
+                                </select>
+                            </div>
+                        {% endif %}
+                        {% if can['blacklist.manage'] %}
+                            <fieldset>
+                                <legend class="{{ labelClass }}">{{ 'sanction.ban.blacklist'|trans }}</legend>
+                                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-700">
+                                    {% for kind in ['email', 'phone', 'name']|merge(a.type == 'supplier' ? ['company'] : [])|merge(['ip']) %}
+                                        <label class="inline-flex items-center gap-1.5"><input type="checkbox" name="blacklist[]" value="{{ kind }}">{{ ('sanction.kind.' ~ kind)|trans }}</label>
+                                    {% endfor %}
+                                </div>
+                                <label class="{{ labelClass }} mt-2" for="ban-days">{{ 'sanction.ban.blacklist_days'|trans }}</label>
+                                <input id="ban-days" type="number" name="blacklistDays" min="1" max="3650" class="{{ inputClass }}">
+                            </fieldset>
+                        {% endif %}
+                        {{ passwordField|replace({'__ID__': 'ban-password'})|raw }}
+                        <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                        <button type="submit" class="rounded-xl bg-rose-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">{{ 'sanction.ban.submit'|trans }}</button>
+                    </form>
+                </details>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# ---------------------------------------------------------------- Dossier fournisseur et contestations #}
+    {% if a.supplier %}
+        <div class="{{ card }}">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="text-sm font-bold text-slate-900">{{ a.supplier.company }}</h2>
+                <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold {{ dossierTones[a.supplier.status] }}">{{ ('dossier.' ~ a.supplier.status)|trans }}</span>
+            </div>
+            <p class="text-xs text-slate-500">{{ a.supplier.address }}</p>
+            {% if a.supplier.reason and a.supplier.status in ['rejected', 'suspended'] %}<p class="rounded-xl bg-rose-50 p-3 text-xs text-rose-900"><span class="font-bold">{{ 'dossier.reason'|trans }}</span> {{ a.supplier.reason }}</p>{% endif %}
+
+            {% if can['suppliers.approve'] %}
+                <div class="flex flex-wrap gap-2 pt-1">
+                    {% if a.supplier.status == 'rejected' or a.supplier.status == 'suspended' %}
+                        <button type="button" data-account-post="{{ path('admin_api_supplier_decision', {id: a.id}) }}" data-payload='{{ {action: 'approve'}|json_encode|raw }}' data-confirm="{{ 'dossier.confirm_revalidate'|trans }}" class="rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">{{ 'dossier.revalidate'|trans }}</button>
+                    {% endif %}
+                    {% if a.supplier.status in ['approved', 'pending', 'suspended'] %}
+                        <details class="w-full rounded-xl border border-rose-200 bg-rose-50 p-3">
+                            <summary class="cursor-pointer text-xs font-semibold text-rose-700 marker:content-none">{{ 'dossier.reject'|trans }}</summary>
+                            <form data-account-form data-endpoint="{{ path('admin_api_supplier_decision', {id: a.id}) }}" class="mt-3 space-y-2" novalidate>
+                                <input type="hidden" name="action" value="reject">
+                                <label class="{{ labelClass }}" for="reject-reason">{{ 'dossier.reject_reason'|trans }}</label>
+                                <textarea id="reject-reason" name="reason" rows="3" maxlength="500" required class="{{ inputClass }}"></textarea>
+                                <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                                <button type="submit" class="rounded-xl bg-rose-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">{{ 'dossier.reject_submit'|trans }}</button>
+                            </form>
+                        </details>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="{{ card }}" data-appeals>
+            <h2 class="text-sm font-bold text-slate-900">{{ 'appeals.title'|trans }}</h2>
+            {% if a.appeals is empty %}
+                <p class="text-xs text-slate-400">{{ 'appeals.none'|trans }}</p>
+            {% endif %}
+            {% for ap in a.appeals %}
+                <div data-appeal="{{ ap.id }}" data-appeal-status="{{ ap.status }}" class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="text-slate-500">{{ ap.createdAt|format_datetime('medium', 'short', locale: app.request.locale) }} · {{ 'appeals.contested'|trans({'%status%': ('dossier.' ~ ap.contested)|trans}) }}</span>
+                        <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold {{ ap.status == 'open' ? 'bg-amber-100 text-amber-800' : (ap.status == 'accepted' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800') }}">{{ ('appeals.status.' ~ ap.status)|trans }}</span>
+                    </div>
+                    <p class="whitespace-pre-line text-slate-700">{{ ap.message }}</p>
+                    {% if ap.documents is not empty %}
+                        <ul class="space-y-1">
+                            {% for d in ap.documents %}
+                                <li><a href="{{ path('app_admin_appeal_document', {id: ap.id, document: d.id}) }}" class="inline-flex items-center gap-1.5 font-semibold text-indigo-700 hover:underline">{{ ux_icon('tabler:paperclip', {class: 'h-3.5 w-3.5'}) }}{{ d.name }} <span class="font-normal text-slate-400">({{ (d.size / 1024)|round }} {{ 'appeals.kb'|trans }})</span></a></li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if ap.open %}
+                        {% if can['suppliers.approve'] %}
+                            <form data-account-form data-endpoint="{{ path('admin_api_appeal_decision', {id: ap.id}) }}" class="space-y-2 border-t border-slate-200 pt-3" novalidate>
+                                <label class="{{ labelClass }}" for="note-{{ ap.id }}">{{ 'appeals.note_label'|trans }}</label>
+                                <textarea id="note-{{ ap.id }}" name="note" rows="2" maxlength="500" class="{{ inputClass }}"></textarea>
+                                <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="submit" name="action" value="accept" class="rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">{{ 'appeals.accept'|trans }}</button>
+                                    <button type="submit" name="action" value="dismiss" class="rounded-xl border border-rose-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50">{{ 'appeals.dismiss'|trans }}</button>
+                                </div>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <p class="rounded-xl bg-white p-3 text-slate-700">{{ 'appeals.decided'|trans({'%who%': ap.decidedBy|default('—'), '%date%': ap.decidedAt ? ap.decidedAt|format_date('medium', locale: app.request.locale) : '—'}) }}{% if ap.note %} — {{ ap.note }}{% endif %}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        {# ---------------------------------------------------------------- Catalogue #}
+        {% if a.products %}
+            <div class="{{ card }}">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="text-sm font-bold text-slate-900">{{ 'catalog.title'|trans }}</h2>
+                    {% if can['products.view'] %}<a href="{{ path('app_admin_products', {owner: a.id}) }}" class="text-xs font-semibold text-indigo-700 hover:underline">{{ 'catalog.manage'|trans }}</a>{% endif %}
+                </div>
+                <p class="text-xs text-slate-600">{{ 'catalog.summary'|trans({'%total%': a.products.total, '%removed%': a.products.removed}) }}</p>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {# ---------------------------------------------------------------- Commandes #}
+    {% if a.orders %}
+        <div class="{{ card }}">
+            <h2 class="text-sm font-bold text-slate-900">{{ 'orders.title'|trans }}</h2>
+            {% if a.type == 'supplier' %}
+                <p class="text-xs text-slate-600">{{ 'orders.supplier_summary'|trans({'%orders%': a.orders.orders, '%preparing%': a.orders.preparing, '%delivered%': a.orders.delivered, '%sales%': a.orders.salesTotal|number_format(0, ',', ' ')}) }}</p>
+            {% else %}
+                <p class="text-xs text-slate-600">{{ 'orders.client_summary'|trans({'%total%': a.orders.total, '%open%': a.orders.open}) }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# ---------------------------------------------------------------- Historique #}
+    <div class="{{ card }}">
+        <h2 class="text-sm font-bold text-slate-900">{{ 'history.title'|trans }}</h2>
+        {% if a.history is empty %}
+            <p class="text-xs text-slate-400">{{ 'history.none'|trans }}</p>
+        {% else %}
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left text-xs">
+                    <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400"><th class="px-3 py-2">{{ 'history.date'|trans }}</th><th class="px-3 py-2">{{ 'history.actor'|trans }}</th><th class="px-3 py-2">{{ 'history.action'|trans }}</th><th class="px-3 py-2">{{ 'history.details'|trans }}</th></tr></thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for h in a.history %}
+                            <tr><td class="whitespace-nowrap px-3 py-2 text-slate-500">{{ h.at|format_datetime('short', 'short', locale: app.request.locale) }}</td><td class="px-3 py-2 text-slate-600">{{ h.actor|default('—') }}</td><td class="px-3 py-2 font-mono text-[11px] text-slate-800">{{ h.action }}</td><td class="max-w-xs truncate px-3 py-2 text-slate-500" title="{{ h.details }}">{{ h.details }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{# « Contester la décision » (/fournisseur/contestation) : le fournisseur dont le dossier est refusé ou suspendu écrit à l'équipe et joint
+   des pièces complémentaires. Le formulaire est piloté par assets/supplier-appeal.js (API /fournisseur/api/contestation, multipart).
+   Textes : translations/sanctions.<langue>.yaml (FR / EN / ES). #}
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'sanctions' %}
+{% block title %}{{ 'appeal.page_title'|trans }}{% endblock %}
+
+{% block body %}
+{% set tones = {open: 'bg-amber-100 text-amber-800', accepted: 'bg-emerald-100 text-emerald-800', dismissed: 'bg-rose-100 text-rose-800'} %}
+
+<div data-supplier-appeal data-endpoint="{{ path('supplier_api_appeal') }}" data-max-files="{{ limits.files }}" data-max-file-mb="{{ limits.fileMb }}" data-max-total-mb="{{ limits.totalMb }}"
+     class="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <a href="{{ path('app_supplier_dashboard') }}" class="text-[11px] font-semibold text-slate-500 hover:text-black">← {{ 'appeal.back'|trans }}</a>
+        <h1 class="mt-1 text-xl font-black text-slate-950">{{ 'appeal.title'|trans }}</h1>
+        <p class="text-xs text-slate-500">{{ 'appeal.subtitle'|trans }}</p>
+    </div>
+
+    {% if profile is not null %}
+        <div class="flex items-start gap-3 rounded-2xl border p-4 text-xs {{ profile.status.value in ['rejected', 'suspended'] ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900' }}">
+            {{ ux_icon('tabler:alert-circle', {class: 'mt-0.5 h-4 w-4 shrink-0'}) }}
+            <div class="space-y-0.5">
+                <p class="font-bold">{{ ('appeal.decision.' ~ profile.status.value)|trans }}</p>
+                {% if profile.rejectionReason and profile.status.value in ['rejected', 'suspended'] %}<p>{{ 'appeal.reason'|trans({'%reason%': profile.rejectionReason}) }}</p>{% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if refusal is null %}
+        <form data-appeal-form class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs" novalidate enctype="multipart/form-data">
+            <div>
+                <label for="appeal-message" class="mb-1 block text-[11px] font-bold text-slate-600">{{ 'appeal.message'|trans }}</label>
+                <textarea id="appeal-message" name="message" rows="7" minlength="{{ limits.min }}" maxlength="{{ limits.max }}" required class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-black focus:outline-none"></textarea>
+                <p class="mt-1 text-[11px] text-slate-500">{{ 'appeal.message_help'|trans({'%min%': limits.min, '%max%': limits.max}) }}</p>
+            </div>
+            <div>
+                <label for="appeal-files" class="mb-1 block text-[11px] font-bold text-slate-600">{{ 'appeal.files'|trans }}</label>
+                <input id="appeal-files" name="files[]" type="file" multiple accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" class="block w-full text-xs text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white">
+                <p class="mt-1 text-[11px] text-slate-500">{{ 'appeal.files_help'|trans({'%count%': limits.files, '%mb%': limits.fileMb, '%total%': limits.totalMb}) }}</p>
+            </div>
+            <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+            <div class="flex items-center justify-between gap-3">
+                <p class="text-[11px] text-slate-500">{{ 'appeal.limit_notice'|trans({'%count%': limits.perDecision}) }}</p>
+                <button type="submit" class="rounded-2xl bg-black px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-neutral-800 disabled:opacity-60">{{ 'appeal.send'|trans }}</button>
+            </div>
+        </form>
+    {% else %}
+        <div data-appeal-unavailable="{{ refusal }}" class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-xs text-slate-700">
+            {{ ux_icon('tabler:info-circle', {class: 'mt-0.5 h-4 w-4 shrink-0 text-slate-400'}) }}
+            <p>{{ ('error.' ~ refusal)|trans({'%count%': limits.perDecision}) }}</p>
+        </div>
+    {% endif %}
+
+    {% if appeals is not empty %}
+        <div class="space-y-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+            <h2 class="text-sm font-bold text-slate-900">{{ 'appeal.history'|trans }}</h2>
+            {% for a in appeals %}
+                <div class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="text-slate-500">{{ a.createdAt|format_datetime('medium', 'short', locale: app.request.locale) }}</span>
+                        <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold {{ tones[a.status] }}">{{ ('appeal.status.' ~ a.status)|trans }}</span>
+                    </div>
+                    <p class="whitespace-pre-line text-slate-700">{{ a.message }}</p>
+                    {% if a.files is not empty %}
+                        <ul class="space-y-0.5 text-[11px] text-slate-500">
+                            {% for f in a.files %}<li class="flex items-center gap-1.5">{{ ux_icon('tabler:paperclip', {class: 'h-3.5 w-3.5'}) }}<span>{{ f.name }} ({{ (f.size / 1024)|round }} {{ 'appeal.kb'|trans }})</span></li>{% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if a.status != 'open' %}
+                        <p class="rounded-xl bg-white p-3 text-slate-700"><span class="font-bold">{{ 'appeal.team_answer'|trans }}</span> {{ a.note|default('appeal.no_note'|trans) }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

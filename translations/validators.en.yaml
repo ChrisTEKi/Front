@@ -19,3 +19,5 @@ password:
     compromised: "This password appeared in a public data breach. Choose another one."
 contact:
     invalid: "Enter a valid e-mail address or phone number."
+price:
+    invalid: "Enter a valid amount (e.g. 12500, or 12.50 for euro and dollar)."

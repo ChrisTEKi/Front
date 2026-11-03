@@ -16,6 +16,7 @@ error:
     validation: "Corrija los campos con errores."
     invalid_courier: "Nombre o teléfono del repartidor no válido."
     not_found: "No se ha encontrado ningún pedido con esta referencia."
+    funds_frozen: "Sus pagos están congelados por el equipo de GoBuy: no puede hacer pedidos por ahora. Contacte con soporte."
 status:
     confirmed: "Pedido confirmado"
     preparing: "En preparación"

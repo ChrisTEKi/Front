@@ -236,6 +236,18 @@ final class AccountSettingsTest extends AppTestCase
         self::assertTrue($this->reload($user)->isPhoneVerified());
     }
 
+    public function testPhoneAlreadyUsedByAnotherAccountIsRefused(): void
+    {
+        $this->createUser('autre@example.com', phone: '+261341234567', phoneVerified: false);
+        $user = $this->signedInClient();
+
+        $r = $this->api('POST', '/compte/api/telephone', ['phone' => '034 12 345 67']);
+
+        self::assertSame(409, $this->httpStatus());
+        self::assertSame('phone_taken', $r['error']);
+        self::assertNull($this->reload($user)->getPhone(), 'Le numéro n\'est pas enregistré.');
+    }
+
     public function testInvalidPhoneIsRejected(): void
     {
         $user = $this->signedInClient();

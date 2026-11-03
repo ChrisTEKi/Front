@@ -19,6 +19,7 @@ use App\Repository\AdminRoleRepository;
 use App\Repository\AuditLogRepository;
 use App\Repository\OrderItemRepository;
 use App\Repository\OrderRepository;
+use App\Repository\SupplierAppealRepository;
 use App\Repository\SupplierProfileRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
@@ -54,6 +55,7 @@ final class AdminDashboardProvider
         private readonly AdminRoleRepository $roles,
         private readonly AuditLogRepository $auditLogs,
         private readonly OrderPresenter $orderPresenter,
+        private readonly SupplierAppealRepository $appeals,
     ) {
     }
 
@@ -86,8 +88,10 @@ final class AdminDashboardProvider
         $data['supplierApplications'] = [];
         if ($can[Permission::SuppliersView->value]) {
             $sales = $can[Permission::FinanceView->value] ? $this->orderItems->salesTotalsBySupplier() : [];
-            $data['pendingSuppliers'] = array_map(fn (SupplierProfile $p): array => $this->supplierRow($p, $sales), $this->suppliers->findByStatus(SupplierStatus::Pending));
-            $data['supplierApplications'] = array_map(fn (SupplierProfile $p): array => $this->supplierRow($p, $sales), $this->suppliers->findRecent(self::SUPPLIERS_LIMIT));
+            // Contestations en attente par fournisseur : la ligne du fournisseur est signalée pour que l'équipe les voie.
+            $appeals = $this->appeals->openCountsBySupplier();
+            $data['pendingSuppliers'] = array_map(fn (SupplierProfile $p): array => $this->supplierRow($p, $sales, $appeals), $this->suppliers->findByStatus(SupplierStatus::Pending));
+            $data['supplierApplications'] = array_map(fn (SupplierProfile $p): array => $this->supplierRow($p, $sales, $appeals), $this->suppliers->findRecent(self::SUPPLIERS_LIMIT));
         }
 
         // ---- Finance : total des ventes (somme réelle des lignes de commande non annulées) ----
@@ -146,11 +150,12 @@ final class AdminDashboardProvider
     // ------------------------------------------------------------------ Lignes
 
     /**
-     * @param array<string, int> $sales ventes cumulées par fournisseur (vide si pas de droit finance)
+     * @param array<string, int> $sales   ventes cumulées par fournisseur (vide si pas de droit finance)
+     * @param array<string, int> $appeals contestations ouvertes par fournisseur
      *
      * @return array<string, mixed>
      */
-    private function supplierRow(SupplierProfile $profile, array $sales): array
+    private function supplierRow(SupplierProfile $profile, array $sales, array $appeals = []): array
     {
         $user = $profile->getUser();
 
@@ -169,6 +174,7 @@ final class AdminDashboardProvider
             'status' => $profile->getStatus()->value,
             'submittedAt' => $profile->getSubmittedAt(),
             'rejectionReason' => $profile->getRejectionReason(),
+            'openAppeals' => $appeals[$user->getId()->toRfc4122()] ?? 0,
             'sales' => $sales[$user->getId()->toRfc4122()] ?? null,
             // Un dossier ne peut être approuvé que si e-mail ET téléphone sont vérifiés (règle appliquée aussi par le service).
             'approvable' => $user->isEmailVerified() && $user->isPhoneVerified(),

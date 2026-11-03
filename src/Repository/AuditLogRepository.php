@@ -20,6 +20,41 @@ class AuditLogRepository extends ServiceEntityRepository
     }
 
     /**
+     * Dernières adresses IP distinctes dont ce compte s'est servi (connexions, inscription), la plus récente d'abord.
+     * Sert à la liste noire « technique ». Les entrées sans IP (console, tâches planifiées) sont ignorées.
+     *
+     * @return list<string>
+     */
+    public function findKnownIps(string $userId, int $limit = 3): array
+    {
+        $rows = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            'SELECT ip FROM (
+                SELECT ip_address AS ip, MAX(created_at) AS last_seen
+                  FROM audit_logs
+                 WHERE actor_id = :user AND ip_address IS NOT NULL
+                 GROUP BY ip_address
+            ) known ORDER BY last_seen DESC LIMIT '.max(1, min(10, $limit)),
+            ['user' => $userId],
+        );
+
+        return array_values(array_map('strval', $rows));
+    }
+
+    /**
+     * Historique d'un compte : les entrées du journal dont il est la CIBLE (décisions, sanctions, contestations…), les plus récentes d'abord.
+     *
+     * @return list<AuditLog>
+     */
+    public function findForTarget(string $targetId, int $limit = 30): array
+    {
+        return $this->createQueryBuilder('a')
+            ->andWhere('a.targetId = :id')->setParameter('id', $targetId)
+            ->orderBy('a.createdAt', 'DESC')
+            ->setMaxResults(max(1, $limit))
+            ->getQuery()->getResult();
+    }
+
+    /**
      * Dernières entrées, éventuellement filtrées par préfixe d'action (ex. « admin. »).
      *
      * @return list<AuditLog>

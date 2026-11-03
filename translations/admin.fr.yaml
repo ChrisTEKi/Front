@@ -18,6 +18,8 @@ tabs:
     admins: "Administrateurs (%count%)"
     roles: "Profils & droits"
     audit: "Journal d'audit"
+    products: "Produits"
+    blacklist: "Liste noire"
 overview:
     clients: "Clients inscrits"
     suppliers_active: "Fournisseurs actifs"
@@ -39,6 +41,8 @@ applications:
         contact: "Contact"
         status: "Statut"
         date: "Dépôt"
+    appeal_open: "Contestation en attente"
+    account: "Fiche"
 payouts:
     sales_total: "Ventes Totales Vendeurs"
     commissions: "Commissions GoBuy"
@@ -58,6 +62,7 @@ approval:
 supplier:
     suspend: "Retirer l'approbation"
     reapprove: "Approuver à nouveau"
+    revalidate: "Re-valider"
 supplier_status:
     pending: "En attente"
     approved: "Approuvé"
@@ -79,8 +84,8 @@ users:
     filter_placeholder: "Filtrer nom ou email..."
     search: "Rechercher"
     none: "Aucun utilisateur inscrit pour le moment."
-    "True": "Activée"
-    "False": "Désactivée"
+    "on": "Activée"
+    "off": "Désactivée"
     suspend: "Suspendre"
     reactivate: "Réactiver"
     confirm_suspend: "Suspendre le compte de %name% ? Cette personne ne pourra plus se connecter."
@@ -162,6 +167,21 @@ perm:
         view: "Voir les administrateurs"
         manage: "Gérer les administrateurs"
         export: "Exporter les administrateurs"
+    products:
+        view: "Voir tous les produits (fournisseurs et GoBuy)"
+        manage: "Créer / modifier les produits de GoBuy"
+        flag: "Signaler des produits"
+        feature: "Mettre des produits en avant"
+        remove: "Retirer / rétablir des produits ou un catalogue entier"
+        delete: "Supprimer définitivement des produits"
+    sanctions:
+        ban: "Bannir définitivement un compte client ou fournisseur"
+        freeze: "Geler les fonds et les paiements d'un compte"
+        refund: "Rembourser les acheteurs lésés"
+    blacklist:
+        manage: "Gérer la liste noire"
+    accounts:
+        delete: "Supprimer définitivement un compte (immédiat ou programmé)"
 audit:
     title: "Journal d'audit"
     subtitle: "Trace de chaque connexion, décision et export. Aucun mot de passe ni code n'y figure."
@@ -221,6 +241,8 @@ dialog:
         title_role_delete: "Supprimer le profil « %name% »"
         help: "Par sécurité, retapez votre mot de passe pour confirmer cette action sensible."
         title_reset_access: "Réinitialiser l'accès de cet administrateur ? Son mot de passe sera supprimé et un nouveau lien d'activation lui sera envoyé."
+        title_suspend_many: "Suspendre %number% administrateur(s) ?"
+        title_reactivate_many: "Réactiver %number% administrateur(s) ?"
     admin:
         title_invite: "Inviter un administrateur"
         title_edit: "Accès de %name%"
@@ -285,6 +307,24 @@ error:
     delivery_failed: "L'e-mail n'a pas pu être envoyé. Réessayez dans quelques instants."
     not_activated: "Ce compte n'est pas encore activé : utilisez « Renvoyer l'invitation »."
     account_not_active: "Seul un compte actif peut être réinitialisé : réactivez-le d'abord."
+    bulk_empty: "Sélectionnez au moins un administrateur."
+    bulk_too_many: "Une action groupée est limitée à %max% administrateurs à la fois."
 application:
     show: "Voir le dossier détaillé"
     none: "Dossier sans détail (inscription simple, sans l'assistant « Devenir partenaire »)."
+bulk:
+    selected: "sélectionné(s)"
+    suspend: "Suspendre la sélection"
+    reactivate: "Réactiver la sélection"
+    select_all: "Tout sélectionner"
+    select_one: "Sélectionner %name%"
+    invited_hint: "Invitation non acceptée : rien à suspendre ni à réactiver."
+    done: "%count% administrateur(s) mis à jour."
+    skipped: "Ignorés : %list%."
+    skip:
+        not_found: "introuvable"
+        cannot_modify_super_admin: "Super Admin protégé"
+        cannot_suspend_self: "c'est votre propre compte"
+        bulk_invited: "invitation non acceptée"
+        bulk_already_suspended: "déjà suspendu"
+        bulk_already_active: "déjà actif"

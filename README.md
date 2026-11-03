@@ -20,6 +20,8 @@ de compte, exports CSV, e-mails de confirmation, trois langues.
 | Commande | Vérification du téléphone et du numéro **Mobile Money** (Mvola, Orange Money, Airtel Money) avant le paiement ; e-mail de confirmation automatique |
 | Compte | Historique des commandes, suivi de colis, mot de passe, 2FA, **suppression avec effacement définitif après 30 jours** ; **changement d'e-mail ou de téléphone avec double confirmation** (code à l'ancienne adresse puis à la nouvelle, tous types de comptes) ; **photo de profil** ; **carnet d'adresses de livraison** (plusieurs adresses, une par défaut, saisie à l'inscription ou à la commande) |
 | Administration | **Super Admin** unique (créé en ligne de commande) qui crée les autres administrateurs (Finance, Comptabilité, Support, Modération…) avec droits ajoutés/retirés ; journal d'audit ; **exports CSV** clients, fournisseurs, administrateurs, commandes |
+| Catalogue | **Produits** des fournisseurs et de GoBuy ; prix en Ariary + prix spécifique par devise (EUR, USD) ; **modération par les administrateurs** : retirer, signaler, mettre en avant, supprimer, retirer ou supprimer tout le catalogue d'un fournisseur (droits `products.*` délégables, mot de passe redemandé pour les actions destructrices) |
+| Modération avancée | **Revalidation** d'un fournisseur refusé et **contestation** par le fournisseur (message + pièces) ; **sanctions** : bannissement définitif avec retrait du catalogue, remboursement des acheteurs (enregistré), liste noire (e-mail, téléphone, nom, raison sociale, IP) ; **gel des fonds** ; **suppression de compte avec délai choisi** (immédiat à 1 an) ; profils **PDG / DG** (droits délégués) ; suspension groupée d'administrateurs |
 | Langues | Français, anglais, espagnol ; détection automatique (choix mémorisé > navigateur > français) ; e-mails et SMS dans la langue du compte |
 | Support | Contact, réclamation, candidature spontanée et avis du site : envoyés par e-mail à `GOBUY_SUPPORT_EMAIL` |
 
@@ -66,7 +68,7 @@ En production : `export APP_ENV=prod` **avant** `composer install --no-dev --opt
 ## Tâches planifiées (cron)
 
 ```cron
-15 3 * * *            cd /chemin/gobuy && php bin/console app:accounts:purge            # efface les comptes dont les 30 jours sont écoulés
+15 * * * *           cd /chemin/gobuy && php bin/console app:accounts:purge            # efface les comptes échus (30 jours, ou délai choisi par un administrateur : toutes les heures = délai respecté à l'heure près)
 */10 * * * *          cd /chemin/gobuy && php bin/console app:orders:send-confirmations # renvoie les e-mails de commande restés en attente
 ```
 
@@ -79,7 +81,7 @@ APP_ENV=test php bin/console doctrine:database:create --if-not-exists
 APP_ENV=test vendor/bin/phpunit
 ```
 
-385 tests sur une **vraie base PostgreSQL** (pas de moteur de substitution) : parcours d'inscription et de connexion,
+488 tests sur une **vraie base PostgreSQL** (pas de moteur de substitution) : parcours d'inscription et de connexion,
 limites de débit, OTP, Google/Apple (faux fournisseur OIDC signé, aucun appel réseau), droits d'administration, exports
 CSV, suppression de compte, rendu des pages dans les trois langues.
 
@@ -88,10 +90,10 @@ CSV, suppression de compte, rendu des pages dans les trois langues.
 - **Versions.** Le code cible Symfony 8.1 / PHP 8.4 (`composer.json`). Il a été exécuté et testé ici sur Symfony 7.4 /
   PHP 8.3 (seules versions installables dans l'environnement de travail) en s'interdisant les API qui diffèrent. Lancez
   la suite de tests après le premier `composer install`.
-- **Catalogue.** Il n'existe pas de table de produits : `App\Order\CatalogInterface` est branchée sur `EmptyCatalog`
-  (aucun produit, donc aucune commande possible). Écrivez votre implémentation (voir le commentaire dans
-  `config/services.yaml`) pour que le panier et la commande fonctionnent. Les boutons « Ajouter un produit » du
-  fournisseur sont désactivés en attendant.
+- **Catalogue.** Il est vide au départ : aucun produit fictif n'est fourni. Les fournisseurs (`/fournisseur/produits`) et
+  les administrateurs (`/admin/produits`) créent les produits ; seuls ceux d'un fournisseur **approuvé** dont le compte est
+  actif sont vendables. Il n'y a pas encore de photos ni de stock : la fiche produit affiche une icône. Avant de publier,
+  renseignez au moins quelques produits réels.
 - **Paiement.** Le Mobile Money est **vérifié** (le numéro appartient bien au client, code SMS) mais aucun prélèvement
   n'est effectué : la passerelle de paiement n'est pas incluse.
 - **Google / Apple** : testés avec un faux fournisseur ; à essayer avec de vrais identifiants avant ouverture.
@@ -109,13 +111,15 @@ src/Account/         compte : coordonnées (double confirmation), photo, carnet 
 src/Admin/           Super Admin, profils et droits, exports CSV, validation fournisseurs, réauthentification
 src/Social/          Google / Apple (OpenID Connect + PKCE)
 src/Order/, Payment/ commande, numéro, e-mail de confirmation, vérification Mobile Money
+src/Catalog/         produits : gestion fournisseur, modération administrateur, catalogue pour les commandes
 src/Supplier/        tableau de bord fournisseur
+src/Moderation/      contestations, sanctions (bannissement, gel des fonds), remboursements, liste noire, suppression programmée
 src/Contact/         formulaires du support
 src/Security/        authentificateur, vérification de compte, droits fins (voter)
 src/Audit/           journal d'audit
 src/Command/         commandes console (super admin, purge, confirmations)
 templates/, assets/  Twig, Tailwind, JavaScript natif
-translations/        fr / en / es par domaine (messages, js, auth, orders, emails, validators, security, admin, categories)
+translations/        fr / en / es par domaine (messages, js, auth, orders, emails, validators, security, admin, categories, catalog, sanctions)
 migrations/          schéma PostgreSQL commenté
 tests/               PHPUnit (vraie base PostgreSQL)
 ```

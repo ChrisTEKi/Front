@@ -80,6 +80,10 @@ final class OrderService
         if (!$client->isClient() || !$client->isActive()) {
             throw new OrderRefusedException('account_not_allowed');
         }
+        // Gel conservatoire des paiements du compte (décision de l'équipe) : plus aucune commande.
+        if ($client->isFundsFrozen()) {
+            throw new OrderRefusedException('funds_frozen');
+        }
 
         // 3) Téléphone mobile valide ET vérifié par SMS : règle métier obligatoire avant toute commande.
         if (!$client->isPhoneVerified()) {

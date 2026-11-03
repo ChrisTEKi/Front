@@ -1,0 +1,166 @@
+{# Administration du catalogue (/admin/produits) : tous les produits des fournisseurs et de GoBuy. La liste est dessinée par le
+   serveur et filtrée par les droits fins de l'administrateur (variable `can`) ; les actions sont envoyées par
+   assets/admin-products.js à l'API /admin/api/produits. Textes : translations/catalog.<langue>.yaml (section « admin »). #}
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'catalog' %}
+{% block title %}{{ 'admin.page_title'|trans }}{% endblock %}
+
+{% block body %}
+{% set tones = {active: 'bg-emerald-100 text-emerald-800', hidden: 'bg-slate-100 text-slate-700', removed: 'bg-rose-100 text-rose-800'} %}
+{% set dialogClass = 'm-auto w-[calc(100%-2rem)] max-w-lg rounded-3xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-950/50' %}
+{% set inputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs' %}
+{% set labelClass = 'mb-1 block text-[11px] font-semibold text-slate-600' %}
+{% set btn = 'rounded-lg border px-2.5 py-1 text-[11px] font-semibold' %}
+
+<div data-admin-products
+     data-endpoint-add="{{ path('admin_api_product_add') }}"
+     data-endpoint-update="{{ path('admin_api_product_update', {id: '00000000-0000-0000-0000-000000000000'}) }}"
+     data-endpoint-removal="{{ path('admin_api_product_removal', {id: '00000000-0000-0000-0000-000000000000'}) }}"
+     data-endpoint-flag="{{ path('admin_api_product_flag', {id: '00000000-0000-0000-0000-000000000000'}) }}"
+     data-endpoint-feature="{{ path('admin_api_product_feature', {id: '00000000-0000-0000-0000-000000000000'}) }}"
+     data-endpoint-delete="{{ path('admin_api_product_delete', {id: '00000000-0000-0000-0000-000000000000'}) }}"
+     data-endpoint-catalog="{{ path('admin_api_supplier_catalog', {id: '00000000-0000-0000-0000-000000000000'}) }}"
+     class="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+
+    <div class="flex flex-col justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
+        <div>
+            <a href="{{ path('app_admin_dashboard') }}" class="text-[11px] font-semibold text-slate-500 hover:text-black">← {{ 'admin.back'|trans }}</a>
+            <h1 class="mt-1 text-xl font-bold text-slate-900">{{ 'admin.title'|trans }}</h1>
+            <p class="text-xs text-slate-500">{{ 'admin.subtitle'|trans({'%count%': total}) }}</p>
+        </div>
+        {% if can['products.manage'] %}
+            <button type="button" data-product-add class="flex items-center gap-2 rounded-2xl bg-black px-4 py-2.5 text-xs font-bold text-white hover:bg-neutral-800">{{ ux_icon('tabler:plus', {class: 'h-4 w-4'}) }}<span>{{ 'admin.add_gobuy'|trans }}</span></button>
+        {% endif %}
+    </div>
+
+    <p data-admin-notice role="status" class="hidden rounded-2xl border p-3 text-xs"></p>
+
+    {# Filtres (GET : l'adresse de la page reflète le filtre, on peut la partager entre administrateurs). #}
+    <form method="get" action="{{ path('app_admin_products') }}" class="grid grid-cols-2 items-end gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-xs sm:grid-cols-6">
+        <div class="col-span-2"><label class="{{ labelClass }}" for="f-q">{{ 'admin.filter.search'|trans }}</label><input id="f-q" name="q" value="{{ filters.q }}" maxlength="100" class="{{ inputClass }}"></div>
+        <div><label class="{{ labelClass }}" for="f-owner">{{ 'admin.filter.owner'|trans }}</label>
+            <select id="f-owner" name="owner" class="{{ inputClass }}">
+                <option value="all" {{ filters.owner == 'all' ? 'selected' }}>{{ 'admin.filter.owner_all'|trans }}</option>
+                <option value="gobuy" {{ filters.owner == 'gobuy' ? 'selected' }}>{{ 'admin.filter.owner_gobuy'|trans }}</option>
+                {% if supplier %}<option value="{{ supplier.id }}" selected>{{ supplier.name }}</option>{% endif %}
+            </select></div>
+        <div><label class="{{ labelClass }}" for="f-status">{{ 'admin.filter.status'|trans }}</label>
+            <select id="f-status" name="status" class="{{ inputClass }}"><option value="">—</option>{% for s in ['active', 'hidden', 'removed'] %}<option value="{{ s }}" {{ filters.status == s ? 'selected' }}>{{ ('status.' ~ s)|trans }}</option>{% endfor %}</select></div>
+        <div class="flex items-center gap-3 pb-2 text-[11px] text-slate-700">
+            <label class="flex items-center gap-1"><input type="checkbox" name="flagged" value="1" {{ filters.flagged ? 'checked' }}>{{ 'admin.filter.flagged'|trans }}</label>
+            <label class="flex items-center gap-1"><input type="checkbox" name="featured" value="1" {{ filters.featured ? 'checked' }}>{{ 'admin.filter.featured'|trans }}</label>
+        </div>
+        <div class="col-span-2 sm:col-span-6"><button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700">{{ 'admin.filter.apply'|trans }}</button>
+            <a href="{{ path('app_admin_products') }}" class="ml-2 text-xs text-slate-500 hover:text-black">{{ 'admin.filter.reset'|trans }}</a></div>
+    </form>
+
+    {# Un fournisseur est sélectionné : actions sur TOUT son catalogue. #}
+    {% if supplier and (can['products.remove'] or can['products.delete']) %}
+        <div class="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-900 sm:flex-row sm:items-center sm:justify-between">
+            <p><span class="font-bold">{{ 'admin.catalog.title'|trans({'%name%': supplier.name}) }}</span> — {{ 'admin.catalog.help'|trans }}</p>
+            <div class="flex shrink-0 gap-2">
+                {% if can['products.remove'] %}<button type="button" data-admin-action data-url="{{ path('admin_api_supplier_catalog', {id: supplier.id}) }}" data-payload='{"action":"remove"}' data-need="reason,password" data-title="{{ 'admin.catalog.remove_title'|trans({'%name%': supplier.name}) }}" class="{{ btn }} border-rose-300 bg-white text-rose-700 hover:bg-rose-100">{{ 'admin.catalog.remove'|trans }}</button>{% endif %}
+                {% if can['products.delete'] %}<button type="button" data-admin-action data-url="{{ path('admin_api_supplier_catalog', {id: supplier.id}) }}" data-payload='{"action":"delete"}' data-need="password" data-danger="1" data-title="{{ 'admin.catalog.delete_title'|trans({'%name%': supplier.name}) }}" class="{{ btn }} border-rose-600 bg-rose-600 text-white hover:bg-rose-700">{{ 'admin.catalog.delete'|trans }}</button>{% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    {# Formulaire d'ajout / modification d'un produit GoBuy. #}
+    {% if can['products.manage'] %}
+    <form data-product-form class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs" novalidate>
+        <h2 data-product-form-title class="text-sm font-bold text-slate-900"></h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="sm:col-span-2"><label class="{{ labelClass }}" for="p-name">{{ 'field.name'|trans }}</label><input id="p-name" name="name" maxlength="255" required class="{{ inputClass }}"><p data-field-error="name" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+            <div class="sm:col-span-2"><label class="{{ labelClass }}" for="p-description">{{ 'field.description'|trans }}</label><textarea id="p-description" name="description" rows="3" maxlength="5000" class="{{ inputClass }}"></textarea><p data-field-error="description" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+            <div><label class="{{ labelClass }}" for="p-category">{{ 'field.category'|trans }}</label><select id="p-category" name="category" class="{{ inputClass }}"><option value="">—</option>{% for c in categories %}<option value="{{ c.slug }}">{{ c.name }}</option>{% endfor %}</select></div>
+            <div><label class="{{ labelClass }}" for="p-reference">{{ 'field.reference'|trans }}</label><input id="p-reference" name="reference" maxlength="64" class="{{ inputClass }}"></div>
+            <div><label class="{{ labelClass }}" for="p-price-mga">{{ 'field.price_mga'|trans }}</label><input id="p-price-mga" name="priceMga" inputmode="numeric" required class="{{ inputClass }}"><p data-field-error="priceMga" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+            {% for currency in currencies %}
+                <div><label class="{{ labelClass }}" for="p-price-{{ currency.value }}">{{ 'field.price_other'|trans({'%currency%': currency.value}) }}</label><input id="p-price-{{ currency.value }}" name="price_{{ currency.value }}" inputmode="decimal" placeholder="{{ 'field.auto_rate'|trans }}" class="{{ inputClass }}"><p data-field-error="price_{{ currency.value }}" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+            {% endfor %}
+        </div>
+        <p data-form-message role="status" class="hidden rounded-xl p-2 text-xs"></p>
+        <div class="flex justify-end gap-2">
+            <button type="button" data-product-cancel class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">{{ 'common.cancel'|trans }}</button>
+            <button type="submit" class="rounded-xl bg-black px-4 py-2 text-xs font-bold text-white hover:bg-neutral-800">{{ 'common.save'|trans }}</button>
+        </div>
+    </form>
+    {% endif %}
+
+    {% if rows is empty %}
+        <div class="rounded-3xl border border-slate-200 bg-white p-10 text-center text-xs text-slate-400">{{ ux_icon('tabler:package', {class: 'mx-auto mb-2 h-10 w-10 text-slate-300'}) }}<p class="font-semibold text-slate-500">{{ 'admin.empty'|trans }}</p></div>
+    {% else %}
+        <div class="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-xs">
+            <table class="w-full border-collapse text-left text-xs">
+                <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                    <th class="px-3 py-3">{{ 'col.product'|trans }}</th><th class="px-3 py-3">{{ 'col.owner'|trans }}</th><th class="px-3 py-3">{{ 'col.price'|trans }}</th><th class="px-3 py-3">{{ 'col.status'|trans }}</th><th class="px-3 py-3"></th>
+                </tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for p in rows %}
+                        <tr data-product-row>
+                            <td class="px-3 py-3"><div class="font-bold text-slate-900">{{ p.name }}</div>{% if p.reference %}<div class="font-mono text-[10px] text-slate-400">{{ p.reference }}</div>{% endif %}</td>
+                            <td class="px-3 py-3">{% if p.gobuy %}<span class="rounded-full bg-black px-2 py-0.5 text-[10px] font-bold text-white">GoBuy</span>{% else %}<a href="{{ path('app_admin_products', {owner: p.ownerId}) }}" class="font-semibold text-indigo-700 hover:underline">{{ p.ownerName }}</a><div class="text-[10px] text-slate-400">{{ p.ownerEmail }}</div>{% endif %}</td>
+                            <td class="px-3 py-3 font-mono">{{ p.priceMga|format_number }} Ar{% for code, amount in p.prices %}<div class="text-[10px] text-slate-500">{{ amount }} {{ code }}</div>{% endfor %}</td>
+                            <td class="px-3 py-3 space-y-1">
+                                <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold {{ tones[p.status]|default(tones.hidden) }}">{{ ('status.' ~ p.status)|trans }}</span>
+                                {% if p.flagged %}<div class="text-[10px] font-semibold text-amber-700" title="{{ p.flagReason }}">⚑ {{ 'admin.flagged'|trans }} — {{ p.flagReason }}</div>{% endif %}
+                                {% if p.featured %}<div class="text-[10px] font-semibold text-indigo-700">★ {{ 'admin.featured'|trans }}{% if p.featuredUntil %} — {{ 'admin.until'|trans({'%date%': p.featuredUntil|date('d/m/Y')}) }}{% endif %}</div>{% endif %}
+                                {% if p.status == 'removed' and p.removedReason %}<div class="max-w-[220px] text-[10px] text-rose-700">{{ p.removedReason }}</div>{% endif %}
+                            </td>
+                            <td class="px-3 py-3">
+                                <div class="flex flex-wrap justify-end gap-1.5">
+                                    {% if can['products.manage'] and p.gobuy and p.status != 'removed' %}<button type="button" data-product-edit data-product="{{ p|json_encode|e('html_attr') }}" class="{{ btn }} border-slate-200 text-slate-700 hover:bg-slate-50">{{ 'common.edit'|trans }}</button>{% endif %}
+                                    {% if can['products.remove'] %}
+                                        {% if p.status == 'removed' %}
+                                            <button type="button" data-admin-action data-url="{{ path('admin_api_product_removal', {id: p.id}) }}" data-payload='{"action":"restore"}' data-need="" data-title="{{ 'admin.action.restore'|trans }}" class="{{ btn }} border-emerald-300 text-emerald-700 hover:bg-emerald-50">{{ 'admin.action.restore'|trans }}</button>
+                                        {% else %}
+                                            <button type="button" data-admin-action data-url="{{ path('admin_api_product_removal', {id: p.id}) }}" data-payload='{"action":"remove"}' data-need="reason" data-title="{{ 'admin.action.remove_title'|trans({'%name%': p.name}) }}" class="{{ btn }} border-rose-300 text-rose-700 hover:bg-rose-50">{{ 'admin.action.remove'|trans }}</button>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if can['products.flag'] %}
+                                        {% if p.flagged %}
+                                            <button type="button" data-admin-action data-url="{{ path('admin_api_product_flag', {id: p.id}) }}" data-payload='{"action":"unflag"}' data-need="" data-title="{{ 'admin.action.unflag'|trans }}" class="{{ btn }} border-slate-200 text-slate-700 hover:bg-slate-50">{{ 'admin.action.unflag'|trans }}</button>
+                                        {% else %}
+                                            <button type="button" data-admin-action data-url="{{ path('admin_api_product_flag', {id: p.id}) }}" data-payload='{"action":"flag"}' data-need="reason" data-title="{{ 'admin.action.flag_title'|trans({'%name%': p.name}) }}" class="{{ btn }} border-amber-300 text-amber-700 hover:bg-amber-50">{{ 'admin.action.flag'|trans }}</button>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if can['products.feature'] and p.status == 'active' %}
+                                        {% if p.featured %}
+                                            <button type="button" data-admin-action data-url="{{ path('admin_api_product_feature', {id: p.id}) }}" data-payload='{"action":"unfeature"}' data-need="" data-title="{{ 'admin.action.unfeature'|trans }}" class="{{ btn }} border-slate-200 text-slate-700 hover:bg-slate-50">{{ 'admin.action.unfeature'|trans }}</button>
+                                        {% else %}
+                                            <button type="button" data-admin-action data-url="{{ path('admin_api_product_feature', {id: p.id}) }}" data-payload='{"action":"feature"}' data-need="days" data-title="{{ 'admin.action.feature_title'|trans({'%name%': p.name}) }}" class="{{ btn }} border-indigo-300 text-indigo-700 hover:bg-indigo-50">{{ 'admin.action.feature'|trans }}</button>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if can['products.delete'] %}<button type="button" data-admin-action data-url="{{ path('admin_api_product_delete', {id: p.id}) }}" data-payload="{}" data-need="password" data-danger="1" data-title="{{ 'admin.action.delete_title'|trans({'%name%': p.name}) }}" class="{{ btn }} border-rose-600 bg-rose-600 text-white hover:bg-rose-700">{{ 'common.delete'|trans }}</button>{% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pages > 1 %}
+            <nav class="flex items-center justify-center gap-2 text-xs" aria-label="pagination">
+                {% set query = filters|merge({page: page - 1}) %}
+                {% if page > 1 %}<a href="{{ path('app_admin_products', query) }}" class="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50">←</a>{% endif %}
+                <span class="text-slate-500">{{ 'admin.page'|trans({'%page%': page, '%pages%': pages}) }}</span>
+                {% if page < pages %}<a href="{{ path('app_admin_products', filters|merge({page: page + 1})) }}" class="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50">→</a>{% endif %}
+            </nav>
+        {% endif %}
+    {% endif %}
+</div>
+
+{# Fenêtre unique pour les actions de modération : motif, durée de mise en avant, mot de passe (selon l'action). #}
+<dialog data-action-dialog class="{{ dialogClass }}">
+    <form method="dialog" data-action-form class="space-y-4 p-6">
+        <h3 data-action-title class="text-sm font-bold text-slate-900"></h3>
+        <div data-need-field="reason" class="hidden"><label class="{{ labelClass }}" for="a-reason">{{ 'admin.dialog.reason'|trans }}</label><textarea id="a-reason" name="reason" rows="3" minlength="5" maxlength="500" class="{{ inputClass }}"></textarea><p class="mt-1 text-[11px] text-slate-400">{{ 'admin.dialog.reason_help'|trans }}</p></div>
+        <div data-need-field="days" class="hidden"><label class="{{ labelClass }}" for="a-days">{{ 'admin.dialog.days'|trans }}</label>
+            <select id="a-days" name="days" class="{{ inputClass }}"><option value="">{{ 'admin.dialog.days_forever'|trans }}</option>{% for d in featureDays %}<option value="{{ d }}">{{ 'admin.dialog.days_n'|trans({'%count%': d}) }}</option>{% endfor %}</select></div>
+        <div data-need-field="password" class="hidden"><label class="{{ labelClass }}" for="a-password">{{ 'admin.dialog.password'|trans }}</label><input id="a-password" type="password" name="password" autocomplete="current-password" class="{{ inputClass }}"><p class="mt-1 text-[11px] text-slate-400">{{ 'admin.dialog.password_help'|trans }}</p></div>
+        <p data-action-error role="alert" class="hidden rounded-xl bg-rose-50 p-2 text-xs text-rose-700"></p>
+        <div class="flex justify-end gap-2"><button type="button" data-action-cancel class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">{{ 'common.cancel'|trans }}</button><button type="submit" data-action-submit class="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">{{ 'admin.dialog.confirm'|trans }}</button></div>
+    </form>
+</dialog>
+{% endblock %}

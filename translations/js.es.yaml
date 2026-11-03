@@ -116,3 +116,13 @@ addresses:
         edit: "Editar dirección"
     saved: "Dirección guardada."
     confirm_delete: "¿Eliminar esta dirección? Tus pedidos anteriores no se ven afectados."
+products:
+    form:
+        add: "Añadir un producto"
+        edit: "Editar el producto"
+    confirm_delete: "¿Eliminar este producto definitivamente?"
+    saved: "Producto guardado."
+    fix: "Corrija los campos con error."
+appeal:
+    sent: "Su impugnación se ha enviado. El equipo de GoBuy la revisará."
+    files_too_big: "Demasiados archivos o archivos demasiado pesados: respete los límites indicados."

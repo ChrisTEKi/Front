@@ -199,6 +199,32 @@ final class AdminApiController extends AbstractController
         });
     }
 
+    /**
+     * Suspend / réactive PLUSIEURS administrateurs d'un coup. Le mot de passe du Super Admin est demandé UNE fois.
+     * Les comptes qui ne peuvent pas être traités sont ignorés et renvoyés avec leur raison (« skipped »).
+     */
+    #[Route('/api/administrateurs/statut-groupe', name: 'admin_status_bulk', methods: ['POST'])]
+    #[IsGranted('admins.manage')]
+    public function adminStatusBulk(Request $request): JsonResponse
+    {
+        return $this->run(function () use ($request): array {
+            $data = $this->payload($request);
+            $this->stepUp->require($this->admin(), (string) ($data['password'] ?? ''));
+            $ids = \is_array($data['ids'] ?? null) ? array_values($data['ids']) : [];
+
+            $result = $this->adminAccounts->changeStatusMany($this->admin(), $ids, $this->text($data, 'action'));
+
+            return [
+                'changed' => \count($result['changed']),
+                'skipped' => array_map(fn (array $s): array => [
+                    'id' => $s['id'],
+                    'reason' => $s['reason'],
+                    'message' => $this->translator->trans('bulk.skip.'.$s['reason'], [], 'admin'),
+                ], $result['skipped']),
+            ];
+        });
+    }
+
     /** Renvoie le lien d'activation d'un administrateur invité. */
     #[Route('/api/administrateurs/{id}/invitation', name: 'admin_resend', methods: ['POST'])]
     #[IsGranted('admins.manage')]

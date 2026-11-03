@@ -145,9 +145,14 @@ function initAdminManagement(root, url) {
     // --- Actions qui ne demandent QUE le mot de passe : suspendre, réactiver, renvoyer l'invitation, supprimer un profil ---
     const titles = JSON.parse(confirmDialog.getAttribute('data-titles') || '{}');
     let pending = null; // {endpoint, title, payload}
-    bindDialog(confirmDialog, root, async (form) => postJson(pending.endpoint, { ...pending.payload, password: form.elements.password.value }));
-    const askPassword = (kind, endpoint, payload = {}, name = '') => {
-        pending = { endpoint, payload };
+    bindDialog(confirmDialog, root, async (form) => {
+        const result = await postJson(pending.endpoint, { ...pending.payload, password: form.elements.password.value });
+        if (result.ok && pending.onSuccess) pending.onSuccess(result);
+
+        return result;
+    });
+    const askPassword = (kind, endpoint, payload = {}, name = '', onSuccess = null) => {
+        pending = { endpoint, payload, onSuccess };
         confirmDialog.querySelector('[data-dialog-title]').textContent = (titles[kind] || '').replace('__NAME__', name);
         confirmDialog.showModal();
     };
@@ -159,6 +164,9 @@ function initAdminManagement(root, url) {
         else if ('reset_access' === kind) askPassword(kind, url('adminResetAccess', id));
         else askPassword(kind, url('adminStatus', id), { action: kind });
     }));
+
+    // --- Suspension / réactivation de PLUSIEURS administrateurs (cases à cocher + une seule confirmation) ---
+    initBulkAdminStatus(root, url, askPassword);
 
     // --- Profils de droits ---
     bindDialog(roleDialog, root, async (form) => postJson(url('roleSave', ''), {
@@ -188,6 +196,53 @@ function initAdminManagement(root, url) {
 
     root.querySelectorAll('[data-role-delete]').forEach((btn) => btn.addEventListener('click', () => {
         askPassword('role_delete', url('roleDelete', btn.getAttribute('data-id')), {}, btn.getAttribute('data-name'));
+    }));
+}
+
+/**
+ * Actions groupées sur les administrateurs : la barre d'actions n'apparaît que si au moins une case est cochée.
+ * Le serveur décide de tout (Super Admin, mot de passe, comptes ignorés) ; ici on ne fait que rassembler les identifiants.
+ */
+function initBulkAdminStatus(root, url, askPassword) {
+    const bar = root.querySelector('[data-admin-bulk]');
+    if (!bar) return;
+    const boxes = () => [...root.querySelectorAll('[data-admin-select]:not(:disabled)')];
+    const selected = () => boxes().filter((b) => b.checked);
+    const all = root.querySelector('[data-admin-select-all]');
+
+    const refresh = () => {
+        const count = selected().length;
+        bar.querySelector('[data-admin-bulk-count]').textContent = String(count);
+        bar.classList.toggle('hidden', 0 === count);
+        bar.classList.toggle('flex', 0 < count);
+        if (all) {
+            all.checked = 0 < count && count === boxes().length;
+            all.indeterminate = 0 < count && count < boxes().length;
+        }
+    };
+    root.addEventListener('change', (event) => {
+        if (event.target.matches('[data-admin-select]')) refresh();
+    });
+    all?.addEventListener('change', () => {
+        boxes().forEach((b) => { b.checked = all.checked; });
+        refresh();
+    });
+
+    bar.querySelectorAll('[data-admin-bulk-action]').forEach((btn) => btn.addEventListener('click', () => {
+        const action = btn.getAttribute('data-admin-bulk-action');
+        const chosen = selected();
+        if (0 === chosen.length) return;
+        const names = new Map(chosen.map((b) => [b.value, b.getAttribute('data-name')]));
+        askPassword(`${action}_many`, url('adminStatusBulk', ''), { action, ids: [...names.keys()] }, String(chosen.length), (result) => {
+            // Réussite : message « N mis à jour » + la liste de ceux qui ont été ignorés, avec la raison (déjà traduite par le serveur).
+            const skipped = result.body?.skipped ?? [];
+            let message = bar.getAttribute('data-done').replace('__COUNT__', String(result.body?.changed ?? 0));
+            if (0 < skipped.length) {
+                const list = skipped.map((s) => `${names.get(s.id) ?? s.id} (${s.message})`).join(' ; ');
+                message += ` ${bar.getAttribute('data-skipped').replace('__LIST__', list)}`;
+            }
+            result.flash = message;
+        });
     }));
 }
 
@@ -274,7 +329,7 @@ function bindDialog(dialog, root, send) {
 
         if (result.ok) {
             dialog.close();
-            if (!result.noop) done(root);
+            if (!result.noop) done(root, result.flash);
 
             return;
         }
@@ -287,8 +342,8 @@ function bindDialog(dialog, root, send) {
 }
 
 /** Une action a réussi : on mémorise le message puis on recharge pour afficher les données à jour. */
-function done(root) {
-    try { window.sessionStorage.setItem(FLASH_KEY, root.getAttribute('data-saved') || ''); } catch { /* facultatif */ }
+function done(root, message = null) {
+    try { window.sessionStorage.setItem(FLASH_KEY, message || root.getAttribute('data-saved') || ''); } catch { /* facultatif */ }
     window.location.reload();
 }
 

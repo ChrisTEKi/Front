@@ -7,7 +7,7 @@ use App\Order\CatalogItem;
 
 /**
  * Catalogue de TEST : quelques produits définis par le test lui-même, pour vérifier que les prix sont bien relus
- * côté serveur. (Aucun produit n'existe dans l'application livrée : voir App\Order\EmptyCatalog.)
+ * côté serveur. (Le vrai catalogue, App\Catalog\DoctrineCatalog, est testé à part dans tests/Catalog.)
  */
 final class InMemoryCatalog implements CatalogInterface
 {

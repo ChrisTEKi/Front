@@ -11,6 +11,7 @@ use App\Enum\OtpPurpose;
 use App\Notification\SecurityNotifier;
 use App\Phone\PhoneNumberParser;
 use App\Repository\OrderRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -38,6 +39,7 @@ final class AccountService
         private readonly AuditLogger $audit,
         private readonly SecurityNotifier $notifier,
         private readonly ClockInterface $clock,
+        private readonly UserRepository $users,
     ) {
     }
 
@@ -123,7 +125,7 @@ final class AccountService
      * sensible (il coupe la 2FA par SMS et sert à la livraison) : ce changement passe par la double confirmation de
      * ContactChangeService (code à l'ancienne adresse e-mail, puis SMS au nouveau numéro) — ici il est refusé.
      *
-     * @throws AccountActionException « contact_change_required », « supplier_phone_required », « invalid_phone »
+     * @throws AccountActionException « contact_change_required », « supplier_phone_required », « invalid_phone », « phone_taken »
      */
     public function changePhone(User $user, string $raw): VerificationResult
     {
@@ -142,6 +144,11 @@ final class AccountService
         // Un fournisseur doit rester joignable : son numéro ne se retire pas.
         if (null === $number && $user->isSupplier()) {
             throw new AccountActionException('supplier_phone_required');
+        }
+
+        // Un numéro ne sert qu'à UN compte (vérifié ou non) : même règle qu'à l'inscription.
+        if (null !== $number && null !== $this->users->findOneByPhone($number->e164, $user)) {
+            throw new AccountActionException('phone_taken');
         }
 
         $before = $user->getPhone();

@@ -3,7 +3,7 @@
 namespace App\Order;
 
 /**
- * Catalogue par défaut : vide. À remplacer par une vraie implémentation de CatalogInterface (voir cette interface).
+ * Catalogue vide, pour un déploiement sans produits. Le catalogue réel est App\Catalog\DoctrineCatalog (table `products`).
  */
 final class EmptyCatalog implements CatalogInterface
 {

@@ -19,3 +19,5 @@ password:
     compromised: "Esta contraseña apareció en una filtración pública de datos. Elija otra."
 contact:
     invalid: "Introduce un correo electrónico o un número de teléfono válido."
+price:
+    invalid: "Introduzca un importe válido (p. ej. 12500, o 12,50 para euro y dólar)."

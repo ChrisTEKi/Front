@@ -340,6 +340,7 @@ product:
     back_home: "Volver al inicio"
     reviews: "(%count% opiniones)"
     add_to_cart: "Añadir a la cesta"
+    featured: "Destacado"
 checkout:
     page_title: "Finalizar el pedido — GoBuy"
     back_address: "Volver a la dirección"
@@ -640,6 +641,8 @@ supplier:
     products:
         none: "Aún no hay productos en tu catálogo."
         soon: "La publicación de productos aún no está abierta: se activará junto con el catálogo de GoBuy."
+        manage: "Gestionar mis productos"
+        count: "%count% producto(s) en su catálogo."
     profile:
         no_description: "Aún no se ha indicado ninguna descripción de la tienda."
         no_phone: "Teléfono no indicado"

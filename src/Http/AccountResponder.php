@@ -53,7 +53,7 @@ final class AccountResponder
             // 429 : trop d'essais ou d'envois rapprochés.
             'step_up_locked', 'too_many_attempts', 'too_soon' => Response::HTTP_TOO_MANY_REQUESTS,
             // 409 : l'état actuel du compte ne permet pas l'action.
-            'open_orders', 'no_password', 'contact_change_required', 'supplier_phone_required', 'address_limit' => Response::HTTP_CONFLICT,
+            'open_orders', 'no_password', 'contact_change_required', 'supplier_phone_required', 'address_limit', 'phone_taken' => Response::HTTP_CONFLICT,
             'delivery_failed' => Response::HTTP_SERVICE_UNAVAILABLE,
             default => Response::HTTP_UNPROCESSABLE_ENTITY,
         }));

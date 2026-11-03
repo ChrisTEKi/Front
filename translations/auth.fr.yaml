@@ -7,7 +7,7 @@ error:
     too_many_attempts: "Trop de tentatives. Réessayez dans %minutes% min."
     too_soon: "Veuillez patienter %seconds% s avant de demander un nouveau code."
     delivery_failed: "Le code n'a pas pu être envoyé. Réessayez dans un instant."
-    phone_taken: "Ce numéro est déjà vérifié sur un autre compte."
+    phone_taken: "Ce numéro de téléphone est déjà utilisé par un autre compte."
     cannot_skip: "Cette étape ne peut pas être ignorée."
     unexpected_step: "Action impossible à cette étape."
     invalid_code: "Code incorrect. Il vous reste %attempts% essai(s)."
@@ -50,6 +50,11 @@ error:
     not_found: "Élément introuvable."
     address_limit: "Vous avez déjà %max% adresses enregistrées. Supprimez-en une avant d'en ajouter une nouvelle."
     addresses_not_available: "Le carnet d'adresses est réservé aux comptes clients."
+    email_taken: "Cette adresse e-mail est déjà utilisée par un autre compte. Connectez-vous ou utilisez « Mot de passe oublié »."
+    registration_conflict: "Inscription impossible : certaines informations sont déjà utilisées par un autre compte."
+    account_banned: "Ce compte a été clos définitivement par GoBuy. Contactez le support GoBuy si vous pensez à une erreur."
+    registration_blocked: "Inscription impossible. Contactez le support GoBuy si vous pensez à une erreur."
+    account_closing: "La suppression de ce compte a été décidée par GoBuy : il est fermé. Contactez le support GoBuy si vous pensez à une erreur."
 forgot:
     sent: "Si un compte existe avec cette adresse, un code vient de lui être envoyé."
 reset:
@@ -76,3 +81,4 @@ social:
         email_unverified: "L'adresse e-mail de ce compte n'est pas vérifiée chez le fournisseur. Vérifiez-la d'abord, ou inscrivez-vous par e-mail."
         client_only: "La connexion par Google ou Apple est réservée aux comptes clients. Utilisez votre e-mail et votre mot de passe."
         blocked: "Ce compte ne peut pas se connecter pour le moment. Contactez le support GoBuy."
+        registration_blocked: "Inscription impossible. Contactez le support GoBuy si vous pensez à une erreur."

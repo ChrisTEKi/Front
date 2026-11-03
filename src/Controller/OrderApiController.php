@@ -86,7 +86,7 @@ final class OrderApiController extends AbstractController
     private function statusFor(string $reason): int
     {
         return match ($reason) {
-            'account_not_allowed' => Response::HTTP_FORBIDDEN,
+            'account_not_allowed', 'funds_frozen' => Response::HTTP_FORBIDDEN,
             'too_many_orders' => Response::HTTP_TOO_MANY_REQUESTS,
             default => Response::HTTP_UNPROCESSABLE_ENTITY,
         };

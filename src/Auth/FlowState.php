@@ -21,7 +21,7 @@ final class FlowState
     public const IDLE_SECONDS = 900;
 
     public function __construct(
-        /** UUID de l'utilisateur ; chaîne vide = « leurre » (voir RegistrationService : adresse déjà inscrite). */
+        /** UUID de l'utilisateur dont l'identité est en cours de vérification. */
         public string $userId,
         /** Comment l'identité a été prouvée : « password », « registration », « google », « apple ». */
         public string $method,
@@ -35,20 +35,7 @@ final class FlowState
         public bool $restoreConfirmed = false,
         /** Canal choisi pour la 2FA : « email » ou « sms » (null = premier canal disponible). */
         public ?string $channel = null,
-        /** Leurre uniquement : adresse masquée à afficher et nombre de saisies déjà faites. */
-        public ?string $decoyTarget = null,
-        public int $decoyAttempts = 0,
-        /** Leurre uniquement : nom et e-mail SAISIS par le visiteur (jamais ceux du vrai compte), pour répondre comme une vraie inscription. */
-        public ?string $decoyName = null,
-        public ?string $decoyEmail = null,
-        /** @var list<int> Leurre : instants (secondes Unix) des « envois de code » simulés, pour imiter les délais d'un vrai compte. */
-        public array $decoySends = [],
     ) {
-    }
-
-    public function isDecoy(): bool
-    {
-        return '' === $this->userId;
     }
 
     /**
@@ -79,11 +66,6 @@ final class FlowState
             (bool) ($data['phoneSkipped'] ?? false),
             (bool) ($data['restoreConfirmed'] ?? false),
             isset($data['channel']) ? (string) $data['channel'] : null,
-            isset($data['decoyTarget']) ? (string) $data['decoyTarget'] : null,
-            (int) ($data['decoyAttempts'] ?? 0),
-            isset($data['decoyName']) ? (string) $data['decoyName'] : null,
-            isset($data['decoyEmail']) ? (string) $data['decoyEmail'] : null,
-            \is_array($data['decoySends'] ?? null) ? array_values(array_map('intval', $data['decoySends'])) : [],
         );
     }
 }

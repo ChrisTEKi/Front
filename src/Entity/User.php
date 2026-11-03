@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Enum\AccountStatus;
 use App\Enum\AccountType;
+use App\Enum\DeletionOrigin;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -94,7 +95,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     private array $roles = [];
 
     /** Actif / suspendu / en cours de suppression. */
-    #[ORM\Column(type: Types::STRING, length: 20, enumType: AccountStatus::class, options: ['comment' => 'active | suspended | pending_deletion'])]
+    #[ORM\Column(type: Types::STRING, length: 20, enumType: AccountStatus::class, options: ['comment' => 'active | suspended | pending_deletion | banned'])]
     private AccountStatus $status = AccountStatus::Active;
 
     /** Langue préférée (fr, en, es) : utilisée pour l'interface ET pour les e-mails. */
@@ -139,6 +140,47 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     /** Date de suppression définitive programmée (demande + 30 jours). La purge l'efface ensuite. */
     #[ORM\Column(name: 'deletion_scheduled_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true, options: ['comment' => 'Suppression définitive programmée (demande + 30 jours), exécutée par app:accounts:purge'])]
     private ?\DateTimeImmutable $deletionScheduledAt = null;
+
+    /** Qui a demandé la suppression : le titulaire ou l'équipe (NULL = aucune suppression programmée). */
+    #[ORM\Column(name: 'deletion_origin', type: Types::STRING, length: 8, nullable: true, enumType: DeletionOrigin::class, options: ['comment' => 'owner | admin'])]
+    private ?DeletionOrigin $deletionOrigin = null;
+
+    /** Motif de la suppression décidée par l'équipe. */
+    #[ORM\Column(name: 'deletion_reason', type: Types::STRING, length: 500, nullable: true)]
+    private ?string $deletionReason = null;
+
+    /** Administrateur qui a programmé la suppression. */
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    #[ORM\JoinColumn(name: 'deletion_requested_by_id', nullable: true, onDelete: 'SET NULL')]
+    private ?self $deletionRequestedBy = null;
+
+    /** Statut du compte avant une suppression décidée par l'équipe (rétabli si elle est annulée). */
+    #[ORM\Column(name: 'deletion_previous_status', type: Types::STRING, length: 20, nullable: true, enumType: AccountStatus::class)]
+    private ?AccountStatus $deletionPreviousStatus = null;
+
+    /** Date du bannissement définitif (NULL = compte non banni). */
+    #[ORM\Column(name: 'banned_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $bannedAt = null;
+
+    /** Motif du bannissement, conservé pour l'équipe (et communiqué au titulaire par e-mail). */
+    #[ORM\Column(name: 'ban_reason', type: Types::STRING, length: 500, nullable: true)]
+    private ?string $banReason = null;
+
+    /** Administrateur qui a prononcé le bannissement. */
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    #[ORM\JoinColumn(name: 'banned_by_id', nullable: true, onDelete: 'SET NULL')]
+    private ?self $bannedBy = null;
+
+    /** Date du gel conservatoire des fonds et des paiements (NULL = fonds non gelés). */
+    #[ORM\Column(name: 'funds_frozen_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true, options: ['comment' => 'Gel conservatoire : plus de vente ni de versement (fournisseur), plus de commande (client)'])]
+    private ?\DateTimeImmutable $fundsFrozenAt = null;
+
+    #[ORM\Column(name: 'funds_frozen_reason', type: Types::STRING, length: 500, nullable: true)]
+    private ?string $fundsFrozenReason = null;
+
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    #[ORM\JoinColumn(name: 'funds_frozen_by_id', nullable: true, onDelete: 'SET NULL')]
+    private ?self $fundsFrozenBy = null;
 
     /**
      * Constructeur privé : on crée toujours un utilisateur via une fabrique nommée
@@ -364,6 +406,51 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
         return $this->deletionScheduledAt;
     }
 
+    public function getDeletionOrigin(): ?DeletionOrigin
+    {
+        return $this->deletionOrigin;
+    }
+
+    public function getDeletionReason(): ?string
+    {
+        return $this->deletionReason;
+    }
+
+    public function getDeletionRequestedBy(): ?self
+    {
+        return $this->deletionRequestedBy;
+    }
+
+    public function getBannedAt(): ?\DateTimeImmutable
+    {
+        return $this->bannedAt;
+    }
+
+    public function getBanReason(): ?string
+    {
+        return $this->banReason;
+    }
+
+    public function getBannedBy(): ?self
+    {
+        return $this->bannedBy;
+    }
+
+    public function getFundsFrozenAt(): ?\DateTimeImmutable
+    {
+        return $this->fundsFrozenAt;
+    }
+
+    public function getFundsFrozenReason(): ?string
+    {
+        return $this->fundsFrozenReason;
+    }
+
+    public function getFundsFrozenBy(): ?self
+    {
+        return $this->fundsFrozenBy;
+    }
+
     // ------------------------------------------------------------------ Questions « métier » (is…)
 
     public function isClient(): bool
@@ -418,6 +505,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     public function isPendingDeletion(): bool
     {
         return AccountStatus::PendingDeletion === $this->status;
+    }
+
+    /** Suppression programmée PAR L'ÉQUIPE : le titulaire ne peut pas l'annuler en se reconnectant. */
+    public function isDeletionByAdmin(): bool
+    {
+        return AccountStatus::PendingDeletion === $this->status && DeletionOrigin::Admin === $this->deletionOrigin;
+    }
+
+    public function isBanned(): bool
+    {
+        return AccountStatus::Banned === $this->status;
+    }
+
+    /** Fonds et paiements gelés par l'équipe (gel conservatoire). */
+    public function isFundsFrozen(): bool
+    {
+        return null !== $this->fundsFrozenAt;
     }
 
     public function hasPassword(): bool
@@ -582,8 +686,47 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
     public function reactivate(): void
     {
         $this->status = AccountStatus::Active;
-        $this->deletionRequestedAt = null;
-        $this->deletionScheduledAt = null;
+        $this->clearDeletion();
+    }
+
+    /**
+     * Bannissement définitif : clôture immédiate (connexion refusée, sessions invalidées). Une éventuelle demande de
+     * suppression est abandonnée : le compte est conservé tel quel, comme pièce du dossier.
+     */
+    public function ban(self $by, string $reason, \DateTimeImmutable $now): void
+    {
+        $this->status = AccountStatus::Banned;
+        $this->bannedAt = $now;
+        $this->banReason = $reason;
+        $this->bannedBy = $by;
+        $this->clearDeletion();
+        $this->updatedAt = $now;
+    }
+
+    /** Lève un bannissement (Super Admin seulement : voir SanctionService). Le compte redevient actif. */
+    public function unban(\DateTimeImmutable $now): void
+    {
+        $this->status = AccountStatus::Active;
+        $this->bannedAt = null;
+        $this->banReason = null;
+        $this->bannedBy = null;
+        $this->updatedAt = $now;
+    }
+
+    public function freezeFunds(self $by, string $reason, \DateTimeImmutable $now): void
+    {
+        $this->fundsFrozenAt = $now;
+        $this->fundsFrozenReason = $reason;
+        $this->fundsFrozenBy = $by;
+        $this->updatedAt = $now;
+    }
+
+    public function unfreezeFunds(\DateTimeImmutable $now): void
+    {
+        $this->fundsFrozenAt = null;
+        $this->fundsFrozenReason = null;
+        $this->fundsFrozenBy = null;
+        $this->updatedAt = $now;
     }
 
     /** Démarre la période de grâce de 30 jours avant suppression définitive. */
@@ -592,14 +735,52 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
         $this->status = AccountStatus::PendingDeletion;
         $this->deletionRequestedAt = $now;
         $this->deletionScheduledAt = $now->modify('+'.self::DELETION_GRACE_DAYS.' days');
+        $this->deletionOrigin = DeletionOrigin::Owner;
+        $this->deletionReason = null;
+        $this->deletionRequestedBy = null;
+        $this->deletionPreviousStatus = null;
+    }
+
+    /**
+     * Suppression décidée par l'équipe, à la date `$due` (= maintenant pour une suppression immédiate). Le compte est fermé tout de suite
+     * et son statut d'avant est mémorisé : si un administrateur annule, il le retrouve (actif, suspendu ou banni).
+     */
+    public function scheduleDeletionByAdmin(self $by, string $reason, \DateTimeImmutable $now, \DateTimeImmutable $due): void
+    {
+        // Une demande du titulaire déjà en cours n'est pas un « statut d'avant » : le compte était alors actif.
+        $this->deletionPreviousStatus = AccountStatus::PendingDeletion === $this->status ? AccountStatus::Active : $this->status;
+        $this->status = AccountStatus::PendingDeletion;
+        $this->deletionRequestedAt = $now;
+        $this->deletionScheduledAt = $due;
+        $this->deletionOrigin = DeletionOrigin::Admin;
+        $this->deletionReason = $reason;
+        $this->deletionRequestedBy = $by;
+        $this->updatedAt = $now;
+    }
+
+    /** Annule une suppression décidée par l'équipe : le compte retrouve le statut qu'il avait avant. */
+    public function cancelDeletionByAdmin(\DateTimeImmutable $now): void
+    {
+        $this->status = $this->deletionPreviousStatus ?? AccountStatus::Active;
+        $this->clearDeletion();
+        $this->updatedAt = $now;
     }
 
     /** Annule la demande de suppression (le client s'est reconnecté et a choisi de restaurer son compte). */
     public function cancelDeletion(): void
     {
         $this->status = AccountStatus::Active;
+        $this->clearDeletion();
+    }
+
+    private function clearDeletion(): void
+    {
         $this->deletionRequestedAt = null;
         $this->deletionScheduledAt = null;
+        $this->deletionOrigin = null;
+        $this->deletionReason = null;
+        $this->deletionRequestedBy = null;
+        $this->deletionPreviousStatus = null;
     }
 
     public function touch(\DateTimeImmutable $now): void

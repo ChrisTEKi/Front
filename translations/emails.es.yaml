@@ -122,3 +122,65 @@ order_confirmation:
     payment_pending: "Su pago se está procesando: se le avisará en cuanto se confirme."
     button: "Seguir mi pedido"
     help: "¿Necesita ayuda? Escríbanos desde su cuenta GoBuy, sección Ayuda."
+moderation:
+    contact: "¿Alguna pregunta? Responda a este correo o contacte con el soporte de GoBuy."
+    product_removed:
+        subject: "GoBuy: uno de sus productos fue retirado de la venta"
+        title: "Producto retirado de la venta"
+        body: "Su producto «%product%» fue retirado de la tienda por el equipo de GoBuy.\nMotivo: %detail%"
+    product_restored:
+        subject: "GoBuy: su producto vuelve a estar en venta"
+        title: "Producto restablecido"
+        body: "Su producto «%product%» fue restablecido por el equipo de GoBuy: vuelve a ser visible en la tienda."
+    product_deleted:
+        subject: "GoBuy: uno de sus productos fue eliminado"
+        title: "Producto eliminado"
+        body: "Su producto «%product%» fue eliminado definitivamente del catálogo por el equipo de GoBuy."
+    catalog_removed:
+        subject: "GoBuy: su catálogo fue retirado de la venta"
+        title: "Catálogo retirado de la venta"
+        body: "%count% producto(s) de su catálogo fueron retirados de la tienda por el equipo de GoBuy.\nMotivo: %detail%"
+    supplier_revalidated:
+        subject: "GoBuy: su solicitud de proveedor ha sido revalidada"
+        title: "Solicitud revalidada"
+        body: "Buenas noticias: tras la revisión, la solicitud de «%company%» vuelve a estar aprobada. Puede vender en GoBuy."
+    supplier_revalidated_note:
+        subject: "GoBuy: su solicitud de proveedor ha sido revalidada"
+        title: "Solicitud revalidada"
+        body: "Buenas noticias: tras la revisión, la solicitud de «%company%» vuelve a estar aprobada. Puede vender en GoBuy.\nMensaje del equipo: %detail%"
+    appeal_received:
+        subject: "GoBuy: hemos recibido su impugnación"
+        title: "Impugnación recibida"
+        body: "Su impugnación y sus documentos se han transmitido al equipo de GoBuy. La estamos revisando y le responderemos por correo electrónico."
+    appeal_dismissed:
+        subject: "GoBuy: respuesta a su impugnación"
+        title: "Decisión mantenida"
+        body: "Tras la revisión, el equipo de GoBuy mantiene su decisión.\nExplicación: %detail%"
+    account_banned:
+        subject: "GoBuy: su cuenta ha sido cerrada definitivamente"
+        title: "Cuenta cerrada definitivamente"
+        body: "El equipo de GoBuy ha cerrado su cuenta definitivamente. Ya no puede iniciar sesión.\nMotivo: %detail%"
+    account_unbanned:
+        subject: "GoBuy: su cuenta vuelve a estar activa"
+        title: "Cuenta restablecida"
+        body: "El equipo de GoBuy ha levantado el baneo de su cuenta: puede volver a iniciar sesión.\nMensaje del equipo: %detail%"
+    funds_frozen:
+        subject: "GoBuy: sus fondos y pagos están congelados"
+        title: "Congelación cautelar de sus fondos"
+        body: "El equipo de GoBuy ha congelado sus fondos y pagos de forma cautelar: sin ventas ni pagos para un proveedor, sin pedidos para un cliente, hasta que se levante la medida.\nMotivo: %detail%"
+    funds_unfrozen:
+        subject: "GoBuy: sus fondos y pagos están descongelados"
+        title: "Fondos descongelados"
+        body: "El equipo de GoBuy ha levantado la congelación de sus fondos y pagos: su cuenta funciona de nuevo con normalidad."
+    order_refunded:
+        subject: "GoBuy: reembolso de su pedido"
+        title: "Pedido reembolsado"
+        body: "Tras una decisión de GoBuy sobre el vendedor, su pedido %orders% se reembolsa por %amount%. Si se había cobrado un pago, el equipo de GoBuy se lo devolverá."
+    deletion_scheduled:
+        subject: "GoBuy: la eliminación de su cuenta está programada"
+        title: "Eliminación de su cuenta"
+        body: "El equipo de GoBuy ha decidido eliminar definitivamente su cuenta el %date%. Queda cerrada desde ahora: ya no puede iniciar sesión.\nMotivo: %detail%"
+    deletion_cancelled:
+        subject: "GoBuy: la eliminación de su cuenta se ha cancelado"
+        title: "Eliminación cancelada"
+        body: "El equipo de GoBuy ha cancelado la eliminación programada de su cuenta. Recupera el estado que tenía antes de la decisión."

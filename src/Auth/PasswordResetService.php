@@ -78,7 +78,7 @@ final class PasswordResetService
             // Les administrateurs (Super Admin compris) n'ont PAS de réinitialisation en libre-service : leur boîte e-mail est déjà leur
             // 2e facteur (code de connexion), donc qui contrôlerait la boîte obtiendrait les deux. Le Super Admin leur renvoie un lien
             // d'activation (AdminAccountService::resetAccess).
-            if (null === $user || $user->isSuspended() || $user->isAdmin()) {
+            if (null === $user || $user->isSuspended() || $user->isBanned() || $user->isDeletionByAdmin() || $user->isAdmin()) {
                 return; // silence : aucun e-mail, aucune trace visible
             }
 
@@ -118,7 +118,7 @@ final class PasswordResetService
         }
 
         // 2) Le code. Message UNIQUE pour « compte inconnu », « mauvais code », « code périmé » : pas d'énumération.
-        if (null === $user || $user->isSuspended() || $user->isAdmin()) {
+        if (null === $user || $user->isSuspended() || $user->isBanned() || $user->isDeletionByAdmin() || $user->isAdmin()) {
             return new PasswordResetOutcome(false, 'invalid_code');
         }
         $check = $this->otp->verify($user, OtpPurpose::PasswordReset, $user->getEmail(), $code);

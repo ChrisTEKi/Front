@@ -105,70 +105,138 @@ final class AuthFlowTest extends AppTestCase
         self::assertArrayHasKey('password', $r['errors']);
     }
 
-    // ------------------------------------------------------------------ Anti-énumération
+    // ------------------------------------------------------------------ Unicité de l'e-mail et du téléphone
 
-    public function testRegisteringExistingEmailLooksIdenticalAndWarnsOwner(): void
+    private const SUPPLIER = [
+        'fullName' => 'Razafy Marie', 'email' => 'marie@boutique.mg', 'password' => self::PASSWORD, 'phone' => '033 12 345 67',
+        'companyName' => 'Boutique Marie', 'companyAddress' => 'Lot 12 Analakely, Antananarivo',
+    ];
+
+    private function countUsers(): int
+    {
+        return (int) $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM users');
+    }
+
+    public function testRegisteringWithAnExistingEmailIsRefusedOnTheEmailField(): void
     {
         $this->createUser('jean@example.com');
 
         $r = $this->api('POST', '/auth/register/client', self::REGISTER_CLIENT);
 
-        // Même écran qu'une vraie inscription…
-        self::assertSame(200, $this->httpStatus());
-        self::assertSame('verify_email', $r['step']);
-        self::assertSame('j•••@example.com', $r['maskedTarget']);
-        // …mais aucun code n'a été émis ; le titulaire reçoit un e-mail d'information.
+        self::assertSame(409, $this->httpStatus());
+        self::assertFalse($r['ok']);
+        self::assertSame('registration_conflict', $r['error']);
+        self::assertSame(['email'], array_keys($r['errors']), 'Seul le champ e-mail est en cause.');
+        self::assertStringContainsString('already used', $r['errors']['email'][0]);
+        // Rien n'est créé, aucun code n'est envoyé, aucun parcours de vérification n'est ouvert.
+        self::assertSame(1, $this->countUsers());
         self::assertSame(0, $this->otp()->count());
-        self::assertEmailCount(1);
-        self::assertEmailHeaderSame(self::getMailerMessage(0), 'To', 'Test Client <jean@example.com>');
-
-        // Toute saisie échoue, et le compte est bloqué après 5 essais comme pour de vrai.
-        for ($i = 4; $i >= 0; --$i) {
-            $r = $this->api('POST', '/auth/verify', ['code' => '000000']);
-            self::assertSame(422, $this->httpStatus());
-        }
-        self::assertSame('code_locked', $r['error']);
+        self::assertSame('login', $this->api('GET', '/auth/state')['step']);
     }
 
-    /**
-     * Le leurre (adresse déjà inscrite) doit répondre avec les MÊMES champs qu'une vraie inscription à chaque étape :
-     * inscription, rechargement de la page, saisie d'un mauvais code, renvoi trop rapide. Sinon un champ en plus ou en
-     * moins (par exemple « user ») suffirait à savoir si une adresse est inscrite.
-     */
-    public function testDecoyAnswersHaveTheSameShapeAsRealOnesAtEveryStep(): void
+    public function testExistingEmailIsRecognisedWhateverItsCaseAndSpaces(): void
     {
         $this->createUser('jean@example.com');
 
-        $run = function (string $email): array {
-            $this->newBrowser();
-            $answers = [];
-            $answers['register'] = $this->api('POST', '/auth/register/client', ['email' => $email] + self::REGISTER_CLIENT);
-            $answers['state'] = $this->api('GET', '/auth/state');
-            $answers['wrong_code'] = $this->api('POST', '/auth/verify', ['code' => '000000']);
-            $answers['resend_too_soon'] = $this->api('POST', '/auth/resend');
+        $this->api('POST', '/auth/register/client', ['email' => '  Jean@EXAMPLE.com '] + self::REGISTER_CLIENT);
 
-            return $answers;
-        };
-        $real = $run('neuf@example.com');
-        $decoy = $run('jean@example.com');
+        self::assertSame(409, $this->httpStatus());
+        self::assertSame(1, $this->countUsers());
+    }
 
-        foreach ($real as $step => $answer) {
-            self::assertSame(array_keys($answer), array_keys($decoy[$step]), $step.' : mêmes champs');
-            self::assertSame($answer['step'], $decoy[$step]['step'], $step);
-            self::assertSame($answer['error'], $decoy[$step]['error'], $step);
-            self::assertSame($answer['channel'], $decoy[$step]['channel'], $step);
-            self::assertSame($answer['channels'], $decoy[$step]['channels'], $step);
-            self::assertSame($answer['skippable'], $decoy[$step]['skippable'], $step);
-            self::assertSame($answer['attemptsLeft'], $decoy[$step]['attemptsLeft'], $step);
-            // « user » existe dans les deux cas et reprend ce que le visiteur a saisi (jamais les données du vrai compte).
-            self::assertSame(['name', 'email'], array_keys($decoy[$step]['user']), $step.' : champ user');
-            self::assertSame('Rakoto Jean', $decoy[$step]['user']['name'], $step);
-            // Les compteurs d'attente ne diffèrent que d'une seconde au plus (deux requêtes à des instants voisins).
-            self::assertEqualsWithDelta($answer['resendIn'], $decoy[$step]['resendIn'], 2, $step.' : resendIn');
-            self::assertEqualsWithDelta($answer['retryAfter'], $decoy[$step]['retryAfter'], 2, $step.' : retryAfter');
+    public function testTheOwnerOfAnExistingEmailIsWarnedButOnlyThreeTimesADay(): void
+    {
+        $this->createUser('jean@example.com');
+
+        $mails = [];
+        for ($i = 0; $i < 4; ++$i) {
+            $this->api('POST', '/auth/register/client', self::REGISTER_CLIENT);
+            self::assertSame(409, $this->httpStatus());
+            $mails[] = \count(self::getMailerMessages());
         }
-        self::assertSame('too_soon', $decoy['resend_too_soon']['error']);
-        self::assertSame('jean@example.com', $decoy['register']['user']['email']);
+
+        self::assertSame([1, 1, 1, 0], $mails, 'Un avis au titulaire pour chacune des 3 premières tentatives, puis plus rien.');
+    }
+
+    public function testRegisteringWithAVerifiedPhoneOfAnotherAccountIsRefusedOnThePhoneField(): void
+    {
+        $this->createUser('a@example.com', phone: '+261341234567', phoneVerified: true);
+
+        $r = $this->api('POST', '/auth/register/client', ['phone' => '034 12 345 67'] + self::REGISTER_CLIENT);
+
+        self::assertSame(409, $this->httpStatus());
+        self::assertSame(['phone'], array_keys($r['errors']));
+        self::assertStringContainsString('already used', $r['errors']['phone'][0]);
+        self::assertSame(1, $this->countUsers());
+    }
+
+    public function testAPhoneNotYetVerifiedOnAnotherAccountAlsoBlocksTheRegistration(): void
+    {
+        $this->createUser('a@example.com', phone: '+261341234567', phoneVerified: false);
+
+        $this->api('POST', '/auth/register/client', ['phone' => '+261 34 12 345 67'] + self::REGISTER_CLIENT);
+
+        self::assertSame(409, $this->httpStatus());
+        self::assertSame(1, $this->countUsers());
+    }
+
+    public function testBothEmailAndPhoneAreReportedTogether(): void
+    {
+        $this->createUser('jean@example.com');
+        $this->createUser('a@example.com', phone: '+261341234567');
+
+        $r = $this->api('POST', '/auth/register/client', ['phone' => '034 12 345 67'] + self::REGISTER_CLIENT);
+
+        self::assertSame(409, $this->httpStatus());
+        self::assertEqualsCanonicalizing(['email', 'phone'], array_keys($r['errors']));
+        self::assertSame(2, $this->countUsers());
+    }
+
+    public function testAnAccountPendingDeletionStillOwnsItsEmailAndPhone(): void
+    {
+        $user = $this->createUser('jean@example.com', phone: '+261341234567');
+        $user = $this->reload($user);
+        $user->requestDeletion(new \DateTimeImmutable());
+        $this->em()->flush();
+
+        $r = $this->api('POST', '/auth/register/client', ['phone' => '034 12 345 67'] + self::REGISTER_CLIENT);
+
+        self::assertSame(409, $this->httpStatus());
+        self::assertEqualsCanonicalizing(['email', 'phone'], array_keys($r['errors']));
+    }
+
+    public function testSupplierRegistrationIsRefusedWhenEmailOrPhoneAreTaken(): void
+    {
+        $this->createUser('marie@boutique.mg');
+        $this->createUser('b@example.com', phone: '+261331234567');
+
+        $r = $this->api('POST', '/auth/register/supplier', self::SUPPLIER);
+        self::assertSame(409, $this->httpStatus());
+        self::assertEqualsCanonicalizing(['email', 'phone'], array_keys($r['errors']));
+
+        // Seul le téléphone est en cause : on corrige l'e-mail, le refus ne porte plus que sur le numéro.
+        $r = $this->api('POST', '/auth/register/supplier', ['email' => 'autre@boutique.mg'] + self::SUPPLIER);
+        self::assertSame(409, $this->httpStatus());
+        self::assertSame(['phone'], array_keys($r['errors']));
+
+        // Les deux sont libres : l'inscription aboutit.
+        $r = $this->api('POST', '/auth/register/supplier', ['email' => 'autre@boutique.mg', 'phone' => '032 11 222 33'] + self::SUPPLIER);
+        self::assertSame(200, $this->httpStatus());
+        self::assertSame('verify_email', $r['step']);
+        self::assertSame(3, $this->countUsers());
+    }
+
+    public function testSecondSignupWithTheSameEmailFromAnotherBrowserIsRefused(): void
+    {
+        $this->api('POST', '/auth/register/client', self::REGISTER_CLIENT);
+        self::assertSame(200, $this->httpStatus());
+
+        // Deuxième navigateur, même e-mail : refusé, un seul compte en base (la course stricte est couverte par le verrou PostgreSQL).
+        $this->newBrowser();
+        $this->api('POST', '/auth/register/client', ['fullName' => 'Autre Personne'] + self::REGISTER_CLIENT);
+
+        self::assertSame(409, $this->httpStatus());
+        self::assertSame(1, $this->countUsers());
     }
 
     public function testUnknownEmailAndWrongPasswordGiveIdenticalAnswers(): void

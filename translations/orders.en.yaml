@@ -16,6 +16,7 @@ error:
     validation: "Please fix the highlighted fields."
     invalid_courier: "Invalid courier name or phone number."
     not_found: "No order found with this reference."
+    funds_frozen: "Your payments are frozen by the GoBuy team: you cannot order for now. Contact support."
 status:
     confirmed: "Order confirmed"
     preparing: "Being prepared"

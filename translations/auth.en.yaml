@@ -7,7 +7,7 @@ error:
     too_many_attempts: "Too many attempts. Try again in %minutes% min."
     too_soon: "Please wait %seconds% s before requesting a new code."
     delivery_failed: "The code could not be sent. Please try again in a moment."
-    phone_taken: "This number is already verified on another account."
+    phone_taken: "This phone number is already used by another account."
     cannot_skip: "This step cannot be skipped."
     unexpected_step: "This action is not possible at this step."
     invalid_code: "Incorrect code. %attempts% attempt(s) left."
@@ -50,6 +50,11 @@ error:
     not_found: "Item not found."
     address_limit: "You already have %max% saved addresses. Delete one before adding a new one."
     addresses_not_available: "The address book is only available to customer accounts."
+    email_taken: "This e-mail address is already used by another account. Sign in or use “Forgot password”."
+    registration_conflict: "Registration not possible: some details are already used by another account."
+    account_banned: "This account has been permanently closed by GoBuy. Contact GoBuy support if you think this is a mistake."
+    registration_blocked: "Registration is not possible. Contact GoBuy support if you think this is a mistake."
+    account_closing: "The deletion of this account has been decided by GoBuy: it is closed. Contact GoBuy support if you think this is a mistake."
 forgot:
     sent: "If an account exists for this address, a code has just been sent to it."
 reset:
@@ -76,3 +81,4 @@ social:
         email_unverified: "The email address of this account is not verified with the provider. Verify it first, or sign up with your email."
         client_only: "Google and Apple sign-in are for customer accounts only. Use your email and password."
         blocked: "This account cannot sign in at the moment. Please contact GoBuy support."
+        registration_blocked: "Registration is not possible. Contact GoBuy support if you think this is a mistake."

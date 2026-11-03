@@ -335,7 +335,7 @@ final class AccountDeletionTest extends AppTestCase
         self::assertNull($this->em()->getRepository(User::class)->find($id));
     }
 
-    public function testOnlyClientAccountsAreEverPurged(): void
+    public function testASupplierIsNeverPurgedUnlessTheTeamDecidedIt(): void
     {
         $supplier = $this->createUser('f@example.com', AccountType::Supplier);
         $supplier = $this->em()->getRepository(User::class)->find($supplier->getId());

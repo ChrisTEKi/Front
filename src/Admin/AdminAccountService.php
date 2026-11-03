@@ -11,6 +11,7 @@ use App\Auth\PasswordPolicy;
 use App\Entity\AdminProfile;
 use App\Entity\AdminRole;
 use App\Entity\User;
+use App\Enum\AccountStatus;
 use App\Enum\AccountType;
 use App\Enum\OtpChannel;
 use App\Enum\OtpPurpose;
@@ -45,6 +46,9 @@ use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
  */
 final class AdminAccountService
 {
+    /** Nombre maximal d'administrateurs traités par une action groupée (au-delà : refus, pour garder une action lisible et vérifiable). */
+    public const BULK_LIMIT = 50;
+
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly UserRepository $users,
@@ -313,6 +317,75 @@ final class AdminAccountService
         $target->touch($this->clock->now());
         $this->em->flush();
         $this->audit->record(AuditAction::ADMIN_REACTIVATED, $actor, 'user', $target->getId()->toRfc4122());
+    }
+
+    /**
+     * Suspend ou réactive PLUSIEURS administrateurs d'un coup (Super Admin uniquement).
+     *
+     * Chaque compte est traité par suspend()/reactivate() : mêmes règles, même journal d'audit (une ligne par administrateur),
+     * en plus d'une ligne récapitulative. Un compte qui ne peut pas être traité (introuvable, Super Admin, soi-même, invitation
+     * non acceptée, déjà dans l'état demandé) est IGNORÉ avec sa raison : il n'empêche pas les autres.
+     *
+     * @param list<string> $ids      identifiants (UUID) des administrateurs ; doublons ignorés
+     * @param string       $action   « suspend » ou « reactivate »
+     *
+     * @return array{changed: list<string>, skipped: list<array{id: string, reason: string}>}
+     *
+     * @throws AdminActionException forbidden | invalid_action | bulk_empty | bulk_too_many
+     */
+    public function changeStatusMany(User $actor, array $ids, string $action): array
+    {
+        $this->assertSuperAdmin($actor);
+        if (!\in_array($action, ['suspend', 'reactivate'], true)) {
+            throw new AdminActionException('invalid_action');
+        }
+        $ids = array_values(array_unique(array_filter($ids, static fn (mixed $id): bool => \is_string($id) && '' !== trim($id))));
+        if ([] === $ids) {
+            throw new AdminActionException('bulk_empty');
+        }
+        if (\count($ids) > self::BULK_LIMIT) {
+            throw new AdminActionException('bulk_too_many', ['%max%' => self::BULK_LIMIT]);
+        }
+
+        $changed = [];
+        $skipped = [];
+        foreach ($ids as $id) {
+            $target = $this->users->findOneByUuid($id);
+            try {
+                if (null === $target) {
+                    throw new AdminActionException('not_found');
+                }
+                $this->managedProfile($target);
+                if ($actor->getId()->equals($target->getId())) {
+                    throw new AdminActionException('cannot_suspend_self');
+                }
+                if (!$target->hasPassword()) {
+                    throw new AdminActionException('bulk_invited');
+                }
+                if ('suspend' === $action) {
+                    if (AccountStatus::Suspended === $target->getStatus()) {
+                        throw new AdminActionException('bulk_already_suspended');
+                    }
+                    $this->suspend($actor, $target);
+                } else {
+                    if (AccountStatus::Active === $target->getStatus()) {
+                        throw new AdminActionException('bulk_already_active');
+                    }
+                    $this->reactivate($actor, $target);
+                }
+                $changed[] = $id;
+            } catch (AdminActionException $e) {
+                $skipped[] = ['id' => $id, 'reason' => $e->reason];
+            }
+        }
+
+        $this->audit->record(AuditAction::ADMIN_BULK_STATUS, $actor, 'user', $actor->getId()->toRfc4122(), [
+            'action' => $action,
+            'changed' => $changed,
+            'skipped' => $skipped,
+        ]);
+
+        return ['changed' => $changed, 'skipped' => $skipped];
     }
 
     // =========================================================================

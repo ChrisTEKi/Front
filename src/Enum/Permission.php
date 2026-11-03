@@ -23,6 +23,21 @@ enum Permission: string
     case SuppliersApprove = 'suppliers.approve';
     case SuppliersExport = 'suppliers.export';
 
+    // ---- Catalogue (produits des fournisseurs et de GoBuy) ----
+    case ProductsView = 'products.view';
+    case ProductsManage = 'products.manage';     // créer / modifier les produits de GoBuy lui-même
+    case ProductsFlag = 'products.flag';         // signaler / retirer le signalement
+    case ProductsFeature = 'products.feature';   // mettre en avant / retirer la mise en avant
+    case ProductsRemove = 'products.remove';     // retirer de la vente / rétablir (produit ou catalogue entier d'un fournisseur)
+    case ProductsDelete = 'products.delete';     // suppression DÉFINITIVE
+
+    // ---- Sanctions sur les comptes clients / fournisseurs (jamais sur un administrateur) ----
+    case SanctionsBan = 'sanctions.ban';         // bannissement définitif + clôture immédiate (la levée reste réservée au Super Admin)
+    case SanctionsFreeze = 'sanctions.freeze';   // gel conservatoire des fonds et des paiements
+    case SanctionsRefund = 'sanctions.refund';   // remboursement des acheteurs lésés
+    case BlacklistManage = 'blacklist.manage';   // liste noire (e-mail, téléphone, nom, raison sociale, IP)
+    case AccountsDelete = 'accounts.delete';     // suppression définitive d'un compte, immédiate ou programmée
+
     // ---- Commandes ----
     case OrdersView = 'orders.view';
     case OrdersUpdateTracking = 'orders.update_tracking';

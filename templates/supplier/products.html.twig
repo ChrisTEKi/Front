@@ -1,0 +1,101 @@
+{# « Mes produits » (/fournisseur/produits) : le fournisseur gère SON catalogue. La liste est dessinée par le serveur ; le
+   formulaire d'ajout / modification et les actions sont pilotés par assets/supplier-products.js (API /fournisseur/api/produits).
+   Textes : translations/catalog.<langue>.yaml (FR / EN / ES). #}
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'catalog' %}
+{% block title %}{{ 'supplier.page_title'|trans }}{% endblock %}
+
+{% block body %}
+{% set tones = {active: 'bg-emerald-100 text-emerald-800', hidden: 'bg-slate-100 text-slate-700', removed: 'bg-rose-100 text-rose-800'} %}
+{% set inputClass = 'w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-black focus:outline-none' %}
+{% set labelClass = 'mb-1 block text-[11px] font-bold text-slate-600' %}
+
+<div data-supplier-products
+     data-endpoint-add="{{ path('supplier_api_product_add') }}"
+     data-endpoint-update="{{ path('supplier_api_product_update', {id: '00000000-0000-0000-0000-000000000000'}) }}"
+     data-endpoint-visibility="{{ path('supplier_api_product_visibility', {id: '00000000-0000-0000-0000-000000000000'}) }}"
+     data-endpoint-delete="{{ path('supplier_api_product_delete', {id: '00000000-0000-0000-0000-000000000000'}) }}"
+     class="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+
+    <div class="flex flex-col justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
+        <div>
+            <a href="{{ path('app_supplier_dashboard') }}" class="text-[11px] font-semibold text-slate-500 hover:text-black">← {{ 'supplier.back'|trans }}</a>
+            <h1 class="mt-1 text-xl font-black text-slate-950">{{ 'supplier.title'|trans }}</h1>
+            <p class="text-xs text-slate-500">{{ 'supplier.subtitle'|trans({'%count%': products|length, '%max%': limit}) }}</p>
+        </div>
+        <button type="button" data-product-add class="flex items-center gap-2 rounded-2xl bg-black px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-neutral-800">{{ ux_icon('tabler:plus', {class: 'h-4 w-4'}) }}<span>{{ 'supplier.add'|trans }}</span></button>
+    </div>
+
+    {% if status != 'approved' %}
+        <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+            {{ ux_icon('tabler:alert-circle', {class: 'mt-0.5 h-4 w-4 shrink-0'}) }}
+            <p>{{ ('supplier.status_notice.' ~ status)|trans }}</p>
+        </div>
+    {% endif %}
+
+    {# Formulaire d'ajout / modification (caché tant qu'on ne l'ouvre pas). #}
+    <form data-product-form class="hidden space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs" novalidate>
+        <h2 data-product-form-title class="text-sm font-bold text-slate-900"></h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="sm:col-span-2"><label class="{{ labelClass }}" for="p-name">{{ 'field.name'|trans }}</label><input id="p-name" name="name" maxlength="255" required class="{{ inputClass }}"><p data-field-error="name" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+            <div class="sm:col-span-2"><label class="{{ labelClass }}" for="p-description">{{ 'field.description'|trans }}</label><textarea id="p-description" name="description" rows="4" maxlength="5000" class="{{ inputClass }}"></textarea><p data-field-error="description" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+            <div><label class="{{ labelClass }}" for="p-category">{{ 'field.category'|trans }}</label>
+                <select id="p-category" name="category" class="{{ inputClass }}"><option value="">—</option>{% for c in categories %}<option value="{{ c.slug }}">{{ c.name }}</option>{% endfor %}</select>
+                <p data-field-error="category" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+            <div><label class="{{ labelClass }}" for="p-reference">{{ 'field.reference'|trans }}</label><input id="p-reference" name="reference" maxlength="64" class="{{ inputClass }}"><p data-field-error="reference" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+        </div>
+
+        <fieldset class="space-y-3 rounded-2xl bg-slate-50 p-4">
+            <legend class="px-1 text-[11px] font-bold text-slate-600">{{ 'field.prices'|trans }}</legend>
+            <p class="text-[11px] text-slate-500">{{ 'field.prices_help'|trans }}</p>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div><label class="{{ labelClass }}" for="p-price-mga">{{ 'field.price_mga'|trans }}</label><input id="p-price-mga" name="priceMga" inputmode="numeric" required class="{{ inputClass }}"><p data-field-error="priceMga" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+                {% for currency in currencies %}
+                    <div><label class="{{ labelClass }}" for="p-price-{{ currency.value }}">{{ 'field.price_other'|trans({'%currency%': currency.value}) }}</label><input id="p-price-{{ currency.value }}" name="price_{{ currency.value }}" inputmode="decimal" placeholder="{{ 'field.auto_rate'|trans }}" class="{{ inputClass }}"><p data-field-error="price_{{ currency.value }}" class="mt-1 hidden text-[11px] text-rose-600"></p></div>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <p data-form-message role="status" class="hidden rounded-xl p-2 text-xs"></p>
+        <div class="flex justify-end gap-2">
+            <button type="button" data-product-cancel class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">{{ 'common.cancel'|trans }}</button>
+            <button type="submit" class="rounded-xl bg-black px-4 py-2 text-xs font-bold text-white hover:bg-neutral-800">{{ 'common.save'|trans }}</button>
+        </div>
+    </form>
+
+    {# Liste des produits. #}
+    {% if products is empty %}
+        <div class="rounded-3xl border border-slate-200 bg-white p-10 text-center text-xs text-slate-400">
+            {{ ux_icon('tabler:package', {class: 'mx-auto mb-2 h-10 w-10 text-slate-300'}) }}
+            <p class="font-semibold text-slate-500">{{ 'supplier.empty'|trans }}</p>
+        </div>
+    {% else %}
+        <div class="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-xs">
+            <table class="w-full border-collapse text-left text-xs">
+                <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                    <th class="px-4 py-3">{{ 'col.product'|trans }}</th><th class="px-4 py-3">{{ 'col.price'|trans }}</th><th class="px-4 py-3">{{ 'col.status'|trans }}</th><th class="px-4 py-3"></th>
+                </tr></thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for p in products %}
+                        <tr data-product-row>
+                            <td class="px-4 py-3"><div class="font-bold text-slate-900">{{ p.name }}</div>{% if p.reference %}<div class="font-mono text-[10px] text-slate-400">{{ p.reference }}</div>{% endif %}</td>
+                            <td class="px-4 py-3 font-mono">{{ p.priceMga|format_number }} Ar{% for code, amount in p.prices %}<div class="text-[10px] text-slate-500">{{ amount }} {{ code }}</div>{% endfor %}</td>
+                            <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold {{ tones[p.status]|default(tones.hidden) }}">{{ ('status.' ~ p.status)|trans }}</span>
+                                {% if p.status == 'removed' and p.removedReason %}<div class="mt-1 max-w-[220px] text-[10px] text-rose-700">{{ 'supplier.removed_reason'|trans({'%reason%': p.removedReason}) }}</div>{% endif %}</td>
+                            <td class="px-4 py-3 text-right">
+                                {% if p.status != 'removed' %}
+                                    <div class="flex justify-end gap-1.5">
+                                        <button type="button" data-product-edit data-product="{{ p|json_encode|e('html_attr') }}" class="rounded-lg border border-slate-200 px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-50">{{ 'common.edit'|trans }}</button>
+                                        <button type="button" data-product-visibility data-id="{{ p.id }}" data-visible="{{ p.status == 'active' ? 'false' : 'true' }}" class="rounded-lg border border-slate-200 px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-50">{{ (p.status == 'active' ? 'supplier.hide' : 'supplier.show')|trans }}</button>
+                                        <button type="button" data-product-delete data-id="{{ p.id }}" class="rounded-lg border border-rose-200 px-2.5 py-1 font-semibold text-rose-700 hover:bg-rose-50">{{ 'common.delete'|trans }}</button>
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

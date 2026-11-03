@@ -122,3 +122,65 @@ order_confirmation:
     payment_pending: "Your payment is being processed: you will be notified as soon as it is confirmed."
     button: "Track my order"
     help: "Need help? Contact us from your GoBuy account, Help section."
+moderation:
+    contact: "A question? Reply to this e-mail or contact GoBuy support."
+    product_removed:
+        subject: "GoBuy: one of your products was taken off sale"
+        title: "Product taken off sale"
+        body: "Your product “%product%” was taken off the shop by the GoBuy team.\nReason: %detail%"
+    product_restored:
+        subject: "GoBuy: your product is back on sale"
+        title: "Product restored"
+        body: "Your product “%product%” was restored by the GoBuy team: it is visible in the shop again."
+    product_deleted:
+        subject: "GoBuy: one of your products was deleted"
+        title: "Product deleted"
+        body: "Your product “%product%” was permanently deleted from the catalogue by the GoBuy team."
+    catalog_removed:
+        subject: "GoBuy: your catalogue was taken off sale"
+        title: "Catalogue taken off sale"
+        body: "%count% product(s) in your catalogue were taken off the shop by the GoBuy team.\nReason: %detail%"
+    supplier_revalidated:
+        subject: "GoBuy: your supplier application has been re-validated"
+        title: "Application re-validated"
+        body: "Good news: after review, the application of “%company%” is approved again. You can sell on GoBuy."
+    supplier_revalidated_note:
+        subject: "GoBuy: your supplier application has been re-validated"
+        title: "Application re-validated"
+        body: "Good news: after review, the application of “%company%” is approved again. You can sell on GoBuy.\nMessage from the team: %detail%"
+    appeal_received:
+        subject: "GoBuy: we received your appeal"
+        title: "Appeal received"
+        body: "Your appeal and documents have been passed to the GoBuy team. We are reviewing it and will reply by e-mail."
+    appeal_dismissed:
+        subject: "GoBuy: answer to your appeal"
+        title: "Decision upheld"
+        body: "After review, the GoBuy team upholds its decision.\nExplanation: %detail%"
+    account_banned:
+        subject: "GoBuy: your account has been permanently closed"
+        title: "Account permanently closed"
+        body: "The GoBuy team has permanently closed your account. You can no longer sign in.\nReason: %detail%"
+    account_unbanned:
+        subject: "GoBuy: your account is active again"
+        title: "Account restored"
+        body: "The ban on your account has been lifted by the GoBuy team: you can sign in again.\nMessage from the team: %detail%"
+    funds_frozen:
+        subject: "GoBuy: your funds and payments are frozen"
+        title: "Conservatory freeze of your funds"
+        body: "The GoBuy team has frozen your funds and payments as a precaution: no sales or payouts for a supplier, no orders for a customer, until the measure is lifted.\nReason: %detail%"
+    funds_unfrozen:
+        subject: "GoBuy: your funds and payments are unfrozen"
+        title: "Funds unfrozen"
+        body: "The freeze on your funds and payments has been lifted by the GoBuy team: your account works normally again."
+    order_refunded:
+        subject: "GoBuy: refund for your order"
+        title: "Order refunded"
+        body: "Following a GoBuy decision about the seller, your order %orders% is refunded for %amount%. If a payment had been collected, the GoBuy team will return it to you."
+    deletion_scheduled:
+        subject: "GoBuy: your account deletion is scheduled"
+        title: "Deletion of your account"
+        body: "The GoBuy team has decided to permanently delete your account on %date%. It is closed from now on: you can no longer sign in.\nReason: %detail%"
+    deletion_cancelled:
+        subject: "GoBuy: your account deletion is cancelled"
+        title: "Deletion cancelled"
+        body: "The GoBuy team has cancelled the scheduled deletion of your account. It gets back the status it had before the decision."

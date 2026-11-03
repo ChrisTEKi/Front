@@ -1,0 +1,10 @@
+{# Version texte brut de la décision de l'équipe GoBuy. #}
+{{ ('moderation.' ~ kind ~ '.title')|trans(params, 'emails') }}
+
+{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}
+
+{{ ('moderation.' ~ kind ~ '.body')|trans(params, 'emails') }}
+
+{{ 'moderation.contact'|trans({}, 'emails') }}
+
+— {{ app_name }}

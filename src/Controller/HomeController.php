@@ -2,7 +2,10 @@
 
 namespace App\Controller;
 
+use App\Catalog\ProductPresenter;
+use App\Repository\ProductRepository;
 use App\Service\CategoryProvider;
+use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -10,15 +13,15 @@ use Symfony\Component\Routing\Attribute\Route;
 final class HomeController extends AbstractController
 {
     #[Route('/', name: 'app_home', methods: ['GET'])]
-    public function index(CategoryProvider $categories): Response
+    public function index(CategoryProvider $categories, ProductRepository $products, ProductPresenter $presenter, ClockInterface $clock): Response
     {
         return $this->render('home/index.html.twig', [
             'categories' => $categories->all(),
-            // Catalog collections are intentionally empty: no fictional/mock data.
-            // Wire these to a repository once the back-end (Doctrine) exists.
+            // Aucune donnée fictive : seuls les VRAIS produits vendables (mis en avant d'abord, puis les plus récents).
+            // Les rubriques « ventes flash » et « livraison express » restent vides tant qu'elles n'ont pas de règle propre.
             'flashSaleProducts' => [],
             'fastestDeliveryProducts' => [],
-            'catalogProducts' => [],
+            'catalogProducts' => $presenter->storefront($products->findStorefront(48, $clock->now())),
         ]);
     }
 
