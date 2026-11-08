@@ -22,6 +22,8 @@ de compte, exports CSV, e-mails de confirmation, trois langues.
 | Administration | **Super Admin** unique (créé en ligne de commande) qui crée les autres administrateurs (Finance, Comptabilité, Support, Modération…) avec droits ajoutés/retirés ; journal d'audit ; **exports CSV** clients, fournisseurs, administrateurs, commandes |
 | Catalogue | **Produits** des fournisseurs et de GoBuy ; prix en Ariary + prix spécifique par devise (EUR, USD) ; **modération par les administrateurs** : retirer, signaler, mettre en avant, supprimer, retirer ou supprimer tout le catalogue d'un fournisseur (droits `products.*` délégables, mot de passe redemandé pour les actions destructrices) |
 | Modération avancée | **Revalidation** d'un fournisseur refusé et **contestation** par le fournisseur (message + pièces) ; **sanctions** : bannissement définitif avec retrait du catalogue, remboursement des acheteurs (enregistré), liste noire (e-mail, téléphone, nom, raison sociale, IP) ; **gel des fonds** ; **suppression de compte avec délai choisi** (immédiat à 1 an) ; profils **PDG / DG** (droits délégués) ; suspension groupée d'administrateurs |
+| Devises | Ariary (référence), **euro et dollar** : taux récupérés automatiquement (`app:rates:refresh`), taux manuel possible, **prix propre à chaque devise** fixé par GoBuy, les fournisseurs ou les administrateurs ; commande **réglée en Ariary** avec taux figé et contrôle du total affiché |
+| Recrutement | **Offres d'emploi** publiques (`/emplois`, sans compte pour postuler : CV obligatoire, lettre facultative) ; côté administration (`/admin/recrutement`, droits `recruitment.view / manage / decide`) : création et publication des offres, lecture des CV et lettres (téléchargement tracé), **refus avec e-mail automatique adressé au nom du candidat**, **entretien par téléphone ou sur place** choisi par l'administrateur (e-mail de convocation, heure de Madagascar), **planning de tous les entretiens classé par date de candidature** ; effacement automatique après 24 mois |
 | Langues | Français, anglais, espagnol ; détection automatique (choix mémorisé > navigateur > français) ; e-mails et SMS dans la langue du compte |
 | Support | Contact, réclamation, candidature spontanée et avis du site : envoyés par e-mail à `GOBUY_SUPPORT_EMAIL` |
 
@@ -40,8 +42,17 @@ cp .env .env.local                    # puis éditer .env.local (secret, base, S
 php bin/console doctrine:migrations:migrate
 php bin/console tailwind:build        # compile le CSS (--watch en développement)
 php bin/console app:admin:create-super --email=vous@exemple.com --name="Votre Nom"
-symfony server:start                  # ou : php -S 127.0.0.1:8000 -t public
+symfony server:start                  # ou : php -S 127.0.0.1:8000 -t public public/index.php
 ```
+
+> **Serveur intégré de PHP : ne jamais oublier `public/index.php` en dernier argument** (le « routeur »). Sans lui, PHP répond
+> 404 à toute adresse qui se termine par une extension de fichier inexistante sur le disque, donc aux scripts
+> `/assets/….js` d'AssetMapper en développement : aucun JavaScript ne se charge et les formulaires (bannir, supprimer…)
+> partent en `POST` natif vers une page qui n'accepte que `GET` → erreur 405. Une garde (bandeau rouge + message) prévient
+> désormais l'administrateur dans ce cas.
+>
+> Après avoir copié de nouveaux fichiers `assets/*.js` dans un projet qui a déjà été compilé, supprimer `public/assets/`
+> (ou relancer `php bin/console asset-map:compile`), puis recharger la page sans cache (Ctrl + F5).
 
 En production : `export APP_ENV=prod` **avant** `composer install --no-dev --optimize-autoloader` (sinon le
 `cache:clear` du script d'installation cherche les bundles de développement), puis
@@ -59,6 +70,7 @@ En production : `export APP_ENV=prod` **avant** `composer install --no-dev --opt
 | `TEXTER_DSN` | Passerelle SMS. `null://null` = aucun SMS envoyé. Twilio est fourni (`twilio://SID:TOKEN@default?from=+…`) ; un autre opérateur demande son pont `symfony/*-notifier` |
 | `GOOGLE_CLIENT_ID/SECRET`, `APPLE_CLIENT_ID/TEAM_ID/KEY_ID/PRIVATE_KEY_PATH` | Vides = boutons Google/Apple masqués |
 | `ADMIN_ALLOWED_IPS` | Liste d'IP/CIDR autorisées sur `/admin` (vide = pas de restriction) |
+| `EXCHANGE_RATE_API_URL` | Service des taux de change (`{base}` remplacé par EUR puis USD). Par défaut open.er-api.com (gratuit, sans clé) |
 | `GOBUY_SUPPORT_EMAIL` | Reçoit contact, réclamations, candidatures, avis. **Vide = ces formulaires sont masqués** |
 | `GOBUY_SUPPORT_WHATSAPP` | Numéro WhatsApp du support (vide = lien masqué) |
 | `GOBUY_COMPANY_ADDRESS/NIF/STAT/RCS` | Identité légale affichée dans « À propos » (chaque ligne vide est masquée) |
@@ -70,9 +82,11 @@ En production : `export APP_ENV=prod` **avant** `composer install --no-dev --opt
 ```cron
 15 * * * *           cd /chemin/gobuy && php bin/console app:accounts:purge            # efface les comptes échus (30 jours, ou délai choisi par un administrateur : toutes les heures = délai respecté à l'heure près)
 */10 * * * *          cd /chemin/gobuy && php bin/console app:orders:send-confirmations # renvoie les e-mails de commande restés en attente
+0 0,6,12,18 * * *     cd /chemin/gobuy && php bin/console app:rates:refresh              # met à jour les taux EUR / USD (sans taux, la devise n'est pas proposée)
+30 3 * * *           cd /chemin/gobuy && php bin/console app:recruitment:purge         # efface les candidatures (CV, lettres, entretiens) 24 mois après leur dernière activité
 ```
 
-`app:accounts:purge --dry-run` compte sans rien modifier.
+`app:accounts:purge --dry-run` et `app:recruitment:purge --dry-run` comptent sans rien modifier.
 
 ## Tests
 
@@ -81,7 +95,7 @@ APP_ENV=test php bin/console doctrine:database:create --if-not-exists
 APP_ENV=test vendor/bin/phpunit
 ```
 
-488 tests sur une **vraie base PostgreSQL** (pas de moteur de substitution) : parcours d'inscription et de connexion,
+617 tests sur une **vraie base PostgreSQL** (pas de moteur de substitution) : parcours d'inscription et de connexion,
 limites de débit, OTP, Google/Apple (faux fournisseur OIDC signé, aucun appel réseau), droits d'administration, exports
 CSV, suppression de compte, rendu des pages dans les trois langues.
 
@@ -99,9 +113,14 @@ CSV, suppression de compte, rendu des pages dans les trois langues.
 - **Google / Apple** : testés avec un faux fournisseur ; à essayer avec de vrais identifiants avant ouverture.
 - **Textes juridiques** (CGU, CGV, confidentialité, délais et zones de livraison, chiffres d'« À propos ») : repris de
   la maquette, ce sont des **brouillons à faire valider** — ils ne remplacent pas un avis juridique.
+- **Devises.** Aucun taux n'est inventé : lancez `app:rates:refresh` une première fois (ou saisissez un taux dans `/admin/devises`), sinon seul l'Ariary est proposé. Le service gratuit ne garantit pas la devise Ariary : prévoyez un taux manuel de secours. Les commandes restent **réglées en Ariary** : faites valider l'article des CGV sur la monnaie de paiement.
 - **Support.** Les messages arrivent dans la boîte du support ; il n'y a pas de système de tickets.
-- **Fournisseurs.** Les ventes ne sont visibles qu'une fois le dossier approuvé. La facturation de la formule Pro n'est
-  pas branchée (le taux de commission affiché suit la candidature).
+- **Fournisseurs.** Les ventes ne sont visibles qu'une fois le dossier approuvé. Il n'y a plus de formule Pro ni de loyer :
+  un taux de commission par rayon, modifiable par l'administration (`/admin/commissions`, droit `commissions.manage`). Ce taux est
+  **informatif** : le calcul réel des reversements n'est pas branché sur les paiements.
+- **Pièces des fournisseurs.** L'inscription demande une pièce d'identité et, pour une société, le NIF / STAT (fichiers de 2 Mo au plus,
+  stockés en base, lisibles seulement avec le droit `suppliers.approve`). Les réglages PHP par défaut (2 Mo par fichier) suffisent.
+  Ce sont des données personnelles : faites valider leur durée de conservation.
 
 ## Structure
 
@@ -113,6 +132,7 @@ src/Social/          Google / Apple (OpenID Connect + PKCE)
 src/Order/, Payment/ commande, numéro, e-mail de confirmation, vérification Mobile Money
 src/Catalog/         produits : gestion fournisseur, modération administrateur, catalogue pour les commandes
 src/Supplier/        tableau de bord fournisseur
+src/Currency/        taux de change (fournisseur de taux, conversion, taux manuel), devise d'affichage
 src/Moderation/      contestations, sanctions (bannissement, gel des fonds), remboursements, liste noire, suppression programmée
 src/Contact/         formulaires du support
 src/Security/        authentificateur, vérification de compte, droits fins (voter)

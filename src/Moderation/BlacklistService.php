@@ -32,6 +32,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 final class BlacklistService
 {
+    public const MAX_DAYS = 3650;
     public const MAX_IP_DAYS = 365;
     public const MAX_VALUE_LENGTH = 255;
 
@@ -117,7 +118,7 @@ final class BlacklistService
      *
      * @throws ModerationException « reason_required », « invalid_blacklist_value », « ip_needs_expiry », « invalid_days »
      */
-    public function add(User $admin, BlacklistKind $kind, string $raw, string $reason, ?int $days): BlacklistEntry
+    public function add(?User $admin, BlacklistKind $kind, string $raw, string $reason, ?int $days): BlacklistEntry
     {
         $reason = trim($reason);
         if (mb_strlen($reason) < 5) {
@@ -151,6 +152,19 @@ final class BlacklistService
     }
 
     /**
+     * Compte BANNI puis supprimé : son e-mail et son téléphone ne doivent pas se libérer (sinon la personne se réinscrirait avec).
+     * Appelé par la purge du compte, avant l'effacement. Entrées définitives, rattachées à l'administrateur qui a banni (s'il existe encore).
+     *
+     * @return list<string> natures ajoutées
+     */
+    public function keepBannedIdentity(User $banned): array
+    {
+        $by = $banned->getBannedBy() ?? $banned->getDeletionRequestedBy();
+
+        return $this->addForAccount($by, $banned, [BlacklistKind::Email, BlacklistKind::Phone], 'Compte banni puis supprimé : identifiants conservés sur la liste noire.', null);
+    }
+
+    /**
      * Interdit d'un coup les identifiants d'un compte (e-mail, téléphone, nom, raison sociale, dernière adresse IP connue).
      * Les natures qui n'ont pas de valeur pour ce compte (pas de téléphone, client sans raison sociale…) sont ignorées.
      *
@@ -160,7 +174,7 @@ final class BlacklistService
      *
      * @throws ModerationException
      */
-    public function addForAccount(User $admin, User $target, array $kinds, string $reason, ?int $days): array
+    public function addForAccount(?User $admin, User $target, array $kinds, string $reason, ?int $days): array
     {
         $added = [];
         foreach (array_unique($kinds, \SORT_REGULAR) as $kind) {
@@ -206,8 +220,8 @@ final class BlacklistService
 
             return null;
         }
-        if ($days < 1 || $days > 3650 || (BlacklistKind::Ip === $kind && $days > self::MAX_IP_DAYS)) {
-            throw new ModerationException('invalid_days', ['%max%' => BlacklistKind::Ip === $kind ? self::MAX_IP_DAYS : 3650]);
+        if ($days < 1 || $days > self::MAX_DAYS || (BlacklistKind::Ip === $kind && $days > self::MAX_IP_DAYS)) {
+            throw new ModerationException('invalid_days', ['%max%' => BlacklistKind::Ip === $kind ? self::MAX_IP_DAYS : self::MAX_DAYS]);
         }
 
         return $this->clock->now()->modify('+'.$days.' days');

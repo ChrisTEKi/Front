@@ -223,6 +223,34 @@ final class AccountDeletionByAdminTest extends AppTestCase
         self::assertContains('admin.account.deletion_scheduled', $this->actions('admin.account'));
     }
 
+    public function testAfterAnImmediateDeletionTheAdminIsSentBackToTheListNotToTheMissingPage(): void
+    {
+        $client = $this->createUser('acheteur@example.com', phone: '+261341234501', phoneVerified: true);
+        $supplier = $this->supplierAccount('marie@boutique.mg');
+        $this->signInAdmin($this->adminWith(['accounts.delete', 'users.view', 'suppliers.view']));
+
+        $r = $this->schedule($client, 'immediate');
+        self::assertSame('/admin?tab=users_table', $r['redirect'], 'Recharger la fiche supprimée donnerait une erreur 404.');
+        $this->client->request('GET', '/admin/comptes/'.$this->id($client));
+        self::assertResponseStatusCodeSame(404);
+        $this->client->request('GET', $r['redirect']);
+        self::assertResponseIsSuccessful();
+
+        $r = $this->schedule($supplier, 'immediate');
+        self::assertSame('/admin?tab=suppliers_approval', $r['redirect']);
+    }
+
+    public function testADeferredDeletionStaysOnTheAccountPage(): void
+    {
+        $client = $this->createUser('acheteur@example.com', phone: '+261341234501', phoneVerified: true);
+        $this->signInAdmin($this->adminWith(['accounts.delete']));
+
+        $r = $this->schedule($client, '3m');
+
+        self::assertFalse($r['purged']);
+        self::assertArrayNotHasKey('redirect', $r, 'Le compte existe encore : on recharge sa fiche.');
+    }
+
     public function testImmediateDeletionIsRefusedWhileOrdersAreInProgress(): void
     {
         $supplier = $this->supplierAccount('marie@boutique.mg');

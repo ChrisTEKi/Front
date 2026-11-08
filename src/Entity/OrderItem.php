@@ -38,6 +38,10 @@ class OrderItem
     #[ORM\Column(name: 'unit_price', type: Types::INTEGER)]
     private int $unitPrice;
 
+    /** Prix unitaire dans la devise de la commande (unités mineures), figé à l'achat ; NULL pour une commande en Ariary. */
+    #[ORM\Column(name: 'unit_price_charged', type: Types::INTEGER, nullable: true)]
+    private ?int $unitPriceCharged = null;
+
     #[ORM\Column(type: Types::SMALLINT)]
     private int $quantity;
 
@@ -69,6 +73,23 @@ class OrderItem
     public function getProductName(): string
     {
         return $this->productName;
+    }
+
+    /** Enregistre le prix unitaire dans la devise de la commande (le prix en Ariary de la ligne reste celui débité). */
+    public function setChargedUnitPrice(int $minor): void
+    {
+        $this->unitPriceCharged = $minor;
+    }
+
+    /** Prix unitaire dans la devise de la commande (en Ariary si la commande est en Ariary). */
+    public function getChargedUnitPrice(): int
+    {
+        return $this->unitPriceCharged ?? $this->unitPrice;
+    }
+
+    public function getChargedLineTotal(): int
+    {
+        return $this->getChargedUnitPrice() * $this->quantity;
     }
 
     public function getUnitPrice(): int

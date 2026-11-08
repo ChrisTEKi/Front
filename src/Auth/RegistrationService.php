@@ -9,6 +9,7 @@ use App\Auth\Dto\RegisterSupplierData;
 use App\Auth\Exception\RegistrationBlockedException;
 use App\Auth\Exception\RegistrationConflictException;
 use App\Entity\Address;
+use App\Entity\SupplierDocument;
 use App\Entity\SupplierProfile;
 use App\Entity\User;
 use App\Moderation\BlacklistService;
@@ -75,10 +76,13 @@ final class RegistrationService
     }
 
     /**
+     * @param list<array{kind: \App\Enum\SupplierDocumentKind, name: string, type: string, content: string}> $documents pièces justificatives DÉJÀ contrôlées
+     *                                                                                                                      (App\Supplier\SupplierDocuments::inspect), enregistrées avec le compte
+     *
      * @throws RegistrationConflictException e-mail et/ou téléphone déjà utilisés par un autre compte
      * @throws RegistrationBlockedException   une donnée saisie figure sur la liste noire
      */
-    public function registerSupplier(RegisterSupplierData $data, string $locale): FlowOutcome
+    public function registerSupplier(RegisterSupplierData $data, string $locale, array $documents = []): FlowOutcome
     {
         if (null !== $blocked = $this->rateLimited()) {
             return $blocked;
@@ -96,13 +100,18 @@ final class RegistrationService
         // Dossier entreprise : statut « en attente » tant qu'un administrateur n'a pas approuvé la demande.
         $profile = new SupplierProfile($user, $data->companyName, $data->companyAddress, '' !== $data->companyDescription ? $data->companyDescription : null, $now, $data->application);
 
-        return $this->persistOrRefuse($user, $data->password, $profile);
+        $files = array_map(fn (array $d): SupplierDocument => new SupplierDocument($user, $d['kind'], $d['name'], $d['type'], $d['content'], $now), $documents);
+
+        return $this->persistOrRefuse($user, $data->password, $profile, null, $files);
     }
 
     /**
      * Enregistre le compte, ou refuse si l'e-mail / le téléphone appartiennent déjà à quelqu'un d'autre.
      */
-    private function persistOrRefuse(User $user, string $plainPassword, ?SupplierProfile $profile, ?Address $address = null): FlowOutcome
+    /**
+     * @param list<SupplierDocument> $documents pièces justificatives du fournisseur (enregistrées dans la même transaction que le compte)
+     */
+    private function persistOrRefuse(User $user, string $plainPassword, ?SupplierProfile $profile, ?Address $address = null, array $documents = []): FlowOutcome
     {
         // 1) Contrôle rapide, SANS le coût du hachage : le cas courant (adresse déjà inscrite) ne mobilise pas Argon2.
         $this->refuseIfTaken($this->conflictsFor($user));
@@ -115,7 +124,7 @@ final class RegistrationService
         // adresse ou le même numéro se suivent au lieu de se croiser. (Le refus est levé APRÈS la transaction : une exception
         // qui traverse wrapInTransaction fermerait l'EntityManager.)
         try {
-            $conflicts = $this->em->wrapInTransaction(function () use ($user, $profile, $address): array {
+            $conflicts = $this->em->wrapInTransaction(function () use ($user, $profile, $address, $documents): array {
                 $this->lock($user);
                 $conflicts = $this->conflictsFor($user);
                 if ([] !== $conflicts) {
@@ -128,6 +137,9 @@ final class RegistrationService
                 }
                 if (null !== $address) {
                     $this->em->persist($address);
+                }
+                foreach ($documents as $document) {
+                    $this->em->persist($document);
                 }
                 $this->em->flush();
 

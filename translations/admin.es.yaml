@@ -19,6 +19,9 @@ tabs:
     audit: "Registro de auditoría"
     products: "Productos"
     blacklist: "Lista negra"
+    currencies: "Divisas"
+    recruitment: "Reclutamiento"
+    commissions: "Comisiones"
 overview:
     clients: "Clientes registrados"
     suppliers_active: "Proveedores activos"
@@ -45,11 +48,11 @@ applications:
 payouts:
     sales_total: "Ventas totales de vendedores"
     commissions: "Comisiones GoBuy"
-    rents: "Alquileres de tiendas Pro"
     net_pending: "Neto pendiente de pago"
     title: "Tabla de pagos quincenales"
-    subtitle: "Pagos realizados tras deducir comisiones y alquileres de tienda."
+    subtitle: "Pagos realizados tras deducir las comisiones."
     none: "Aún no hay pagos que mostrar."
+    edit_rates: "Modificar las tasas de comisión"
 approval:
     title: "Solicitudes de proveedores por aprobar por el administrador"
     subtitle: "Cada proveedor debe tener su correo y su teléfono verificados y ser validado por un administrador antes de acceder al espacio de vendedor."
@@ -110,6 +113,7 @@ orders:
         payment: "Pago"
         status: "Estado"
         date: "Fecha"
+    charged_title: "Importe mostrado al cliente en %currency%; el importe en ariary es el que se cobra."
 order_status:
     confirmed: "Pedido confirmado"
     preparing: "En preparación"
@@ -181,6 +185,14 @@ perm:
         manage: "Gestionar la lista negra"
     accounts:
         delete: "Eliminar definitivamente una cuenta (inmediata o programada)"
+    currency:
+        manage: "Gestionar los tipos de cambio"
+    recruitment:
+        view: "Ver las ofertas de empleo, los candidatos, sus CV y el calendario de entrevistas"
+        manage: "Crear, modificar, publicar, cerrar y eliminar ofertas de empleo"
+        decide: "Rechazar o seleccionar candidatos, programar entrevistas, borrar a un candidato"
+    commissions:
+        manage: "Ver y modificar las tasas de comisión por sección"
 audit:
     title: "Registro de auditoría"
     subtitle: "Rastro de cada conexión, decisión y exportación. Nunca figura ninguna contraseña ni código."
@@ -305,9 +317,16 @@ error:
     too_soon: "Acaba de enviarse un mensaje. Espere %seconds% s antes de volver a intentarlo."
     delivery_failed: "No se pudo enviar el correo. Inténtelo de nuevo en unos instantes."
     not_activated: "Esta cuenta aún no está activada: usa «Reenviar invitación»."
-    account_not_active: "Solo se puede restablecer una cuenta activa: reactívala primero."
+    account_not_active: "Solo una cuenta activa puede ser objeto de esta acción: reactívela primero."
     bulk_empty: "Seleccione al menos un administrador."
     bulk_too_many: "Una acción masiva se limita a %max% administradores a la vez."
+    invalid_rate: "Tipo no válido: introduzca un número positivo (6 decimales como máximo), por ejemplo 5012,50."
+    invalid_days: "Duración no válida: entre 1 y 365 días."
+    invalid_currency: "Divisa desconocida o sin tipo (el ariary es la divisa base)."
+    rate_provider_down: "El servicio de tipos no responde. Inténtelo más tarde o fije un tipo a mano."
+    rate_missing: "El servicio no proporcionó ningún tipo para esta divisa."
+    invalid_commission_rate: "Tasa no válida: cada tasa es un número de 0 a %max% (2 decimales como máximo), por ejemplo 7,5."
+    commission_no_change: "Ninguna tasa ha cambiado."
 application:
     show: "Ver la solicitud detallada"
     none: "Sin detalle (registro simple, sin el asistente «Hazte socio»)."
@@ -327,3 +346,72 @@ bulk:
         bulk_invited: "invitación aún no aceptada"
         bulk_already_suspended: "ya suspendido"
         bulk_already_active: "ya activo"
+currencies:
+    page_title: "Divisas — Administración GoBuy"
+    back: "Volver al panel"
+    title: "Divisas y tipos de cambio"
+    subtitle: "Los tipos del euro y del dólar frente al ariary se actualizan automáticamente mediante una tarea programada. Puede imponer un tipo a mano (por ejemplo si el servicio no funciona) y luego reanudar el modo automático."
+    settlement_note: "Los pedidos se liquidan en ariary. El cliente que elige otra divisa ve el precio fijado por el vendedor en esa divisa y, si no lo hay, el precio en ariary convertido al tipo del día; el tipo utilizado se guarda en cada pedido. Mientras una divisa no tenga tipo, no se ofrece a los clientes."
+    refresh: "Actualizar ahora"
+    refreshed: "Tipos actualizados."
+    saved: "Tipo guardado."
+    name:
+        EUR: "Euro"
+        USD: "Dólar estadounidense"
+    no_rate: "Ningún tipo para %code%: esta divisa no se ofrece a los clientes. Pulse «Actualizar ahora» o introduzca un tipo."
+    since: "desde el"
+    until: "válido hasta el %date%"
+    until_released: "hasta reanudar el modo automático"
+    source:
+        auto: "Automático"
+        manual: "Manual"
+    badge:
+        manual: "Tipo manual"
+        auto: "Automático"
+        none: "Sin tipo"
+        stale: "Antiguo"
+    stale_help: "Este tipo automático tiene más de 3 días: puede que el servicio de tipos ya no responda. Compruebe la tarea programada «app:rates:refresh» o fije un tipo a mano."
+    locked_help: "Hay un tipo manual en vigor: la actualización automática no lo modifica."
+    password: "Su contraseña"
+    manual:
+        title: "Fijar un tipo a mano"
+        rate: "Ariary por 1 %symbol%"
+        days: "Duración en días (opcional)"
+        note: "Motivo (opcional)"
+        help: "Sin duración, el tipo sigue en vigor hasta reanudar el modo automático. Se aplica de inmediato a los nuevos carritos y pedidos; los pedidos ya realizados conservan su tipo."
+        submit: "Guardar este tipo"
+    auto:
+        title: "Reanudar el modo automático"
+        help: "Obtiene el tipo del servicio ahora mismo y lo pone en vigor, en lugar de un posible tipo manual."
+        submit: "Reanudar el automático"
+    history:
+        title: "Historial"
+        none: "Ningún tipo registrado."
+        date: "Fecha"
+        rate: "Tipo"
+        source: "Origen"
+        by: "Por"
+        note: "Motivo"
+    attribution: "Tipos proporcionados por"
+commissions:
+    page_title: "Comisiones — Administración"
+    back: "Volver al panel"
+    title: "Tasas de comisión"
+    subtitle: "Porcentaje que GoBuy cobra sobre las ventas de cada sección. Una sola tasa por sección, igual para todos los proveedores: no hay alquiler ni plan de pago."
+    note: "Las nuevas tasas se muestran de inmediato en la página «Ser socio» (simulador) y en el Espacio Proveedor. Los pagos aún no se calculan automáticamente: no se modifica ningún importe ya pagado."
+    original: "Tasa original (%rate% %), nunca modificada"
+    updated: "Modificado por %who% el %date%"
+    help: "Un número de 0 a %max% (2 decimales como máximo). Se acepta la coma: 7,5."
+    password: "Su contraseña (confirmación)"
+    submit: "Guardar las tasas"
+    saved: "Tasas guardadas."
+    history:
+        title: "Últimos cambios"
+        none: "Ningún cambio por ahora."
+documents:
+    title: "Documentos justificativos"
+    kind:
+        identity: "Documento de identidad válido"
+        tax: "Comprobante NIF / STAT"
+    none: "No proporcionado"
+    kb: "KB"

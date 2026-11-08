@@ -127,6 +127,16 @@
             <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'auth.company_description'|trans }}</label>
                 <textarea rows="2" name="companyDescription" placeholder="{{ 'auth.company_description_placeholder'|trans }}" class="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"></textarea>
                 <p data-field-error="companyDescription" class="mt-1 hidden text-[11px] text-red-600"></p></div>
+            {# Pièces justificatives (même règle que l'assistant « Devenir partenaire ») : pièce d'identité obligatoire, NIF / STAT facultatif ici. #}
+            {% set fileClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white' %}
+            <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.doc_identity'|trans }}</label>
+                <input type="file" name="identityDocument" required accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" class="{{ fileClass }}">
+                <p class="mt-1 text-[11px] text-slate-400">{{ 'auth.doc_hint'|trans({'%mb%': 2}) }}</p>
+                <p data-field-error="identityDocument" class="mt-1 hidden text-[11px] text-red-600"></p></div>
+            <div><label class="mb-1 block text-xs font-semibold text-slate-700">{{ 'vendor.form.doc_tax'|trans }}</label>
+                <input type="file" name="taxDocument" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" class="{{ fileClass }}">
+                <p class="mt-1 text-[11px] text-slate-400">{{ 'vendor.form.doc_tax_hint_individual'|trans }}</p>
+                <p data-field-error="taxDocument" class="mt-1 hidden text-[11px] text-red-600"></p></div>
             <button type="submit" class="w-full rounded-2xl bg-emerald-600 py-3 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition-all hover:bg-emerald-700 disabled:opacity-60">{{ 'auth.supplier_submit'|trans }}</button>
             <p class="pt-2 text-center text-xs text-slate-500">{{ 'auth.already_registered'|trans }} <button type="button" data-auth-switch="login" class="font-bold text-emerald-600 hover:underline">{{ 'auth.login_submit'|trans }}</button></p>
         </form>

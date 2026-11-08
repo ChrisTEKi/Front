@@ -3,16 +3,20 @@
 namespace App\Controller;
 
 use App\Admin\StepUpService;
+use App\Audit\AuditAction;
+use App\Audit\AuditLogger;
 use App\Entity\SupplierAppealDocument;
 use App\Entity\User;
 use App\Enum\DeletionDelay;
 use App\Enum\Permission;
+use App\Enum\SupplierDocumentKind;
 use App\Http\ModerationResponder;
 use App\Http\ReadsJsonPayload;
 use App\Moderation\AccountOverview;
 use App\Moderation\ModerationException;
 use App\Moderation\SupplierAppealService;
 use App\Repository\SupplierAppealRepository;
+use App\Repository\SupplierDocumentRepository;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -34,6 +38,7 @@ use Symfony\Component\Uid\Uuid;
  *   GET  /admin/comptes/{id}                                  users.view (client) | suppliers.view (fournisseur)
  *   POST /admin/api/contestations/{id}/decision               suppliers.approve   {action: accept|dismiss, note}
  *   GET  /admin/contestations/{id}/pieces/{document}          suppliers.view      téléchargement d'une pièce jointe
+ *   GET  /admin/fournisseurs/{id}/pieces/{kind}               suppliers.approve   pièce d'identité ou NIF/STAT du fournisseur (kind = identity|tax)
  */
 final class AdminAccountController extends AbstractController
 {
@@ -48,6 +53,8 @@ final class AdminAccountController extends AbstractController
         private readonly AccountOverview $overview,
         private readonly ModerationResponder $responder,
         private readonly StepUpService $stepUp,
+        private readonly SupplierDocumentRepository $supplierDocuments,
+        private readonly AuditLogger $audit,
     ) {
     }
 
@@ -109,6 +116,33 @@ final class AdminAccountController extends AbstractController
 
         $response = new Response($found->getContent(), Response::HTTP_OK, ['Content-Type' => $found->getContentType()]);
         $response->headers->set('Content-Disposition', HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $found->getFileName(), 'piece'));
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Cache-Control', 'no-store, private');
+        // Aucun script ni ressource ne peut s'exécuter depuis ce fichier, même ouvert par erreur dans le navigateur.
+        $response->headers->set('Content-Security-Policy', "default-src 'none'; sandbox");
+
+        return $response;
+    }
+
+    /**
+     * Pièce déposée par un fournisseur à l'inscription (pièce d'identité ou justificatif NIF / STAT). Même précautions que pour les
+     * pièces de contestation (téléchargement « attachment », type figé, jamais interprétée ni mise en cache), et chaque ouverture est
+     * inscrite au journal d'audit : ce sont des données personnelles. Réservé au droit de VALIDER les fournisseurs (suppliers.approve) :
+     * voir la liste des fournisseurs (suppliers.view, ex. Finance, Compta) ne donne pas accès à leurs pièces d'identité.
+     */
+    #[Route('/admin/fournisseurs/{id}/pieces/{kind}', name: 'app_admin_supplier_document', requirements: ['id' => self::ID, 'kind' => 'identity|tax'], methods: ['GET'])]
+    #[IsGranted('suppliers.approve')]
+    public function supplierDocument(string $id, string $kind): Response
+    {
+        $supplier = $this->target($id);
+        $document = $supplier->isSupplier() ? $this->supplierDocuments->findOneByOwnerAndKind($supplier, SupplierDocumentKind::from($kind)) : null;
+        if (null === $document) {
+            throw $this->createNotFoundException();
+        }
+        $this->audit->record(AuditAction::SUPPLIER_DOCUMENT_VIEWED, $this->admin(), 'user', $id, ['kind' => $kind]);
+
+        $response = new Response($document->getContent(), Response::HTTP_OK, ['Content-Type' => $document->getContentType()]);
+        $response->headers->set('Content-Disposition', HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $document->getFileName(), 'piece'));
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Cache-Control', 'no-store, private');
         // Aucun script ni ressource ne peut s'exécuter depuis ce fichier, même ouvert par erreur dans le navigateur.

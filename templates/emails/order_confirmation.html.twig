@@ -19,22 +19,25 @@
         {% for item in order.items %}
             <tr>
                 <td style="padding:8px 0;border-bottom:1px solid #E5E7EB;">{{ item.productName }} <span style="color:#6B7280;">× {{ item.quantity }}</span></td>
-                <td align="right" style="padding:8px 0;border-bottom:1px solid #E5E7EB;white-space:nowrap;">{{ item.lineTotal|number_format(0, ',', ' ') }} Ar</td>
+                <td align="right" style="padding:8px 0;border-bottom:1px solid #E5E7EB;white-space:nowrap;">{{ money(item.chargedLineTotal, order.currency.value, order.locale) }}</td>
             </tr>
         {% endfor %}
         <tr>
             <td style="padding:8px 0;color:#6B7280;">{{ 'order_confirmation.subtotal'|trans({}, 'emails') }}</td>
-            <td align="right" style="padding:8px 0;color:#6B7280;white-space:nowrap;">{{ order.subtotal|number_format(0, ',', ' ') }} Ar</td>
+            <td align="right" style="padding:8px 0;color:#6B7280;white-space:nowrap;">{{ money(order.chargedSubtotal, order.currency.value, order.locale) }}</td>
         </tr>
         <tr>
             <td style="padding:0 0 8px;color:#6B7280;">{{ 'order_confirmation.delivery'|trans({}, 'emails') }}</td>
-            <td align="right" style="padding:0 0 8px;color:#6B7280;white-space:nowrap;">{{ order.deliveryFee|number_format(0, ',', ' ') }} Ar</td>
+            <td align="right" style="padding:0 0 8px;color:#6B7280;white-space:nowrap;">{{ money(order.chargedDeliveryFee, order.currency.value, order.locale) }}</td>
         </tr>
         <tr>
             <td style="padding:8px 0;border-top:2px solid #000000;font-weight:800;">{{ 'order_confirmation.total'|trans({}, 'emails') }}</td>
-            <td align="right" style="padding:8px 0;border-top:2px solid #000000;font-weight:800;white-space:nowrap;">{{ order.total|number_format(0, ',', ' ') }} Ar</td>
+            <td align="right" style="padding:8px 0;border-top:2px solid #000000;font-weight:800;white-space:nowrap;">{{ money(order.chargedTotal, order.currency.value, order.locale) }}</td>
         </tr>
     </table>
+    {% if order.foreignCurrency %}
+        <p style="margin:-8px 0 16px;color:#6B7280;font-size:13px;">{{ 'order_confirmation.settlement'|trans({'%amount%': money(order.total, 'MGA', order.locale), '%rate%': exchange_rate(order.exchangeRate, order.locale), '%symbol%': currency_symbol(order.currency.value)}, 'emails') }}</p>
+    {% endif %}
 
     {% set address = order.shippingAddress %}
     <p style="margin:0 0 4px;font-weight:700;">{{ 'order_confirmation.address'|trans({}, 'emails') }}</p>

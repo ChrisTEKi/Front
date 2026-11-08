@@ -210,17 +210,17 @@ final class AuthFlowTest extends AppTestCase
         $this->createUser('marie@boutique.mg');
         $this->createUser('b@example.com', phone: '+261331234567');
 
-        $r = $this->api('POST', '/auth/register/supplier', self::SUPPLIER);
+        $r = $this->registerSupplierApi(self::SUPPLIER);
         self::assertSame(409, $this->httpStatus());
         self::assertEqualsCanonicalizing(['email', 'phone'], array_keys($r['errors']));
 
         // Seul le téléphone est en cause : on corrige l'e-mail, le refus ne porte plus que sur le numéro.
-        $r = $this->api('POST', '/auth/register/supplier', ['email' => 'autre@boutique.mg'] + self::SUPPLIER);
+        $r = $this->registerSupplierApi(['email' => 'autre@boutique.mg'] + self::SUPPLIER);
         self::assertSame(409, $this->httpStatus());
         self::assertSame(['phone'], array_keys($r['errors']));
 
         // Les deux sont libres : l'inscription aboutit.
-        $r = $this->api('POST', '/auth/register/supplier', ['email' => 'autre@boutique.mg', 'phone' => '032 11 222 33'] + self::SUPPLIER);
+        $r = $this->registerSupplierApi(['email' => 'autre@boutique.mg', 'phone' => '032 11 222 33'] + self::SUPPLIER);
         self::assertSame(200, $this->httpStatus());
         self::assertSame('verify_email', $r['step']);
         self::assertSame(3, $this->countUsers());
@@ -452,7 +452,7 @@ final class AuthFlowTest extends AppTestCase
 
     public function testSupplierNeedsEmailAndPhoneThenWaitsForApproval(): void
     {
-        $r = $this->api('POST', '/auth/register/supplier', [
+        $r = $this->registerSupplierApi([
             'fullName' => 'Razafy Marie', 'email' => 'marie@boutique.mg', 'password' => self::PASSWORD, 'phone' => '033 12 345 67',
             'companyName' => 'Boutique Marie', 'companyAddress' => 'Lot 12 Analakely, Antananarivo', 'companyDescription' => 'Vêtements',
         ]);
@@ -475,15 +475,15 @@ final class AuthFlowTest extends AppTestCase
 
     public function testSupplierApplicationAnswersAreStoredButCleaned(): void
     {
-        $r = $this->api('POST', '/auth/register/supplier', [
+        $r = $this->registerSupplierApi([
             'fullName' => 'Razafy Marie', 'email' => 'marie@boutique.mg', 'password' => self::PASSWORD, 'phone' => '033 12 345 67',
             'companyName' => 'Boutique Marie', 'companyAddress' => 'Lot 12 Analakely, Antananarivo', 'companyDescription' => 'Vêtements',
             'application' => [
-                'city' => 'Antananarivo', 'activityType' => 'individual', 'mainCategory' => 'cat-mode', 'plan' => 'pro',
-                'productTypes' => ['fashion', 'inconnu'], 'ownDelivery' => true, 'damage' => false,
+                'city' => 'Antananarivo', 'activityType' => 'individual', 'mainCategory' => 'cat-mode',
+                'productTypes' => ['fashion', 'inconnu'], 'ownDelivery' => true,
                 'expectations' => '<script>alert(1)</script>',
-                // Tentatives d'injection : jamais enregistrées.
-                'status' => 'approved', 'isAdmin' => true,
+                // Tentatives d'injection et anciennes réponses (formule Pro, programme de solidarité, supprimés) : jamais enregistrées.
+                'status' => 'approved', 'isAdmin' => true, 'plan' => 'pro', 'damage' => true, 'proofs' => ['photos'],
             ],
         ]);
         self::assertSame('verify_email', $r['step']);
@@ -491,15 +491,15 @@ final class AuthFlowTest extends AppTestCase
         $profile = $this->em()->getRepository(SupplierProfile::class)->findOneBy([]);
         self::assertSame(SupplierStatus::Pending, $profile->getStatus(), 'Une candidature reste « en attente » quoi que dise le formulaire.');
         self::assertEquals([
-            'city' => 'Antananarivo', 'activityType' => 'individual', 'mainCategory' => 'cat-mode', 'plan' => 'pro',
-            'productTypes' => ['fashion'], 'ownDelivery' => true, 'damage' => false,
+            'city' => 'Antananarivo', 'activityType' => 'individual', 'mainCategory' => 'cat-mode',
+            'productTypes' => ['fashion'], 'ownDelivery' => true,
             'expectations' => '<script>alert(1)</script>', // gardé tel quel en base : c'est l'AFFICHAGE qui échappe (testé côté admin)
         ], $profile->getApplication());
     }
 
     public function testSupplierApplicationIsOptional(): void
     {
-        $this->api('POST', '/auth/register/supplier', [
+        $this->registerSupplierApi([
             'fullName' => 'Razafy Marie', 'email' => 'marie@boutique.mg', 'password' => self::PASSWORD, 'phone' => '033 12 345 67',
             'companyName' => 'Boutique Marie', 'companyAddress' => 'Lot 12 Analakely, Antananarivo', 'application' => 'n\'importe quoi',
         ]);
@@ -510,7 +510,7 @@ final class AuthFlowTest extends AppTestCase
 
     public function testSupplierRegistrationRequiresPhone(): void
     {
-        $r = $this->api('POST', '/auth/register/supplier', [
+        $r = $this->registerSupplierApi([
             'fullName' => 'Razafy Marie', 'email' => 'marie@boutique.mg', 'password' => self::PASSWORD, 'phone' => '',
             'companyName' => 'Boutique Marie', 'companyAddress' => 'Lot 12 Analakely',
         ]);

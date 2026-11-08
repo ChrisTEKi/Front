@@ -1,0 +1,14 @@
+{# Version texte brut de l'e-mail de recrutement adressé à un candidat. #}
+{{ ('job.' ~ kind ~ '.title')|trans(params, 'emails') }}
+
+{{ 'greeting'|trans({'%name%': recipient_name}, 'emails') }}
+
+{{ ('job.' ~ kind ~ '.body')|trans(params, 'emails') }}
+{% if note %}
+
+{{ 'job.note_label'|trans({}, 'emails') }} {{ note }}
+{% endif %}
+
+{{ 'job.contact'|trans({}, 'emails') }}
+
+— {{ app_name }}

@@ -260,7 +260,8 @@ final class OrderFlowTest extends AppTestCase
         self::assertEmailHeaderSame($mail, 'To', 'Test Client <c@example.com>');
         self::assertEmailSubjectContains($mail, $number);
         self::assertEmailHtmlBodyContains($mail, 'Casque audio');
-        self::assertEmailHtmlBodyContains($mail, '160 000 Ar');
+        // Séparateur de milliers de la langue (espace fine insécable en français) : on compare sans tenir compte du type d'espace.
+        self::assertMatchesRegularExpression('/160[\x{202F}\x{00A0} ]000 Ar/u', (string) $mail->getHtmlBody());
         self::assertEmailHtmlBodyContains($mail, '/suivi/'.$number);
         self::assertEmailTextBodyContains($mail, $number);
 

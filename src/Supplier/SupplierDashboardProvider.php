@@ -42,8 +42,6 @@ final class SupplierDashboardProvider
         $application = $profile?->getApplication() ?? [];
         $phone = $user->getPhone();
 
-        // Plan « souhaité » dans la candidature : la facturation de la formule Pro n'est pas encore en service.
-        $plan = 'pro' === ($application['plan'] ?? null) ? 'pro' : 'standard';
         $category = \is_string($application['mainCategory'] ?? null) ? $application['mainCategory'] : null;
 
         // Les chiffres de vente ne sont montrés qu'à un fournisseur APPROUVÉ : un dossier refusé ou suspendu ne donne plus accès
@@ -63,9 +61,7 @@ final class SupplierDashboardProvider
             'status' => $profile?->getStatus()->value ?? 'pending',
             'rejectionReason' => $profile?->getRejectionReason(),
             'approved' => $approved,
-            'plan' => $plan,
-            'proRent' => CommissionSchedule::PRO_MONTHLY_RENT,
-            'commissionRate' => $this->commissions->rateFor($category, $plan),
+            'commissionRate' => $this->commissions->rateFor($category),
             'stats' => $stats,
             'chart' => $this->chart($supplierId, $approved),
             'orders' => $orders,

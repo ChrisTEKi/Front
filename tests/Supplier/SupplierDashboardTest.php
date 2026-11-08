@@ -184,17 +184,28 @@ final class SupplierDashboardTest extends AppTestCase
 
     public function testExpectedCommissionRateFollowsTheApplication(): void
     {
-        $schedule = new CommissionSchedule();
-        self::assertSame(8, $schedule->rateFor('cat-mode', 'standard'));
-        self::assertSame(6, $schedule->rateFor('cat-mode', 'pro'));
-        self::assertSame(8, $schedule->rateFor('cat-mode', 'gratuit'), 'Une formule inconnue ne donne jamais un taux réduit.');
-        self::assertNull($schedule->rateFor('cat-inconnu', 'pro'));
-        self::assertNull($schedule->rateFor(null, 'standard'));
+        $schedule = self::getContainer()->get(CommissionSchedule::class);
+        self::assertSame(8, $schedule->rateFor('cat-mode'));
+        self::assertSame(5, $schedule->rateFor('cat-elec'));
+        self::assertNull($schedule->rateFor('cat-inconnu'));
+        self::assertNull($schedule->rateFor(null));
 
+        $this->signIn($this->supplier('marie@boutique.mg', 'Boutique Marie', ['mainCategory' => 'cat-elec']));
+        $html = $this->dashboard();
+        self::assertMatchesRegularExpression('/data-commission-rate[^>]*>\s*5%/', $html);
+    }
+
+    public function testThereIsNoPlanNorRentAnymore(): void
+    {
+        // Pas de version « Pro » : ni formule, ni loyer mensuel, même si un ancien dossier en parle encore.
         $this->signIn($this->supplier('marie@boutique.mg', 'Boutique Marie', ['mainCategory' => 'cat-elec', 'plan' => 'pro']));
         $html = $this->dashboard();
-        self::assertMatchesRegularExpression('/data-commission-rate[^>]*>\s*3%/', $html);
-        self::assertStringContainsString('Boutique Pro Certifiée', $html);
+
+        foreach (['Boutique Pro', 'Loyer', 'loyer', 'data-plan', 'data-pro-rent', 'solidar'] as $gone) {
+            self::assertStringNotContainsString($gone, $html, $gone);
+        }
+        // Le taux affiché est celui du rayon (5 %), pas un taux « Pro » réduit (3 %).
+        self::assertMatchesRegularExpression('/data-commission-rate[^>]*>\s*5%/', $html);
     }
 
     public function testDashboardIsTranslated(): void

@@ -1,0 +1,31 @@
+{# Champs d'un entretien (création et modification). Variables : prefix, mode, at (AAAA-MM-JJTHH:MM, heure de Madagascar), duration,
+   location, note, limits. Le lieu n'est obligatoire que pour un entretien SUR PLACE (le serveur le contrôle). #}
+{% trans_default_domain 'recruitment' %}
+{% set inputClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs' %}
+{% set labelClass = 'mb-1 block text-[11px] font-semibold text-slate-600' %}
+<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div>
+        <label class="{{ labelClass }}" for="{{ prefix }}-mode">{{ 'interview.field.mode'|trans }}</label>
+        <select id="{{ prefix }}-mode" name="mode" required class="{{ inputClass }}">
+            {% for m in ['phone', 'in_person'] %}<option value="{{ m }}" {{ mode == m ? 'selected' }}>{{ ('mode.' ~ m)|trans }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="{{ labelClass }}" for="{{ prefix }}-at">{{ 'interview.field.at'|trans }}</label>
+        <input id="{{ prefix }}-at" type="datetime-local" name="at" required value="{{ at }}" class="{{ inputClass }}">
+    </div>
+    <div>
+        <label class="{{ labelClass }}" for="{{ prefix }}-duration">{{ 'interview.field.duration'|trans }}</label>
+        <input id="{{ prefix }}-duration" type="number" name="duration" min="{{ limits.minMinutes }}" max="{{ limits.maxMinutes }}" value="{{ duration }}" class="{{ inputClass }}">
+    </div>
+</div>
+<div>
+    <label class="{{ labelClass }}" for="{{ prefix }}-location">{{ 'interview.field.location'|trans }}</label>
+    <input id="{{ prefix }}-location" name="location" maxlength="{{ limits.placeMax }}" value="{{ location }}" class="{{ inputClass }}">
+    <p class="mt-1 text-[11px] text-slate-500">{{ 'interview.field.location_help'|trans }}</p>
+</div>
+<div>
+    <label class="{{ labelClass }}" for="{{ prefix }}-note">{{ 'interview.field.note'|trans }}</label>
+    <textarea id="{{ prefix }}-note" name="note" rows="2" maxlength="{{ limits.interviewNoteMax }}" class="{{ inputClass }}">{{ note }}</textarea>
+    <p class="mt-1 text-[11px] text-slate-500">{{ 'interview.field.note_help'|trans }}</p>
+</div>

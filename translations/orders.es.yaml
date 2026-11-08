@@ -17,6 +17,9 @@ error:
     invalid_courier: "Nombre o teléfono del repartidor no válido."
     not_found: "No se ha encontrado ningún pedido con esta referencia."
     funds_frozen: "Sus pagos están congelados por el equipo de GoBuy: no puede hacer pedidos por ahora. Contacte con soporte."
+    invalid_currency: "Divisa desconocida: elija ariary, euro o dólar."
+    currency_unavailable: "Esta divisa no está disponible por ahora (tipo de cambio no disponible). Elija ariary o inténtelo más tarde."
+    price_changed: "El precio ha cambiado desde que se mostró su carrito (tipo de cambio o precio del vendedor). El resumen se acaba de actualizar: compruebe el nuevo total y confirme de nuevo."
 status:
     confirmed: "Pedido confirmado"
     preparing: "En preparación"

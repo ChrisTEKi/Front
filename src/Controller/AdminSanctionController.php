@@ -36,6 +36,7 @@ use Symfony\Component\Uid\Uuid;
  *   POST /admin/api/comptes/{id}/gel            sanctions.freeze                       {action: freeze|unfreeze, reason, password}
  *   POST /admin/api/comptes/{id}/remboursements sanctions.refund                       {scope: open|all, reason, password}   (fournisseur)
  *   POST /admin/api/comptes/{id}/suppression   accounts.delete                       {action: schedule|cancel, delay, reason, password}
+ *                                               suppression immédiate réussie : la réponse porte « redirect » (la fiche n'existe plus)
  *                                               délais : immediate, 24h, 48h, 72h, 7d, 14d, 30d, 3m, 6m, 1y (voir DeletionDelay)
  *   GET  /admin/liste-noire                     blacklist.manage
  *   POST /admin/api/liste-noire                 blacklist.manage                       {kind, value, reason, days, password}
@@ -159,9 +160,15 @@ final class AdminSanctionController extends AbstractController
             switch ($this->text($data, 'action')) {
                 case 'schedule':
                     $delay = DeletionDelay::tryFrom($this->text($data, 'delay')) ?? throw new ModerationException('invalid_delay');
+                    $tab = $target->isSupplier() ? 'suppliers_approval' : 'users_table';
                     $result = $this->deletions->schedule($admin, $target, $delay, $this->text($data, 'reason'));
+                    $body = ['purged' => $result['purged'], 'scheduledAt' => $result['scheduledAt']->format(\DATE_ATOM)];
+                    // Suppression IMMÉDIATE : la fiche du compte n'existe plus, la recharger donnerait une erreur 404. On renvoie à la liste.
+                    if ($result['purged']) {
+                        $body['redirect'] = $this->generateUrl('app_admin_dashboard', ['tab' => $tab]);
+                    }
 
-                    return $this->responder->ok(['purged' => $result['purged'], 'scheduledAt' => $result['scheduledAt']->format(\DATE_ATOM)]);
+                    return $this->responder->ok($body);
                 case 'cancel':
                     $this->deletions->cancel($admin, $target);
 
@@ -256,7 +263,7 @@ final class AdminSanctionController extends AbstractController
             return null;
         }
         if (!\is_scalar($raw) || !preg_match('/^\d{1,4}$/', (string) $raw)) {
-            throw new ModerationException('invalid_days', ['%max%' => 3650]);
+            throw new ModerationException('invalid_days', ['%max%' => BlacklistService::MAX_DAYS]);
         }
 
         return (int) $raw;

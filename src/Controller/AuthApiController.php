@@ -12,10 +12,12 @@ use App\Auth\PasswordResetService;
 use App\Auth\RegistrationService;
 use App\Http\ReadsJsonPayload;
 use App\Http\ValidationErrors;
+use App\Supplier\SupplierDocuments;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -42,6 +44,7 @@ final class AuthApiController extends AbstractController
         private readonly PasswordResetService $passwordReset,
         private readonly ValidatorInterface $validator,
         private readonly TranslatorInterface $translator,
+        private readonly SupplierDocuments $supplierDocuments,
     ) {
     }
 
@@ -79,17 +82,30 @@ final class AuthApiController extends AbstractController
         }
     }
 
-    /** Inscription d'un fournisseur (e-mail + téléphone à vérifier, puis approbation par un administrateur). */
+    /**
+     * Inscription d'un fournisseur (e-mail + téléphone à vérifier, puis approbation par un administrateur).
+     *
+     * Requête « multipart » : le champ `payload` porte le JSON du formulaire (comme pour les autres inscriptions) et les fichiers
+     * `identityDocument` (obligatoire) et `taxDocument` (NIF / STAT, obligatoire pour une entreprise) portent les pièces. Un corps
+     * JSON simple reste lu, mais sans pièce d'identité il est refusé comme un formulaire incomplet.
+     */
     #[Route('/register/supplier', name: 'register_supplier', methods: ['POST'])]
     public function registerSupplier(Request $request): JsonResponse
     {
-        $dto = RegisterSupplierData::fromArray($this->payload($request));
-        if (null !== $invalid = $this->validationFailure($dto)) {
+        $dto = RegisterSupplierData::fromArray($this->supplierPayload($request));
+
+        // Pièces justificatives : lues et contrôlées AVANT toute écriture ; leurs erreurs s'ajoutent à celles des champs.
+        $inspected = $this->supplierDocuments->inspect($request->files->all(), 'company' === ($dto->application['activityType'] ?? null));
+        $documentErrors = [];
+        foreach ($inspected['errors'] as $field => $error) {
+            $documentErrors[$field] = [$this->translator->trans('error.'.$error['reason'], $error['params'], 'auth')];
+        }
+        if (null !== $invalid = $this->validationFailure($dto, $documentErrors)) {
             return $invalid;
         }
 
         try {
-            return $this->respond($this->registration->registerSupplier($dto, $request->getLocale()));
+            return $this->respond($this->registration->registerSupplier($dto, $request->getLocale(), $inspected['documents']));
         } catch (RegistrationConflictException $conflict) {
             return $this->registrationConflict($conflict);
         } catch (RegistrationBlockedException) {
@@ -174,11 +190,19 @@ final class AuthApiController extends AbstractController
 
     // ------------------------------------------------------------------ Outils
 
-    /** Valide un DTO ; retourne la réponse 422 (avec les erreurs par champ) ou null si tout est valide. */
-    private function validationFailure(object $dto): ?JsonResponse
+    /**
+     * Valide un DTO ; retourne la réponse 422 (avec les erreurs par champ) ou null si tout est valide.
+     *
+     * @param array<string, list<string>> $extraErrors erreurs déjà trouvées ailleurs (ex. pièces justificatives), ajoutées à celles du DTO
+     */
+    private function validationFailure(object $dto, array $extraErrors = []): ?JsonResponse
     {
         $violations = $this->validator->validate($dto);
-        if (0 === \count($violations)) {
+        $errors = 0 === \count($violations) ? [] : ValidationErrors::toArray($violations);
+        foreach ($extraErrors as $field => $messages) {
+            $errors[$field] = [...($errors[$field] ?? []), ...$messages];
+        }
+        if ([] === $errors) {
             return null;
         }
 
@@ -186,8 +210,28 @@ final class AuthApiController extends AbstractController
             'ok' => false,
             'error' => 'validation',
             'message' => $this->translator->trans('error.validation', [], 'auth'),
-            'errors' => ValidationErrors::toArray($violations),
+            'errors' => $errors,
         ], Response::HTTP_UNPROCESSABLE_ENTITY));
+    }
+
+    /**
+     * Données de l'inscription fournisseur : le JSON du champ « payload » d'une requête multipart (formulaire avec fichiers),
+     * ou le corps JSON d'une requête ordinaire.
+     *
+     * @return array<string, mixed>
+     */
+    private function supplierPayload(Request $request): array
+    {
+        if (!$request->request->has('payload')) {
+            return $this->payload($request);
+        }
+        $raw = $request->request->all()['payload'] ?? null;
+        $decoded = \is_string($raw) ? json_decode($raw, true) : null;
+        if (!\is_array($decoded)) {
+            throw new BadRequestHttpException('Requête invalide.');
+        }
+
+        return $decoded;
     }
 
     /**

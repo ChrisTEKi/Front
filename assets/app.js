@@ -5,15 +5,16 @@ import { initAccount } from './account.js';
 import { initAddresses } from './addresses.js';
 import { initSupplierProducts } from './supplier-products.js';
 import { initSupplierAppeal } from './supplier-appeal.js';
+import { initJobApplication } from './job-application.js';
 import { initAdminAccount } from './admin-account.js';
 import { initAdminProducts } from './admin-products.js';
 import { initAvatar } from './avatar.js';
 import { initContactChange } from './contact.js';
 import { initCart } from './cart.js';
 import { initCheckout } from './checkout.js';
-import { goTo, postJson } from './api.js';
+import { goTo, postForm, postJson } from './api.js';
 import { closeModal, openModal, showToast } from './ui.js';
-import { formatAr, formatNumber, t } from './i18n.js';
+import { formatAr, numberLocale, t } from './i18n.js';
 
 /**
  * GoBuy — interactions du navigateur (JavaScript simple, sans framework).
@@ -29,35 +30,53 @@ import { formatAr, formatNumber, t } from './i18n.js';
  *   admin.js     espace administrateur.
  * Les textes affichés par le JavaScript viennent du dictionnaire « js » (i18n.js), jamais écrits en dur ici.
  */
+/**
+ * Chaque écran est initialisé ISOLÉMENT : si l'un d'eux échoue (donnée locale périmée, élément absent…), l'erreur est écrite dans la
+ * console du navigateur et les autres écrans continuent de fonctionner. Sans cela, une seule exception empêchait TOUS les scripts
+ * suivants de s'attacher (boutons de l'administration morts, formulaires envoyés « à l'ancienne »).
+ */
+function safely(init) {
+    try {
+        init();
+    } catch (error) {
+        console.error('[GoBuy] Initialisation échouée : ' + (init.name || 'fonction anonyme'), error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    initDrawers();
-    initDropdowns();
-    initModeToggle();
-    initSearchClear();
-    initModals();
-    initToggleChips();
-    initChipGroups();
-    initCityPicker();
-    initViewToggle();
-    initCart();
-    initAuth();
-    initOnboarding();
-    initAccount();
-    initContactChange();
-    initAvatar();
-    initAddresses();
-    initSupplierProducts();
-    initSupplierAppeal();
-    initAdminAccount();
-    initAdminProducts();
-    initInfoModal();
-    initFeedback();
-    initSupportForms();
-    initCheckout();
-    initVendorForm();
-    initFlashCountdown();
-    initSupplierDashboard();
-    initAdminDashboard();
+    [
+        initDrawers,
+        initDropdowns,
+        initModeToggle,
+        initSearchClear,
+        initModals,
+        initToggleChips,
+        initChipGroups,
+        initCityPicker,
+        initViewToggle,
+        initCart,
+        initAuth,
+        initOnboarding,
+        initAccount,
+        initContactChange,
+        initAvatar,
+        initAddresses,
+        initSupplierProducts,
+        initSupplierAppeal,
+        initJobApplication,
+        initAdminAccount,
+        initAdminProducts,
+        initInfoModal,
+        initFeedback,
+        initSupportForms,
+        initCheckout,
+        initVendorForm,
+        initFlashCountdown,
+        initSupplierDashboard,
+        initAdminDashboard,
+    ].forEach(safely);
+    // Repère lu par le garde-fou de templates/base.html.twig : « les scripts de la page se sont bien chargés ».
+    window.__gbReady = true;
 });
 
 /* ----------------------------- Bulles d'information ----------------------------- */
@@ -380,10 +399,11 @@ function initFlashCountdown() {
 }
 
 /* ---------------------------------------------------------------------------
-   Devenir partenaire — bascule présentation / formulaire + assistant en 4 étapes + simulateur
-   de commissions (calcul réel, aucune donnée fictive).
-   À l'envoi, les réponses partent vers l'inscription fournisseur (POST /auth/register/supplier) : le compte et le
-   dossier sont créés en base, puis la personne est envoyée vers /connexion pour vérifier son e-mail et son téléphone.
+   Devenir partenaire — bascule présentation / formulaire + assistant en 4 étapes (identité, activité, logistique,
+   pièces justificatives) + simulateur de commissions (calcul réel, taux lus dans l'administration, aucune donnée fictive).
+   À l'envoi, les réponses et les pièces (pièce d'identité, NIF / STAT) partent vers l'inscription fournisseur
+   (POST /auth/register/supplier, multipart) : le compte, le dossier et les pièces sont créés en base, puis la personne est
+   envoyée vers /connexion pour vérifier son e-mail et son téléphone.
 --------------------------------------------------------------------------- */
 function initVendorForm() {
     const page = document.querySelector('[data-vendor-page]');
@@ -394,7 +414,6 @@ function initVendorForm() {
         showView('form');
         goToVendorStep(Number(btn.getAttribute('data-vendor-open-form')) || 1);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (btn.hasAttribute('data-vendor-solidarity')) { page.querySelector('[data-damage-yes]').checked = true; syncDamageFields(); }
     }));
     page.querySelector('[data-vendor-back]')?.addEventListener('click', () => showView('landing'));
 
@@ -415,13 +434,6 @@ function initVendorForm() {
         page.querySelector('[data-vendor-submit]')?.classList.toggle('hidden', n !== 4);
     }
     page.querySelector('[data-vendor-prev]')?.addEventListener('click', () => goToVendorStep(Math.max(currentStep - 1, 1)));
-
-    // ---- Programme « Reconstruisons Ensemble » : les justificatifs n'apparaissent que si la réponse est « Oui ». ----
-    const damageFields = page.querySelector('[data-damage-fields]');
-    const syncDamageFields = () => damageFields?.classList.toggle('hidden', !page.querySelector('[data-damage-yes]')?.checked);
-    page.querySelector('[data-damage-yes]')?.addEventListener('change', syncDamageFields);
-    page.querySelector('[data-damage-no]')?.addEventListener('change', syncDamageFields);
-    syncDamageFields();
 
     const form = page.querySelector('[data-vendor-form]');
     const errorBox = form?.querySelector('[data-vendor-error]');
@@ -466,25 +478,47 @@ function initVendorForm() {
     const checked = (name) => [...form.querySelectorAll('input[name="' + name + '"]:checked')].map((i) => i.value);
 
     /** Construit le JSON attendu par RegisterSupplierData : champs du compte + objet « application » (voir SupplierApplication). */
-    const buildPayload = () => {
-        const damage = checked('damage')[0] === 'yes';
-        return {
-            fullName: text('fullName'),
-            email: text('email'),
-            phone: text('phone'),
-            // Le mot de passe n'est JAMAIS « trimé » : les espaces en font partie.
-            password: form.elements.namedItem('password').value,
-            companyName: text('companyName'),
-            companyAddress: text('companyAddress'),
-            companyDescription: text('companyDescription'),
-            application: {
-                contactRole: text('contactRole'), city: text('city'), activityType: text('activityType'), taxId: text('taxId'),
-                mainCategory: text('mainCategory'), plan: checked('plan')[0] ?? '',
-                sector: text('sector'), productTypes: checked('productTypes'), skuRange: text('skuRange'),
-                prepTime: text('prepTime'), salesPoints: checked('salesPoints'), ownDelivery: checked('ownDelivery')[0] === 'yes', stockTool: text('stockTool'),
-                damage, proofs: damage ? checked('proofs') : [], expectations: text('expectations'),
-            },
-        };
+    const buildPayload = () => ({
+        fullName: text('fullName'),
+        email: text('email'),
+        phone: text('phone'),
+        // Le mot de passe n'est JAMAIS « trimé » : les espaces en font partie.
+        password: form.elements.namedItem('password').value,
+        companyName: text('companyName'),
+        companyAddress: text('companyAddress'),
+        companyDescription: text('companyDescription'),
+        application: {
+            contactRole: text('contactRole'), city: text('city'), activityType: text('activityType'), taxId: text('taxId'),
+            mainCategory: text('mainCategory'),
+            sector: text('sector'), productTypes: checked('productTypes'), skuRange: text('skuRange'),
+            prepTime: text('prepTime'), salesPoints: checked('salesPoints'), ownDelivery: checked('ownDelivery')[0] === 'yes', stockTool: text('stockTool'),
+            expectations: text('expectations'),
+        },
+    });
+
+    // ---- Pièces justificatives : le justificatif NIF / STAT n'est obligatoire que pour une entreprise (le serveur applique la même règle). ----
+    const DOCUMENT_FIELDS = ['identityDocument', 'taxDocument'];
+    const DOCUMENT_MAX_BYTES = 2 * 1024 * 1024;
+    const DOCUMENT_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+    const taxInput = form?.querySelector('[data-tax-document]');
+    const taxHint = form?.querySelector('[data-tax-hint]');
+    const syncTaxRequirement = () => {
+        const company = text('activityType') !== 'individual';
+        if (taxInput) taxInput.required = company;
+        if (taxHint) taxHint.textContent = taxHint.getAttribute(company ? 'data-hint-company' : 'data-hint-individual') ?? '';
+    };
+    form?.elements.namedItem('activityType')?.addEventListener('change', syncTaxRequirement);
+    syncTaxRequirement();
+
+    /** Premier fichier choisi qui est trop lourd ou d'un autre type que PDF / JPEG / PNG : {name, message}, ou null. */
+    const firstBadDocument = () => {
+        for (const name of DOCUMENT_FIELDS) {
+            const file = form.elements.namedItem(name)?.files?.[0];
+            if (!file) continue;
+            if (file.size > DOCUMENT_MAX_BYTES) return { name, message: t('vendor.form.doc_too_large', { mb: DOCUMENT_MAX_BYTES / 1048576 }) };
+            if (file.type && !DOCUMENT_TYPES.includes(file.type)) return { name, message: t('vendor.form.doc_type') };
+        }
+        return null;
     };
 
     form?.addEventListener('submit', async (e) => {
@@ -496,10 +530,19 @@ function initVendorForm() {
             const bad = firstInvalid(n);
             if (bad) { goToVendorStep(n); flagInvalid(bad); return; }
         }
+        const badDocument = firstBadDocument();
+        if (badDocument) { goToVendorStep(4); showFieldError(badDocument.name, badDocument.message); return; }
 
         submitButton.disabled = true;
         submitButton.textContent = t('vendor.form.sending');
-        const result = await postJson(page.getAttribute('data-vendor-endpoint'), buildPayload());
+        // Requête multipart : le JSON du formulaire dans « payload », puis les fichiers choisis (le serveur contrôle tout, même le type).
+        const payload = new FormData();
+        payload.append('payload', JSON.stringify(buildPayload()));
+        DOCUMENT_FIELDS.forEach((name) => {
+            const file = form.elements.namedItem(name)?.files?.[0];
+            if (file) payload.append(name, file);
+        });
+        const result = await postForm(page.getAttribute('data-vendor-endpoint'), payload);
         const body = result.body;
 
         if (result.ok && body && body.step && body.step !== 'login') {
@@ -514,8 +557,8 @@ function initVendorForm() {
 
         if (result.network) { showFormError(t('net.error')); return; }
         if (body?.errors) {
-            // Les champs en erreur du serveur sont tous à l'étape 1 : on y retourne et on les signale un par un.
-            goToVendorStep(1);
+            // Les champs en erreur du serveur sont à l'étape 1 (compte) ou 4 (pièces) : on retourne au premier concerné et on les signale un par un.
+            goToVendorStep(Object.keys(body.errors).every((field) => DOCUMENT_FIELDS.includes(field)) ? 4 : 1);
             let general = '';
             Object.entries(body.errors).forEach(([field, messages]) => {
                 const msg = Array.isArray(messages) ? messages.join(' ') : String(messages);
@@ -528,38 +571,25 @@ function initVendorForm() {
     });
     if (submitButton) submitButton.setAttribute('data-label', submitButton.textContent);
 
-    /* Revenue simulator */
+    /* Revenue simulator : un seul taux par rayon (lu dans l'administration), pas de loyer ni de formule Pro. */
     const sim = page.querySelector('[data-simulator]');
     if (sim) {
-        const proRent = Number(sim.getAttribute('data-pro-rent')) || 49000;
         const catButtons = sim.querySelectorAll('[data-sim-category]');
         const revenueInput = sim.querySelector('[data-sim-revenue]');
-        let standardRate = Number(catButtons[0]?.getAttribute('data-standard')) / 100 || 0.04;
-        let proRate = Number(catButtons[0]?.getAttribute('data-pro')) / 100 || 0.02;
+        let rate = Number(catButtons[0]?.getAttribute('data-rate')) / 100 || 0;
 
         const refresh = () => {
             const revenue = Number(revenueInput.value);
+            const commission = revenue * rate;
             sim.querySelector('[data-sim-revenue-label]').textContent = formatAr(revenue);
-            const stdCommission = revenue * standardRate;
-            const proCommission = revenue * proRate;
-            const netStd = revenue - stdCommission;
-            const netPro = revenue - proCommission - proRent;
-            sim.querySelector('[data-sim-standard-rate]').textContent = Math.round(standardRate * 100) + '%';
-            sim.querySelector('[data-sim-pro-rate]').textContent = Math.round(proRate * 100) + '%';
-            sim.querySelector('[data-sim-standard-commission]').textContent = '-' + formatAr(stdCommission);
-            sim.querySelector('[data-sim-pro-commission]').textContent = '-' + formatAr(proCommission);
-            sim.querySelector('[data-sim-standard-net]').textContent = formatAr(netStd);
-            sim.querySelector('[data-sim-pro-net]').textContent = formatAr(netPro);
-            const advantage = netPro - netStd;
-            const advEl = sim.querySelector('[data-sim-pro-advantage]');
-            if (advantage > 0) { advEl.textContent = t('vendor.sim.advantage', { amount: formatAr(advantage) }); advEl.classList.remove('hidden'); }
-            else advEl.classList.add('hidden');
+            sim.querySelector('[data-sim-rate]').textContent = (Math.round(rate * 10000) / 100).toLocaleString(numberLocale(), { maximumFractionDigits: 2 }) + '%';
+            sim.querySelector('[data-sim-commission]').textContent = '-' + formatAr(commission);
+            sim.querySelector('[data-sim-net]').textContent = formatAr(revenue - commission);
         };
         catButtons.forEach((btn) => btn.addEventListener('click', () => {
             catButtons.forEach((b) => { b.classList.remove('border-emerald-600', 'bg-emerald-50', 'font-bold', 'text-emerald-950', 'shadow-xs'); b.classList.add('border-slate-200', 'bg-slate-50/50', 'text-slate-600'); });
             btn.classList.add('border-emerald-600', 'bg-emerald-50', 'font-bold', 'text-emerald-950', 'shadow-xs'); btn.classList.remove('border-slate-200', 'bg-slate-50/50', 'text-slate-600');
-            standardRate = Number(btn.getAttribute('data-standard')) / 100;
-            proRate = Number(btn.getAttribute('data-pro')) / 100;
+            rate = Number(btn.getAttribute('data-rate')) / 100;
             refresh();
         }));
         revenueInput?.addEventListener('input', refresh);

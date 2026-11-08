@@ -20,6 +20,9 @@ tabs:
     audit: "Journal d'audit"
     products: "Produits"
     blacklist: "Liste noire"
+    currencies: "Devises"
+    recruitment: "Recrutement"
+    commissions: "Commissions"
 overview:
     clients: "Clients inscrits"
     suppliers_active: "Fournisseurs actifs"
@@ -46,11 +49,11 @@ applications:
 payouts:
     sales_total: "Ventes Totales Vendeurs"
     commissions: "Commissions GoBuy"
-    rents: "Loyers Boutiques Pro"
     net_pending: "Net à reverser en attente"
     title: "Tableau des reversements bi-hebdomadaires"
-    subtitle: "Reversements effectués après déduction des commissions et loyers boutique."
+    subtitle: "Reversements effectués après déduction des commissions."
     none: "Aucun reversement à afficher pour le moment."
+    edit_rates: "Modifier les taux de commission"
 approval:
     title: "Dossiers Fournisseurs à approuver par l'Administrateur"
     subtitle: "Chaque fournisseur doit obligatoirement avoir son e-mail et son téléphone vérifiés, puis être validé par un administrateur avant de pouvoir accéder à l'espace vendeur."
@@ -111,6 +114,7 @@ orders:
         payment: "Paiement"
         status: "Statut"
         date: "Date"
+    charged_title: "Montant annoncé au client en %currency% ; le montant en Ariary est celui qui est débité."
 order_status:
     confirmed: "Commande confirmée"
     preparing: "En préparation"
@@ -182,6 +186,14 @@ perm:
         manage: "Gérer la liste noire"
     accounts:
         delete: "Supprimer définitivement un compte (immédiat ou programmé)"
+    currency:
+        manage: "Gérer les taux de change"
+    recruitment:
+        view: "Voir les offres d'emploi, les candidats, leurs CV et le planning des entretiens"
+        manage: "Créer, modifier, publier, clôturer et supprimer des offres d'emploi"
+        decide: "Refuser ou retenir des candidats, fixer des entretiens, effacer un candidat"
+    commissions:
+        manage: "Voir et modifier les taux de commission par rayon"
 audit:
     title: "Journal d'audit"
     subtitle: "Trace de chaque connexion, décision et export. Aucun mot de passe ni code n'y figure."
@@ -306,9 +318,16 @@ error:
     too_soon: "Un message vient d'être envoyé. Patientez %seconds% s avant de réessayer."
     delivery_failed: "L'e-mail n'a pas pu être envoyé. Réessayez dans quelques instants."
     not_activated: "Ce compte n'est pas encore activé : utilisez « Renvoyer l'invitation »."
-    account_not_active: "Seul un compte actif peut être réinitialisé : réactivez-le d'abord."
+    account_not_active: "Seul un compte actif peut faire l'objet de cette action : réactivez-le d'abord."
     bulk_empty: "Sélectionnez au moins un administrateur."
     bulk_too_many: "Une action groupée est limitée à %max% administrateurs à la fois."
+    invalid_rate: "Taux invalide : saisissez un nombre positif (6 décimales au plus), par exemple 5012,50."
+    invalid_days: "Durée invalide : entre 1 et 365 jours."
+    invalid_currency: "Devise inconnue ou sans taux (l'Ariary est la devise de base)."
+    rate_provider_down: "Le service de taux ne répond pas. Réessayez plus tard ou fixez un taux à la main."
+    rate_missing: "Le service n'a pas fourni de taux pour cette devise."
+    invalid_commission_rate: "Taux invalide : chaque taux est un nombre de 0 à %max% (2 décimales au plus), par exemple 7,5."
+    commission_no_change: "Aucun taux n'a changé."
 application:
     show: "Voir le dossier détaillé"
     none: "Dossier sans détail (inscription simple, sans l'assistant « Devenir partenaire »)."
@@ -328,3 +347,72 @@ bulk:
         bulk_invited: "invitation non acceptée"
         bulk_already_suspended: "déjà suspendu"
         bulk_already_active: "déjà actif"
+currencies:
+    page_title: "Devises — Administration GoBuy"
+    back: "Retour au tableau de bord"
+    title: "Devises et taux de change"
+    subtitle: "Les taux de l'euro et du dollar contre l'Ariary sont mis à jour automatiquement par une tâche planifiée. Vous pouvez imposer un taux à la main (par exemple si le service est en panne) puis reprendre l'automatique."
+    settlement_note: "Les commandes sont réglées en Ariary. Le client qui choisit une autre devise voit le prix fixé par le vendeur dans cette devise, sinon le prix en Ariary converti au taux du jour ; le taux utilisé est enregistré dans chaque commande. Tant qu'une devise n'a aucun taux, elle n'est pas proposée aux clients."
+    refresh: "Actualiser maintenant"
+    refreshed: "Taux actualisés."
+    saved: "Taux enregistré."
+    name:
+        EUR: "Euro"
+        USD: "Dollar américain"
+    no_rate: "Aucun taux pour %code% : cette devise n'est pas proposée aux clients. Lancez « Actualiser maintenant » ou saisissez un taux."
+    since: "depuis le"
+    until: "valable jusqu'au %date%"
+    until_released: "jusqu'à la reprise du mode automatique"
+    source:
+        auto: "Automatique"
+        manual: "Manuel"
+    badge:
+        manual: "Taux manuel"
+        auto: "Automatique"
+        none: "Aucun taux"
+        stale: "Ancien"
+    stale_help: "Ce taux automatique a plus de 3 jours : le service de taux ne répond peut-être plus. Vérifiez la tâche planifiée « app:rates:refresh » ou fixez un taux à la main."
+    locked_help: "Un taux manuel est en vigueur : la mise à jour automatique ne le modifie pas."
+    password: "Votre mot de passe"
+    manual:
+        title: "Fixer un taux à la main"
+        rate: "Ariary pour 1 %symbol%"
+        days: "Durée en jours (facultatif)"
+        note: "Motif (facultatif)"
+        help: "Sans durée, le taux reste en vigueur jusqu'à la reprise du mode automatique. Il s'applique tout de suite aux nouveaux paniers et commandes ; les commandes déjà passées gardent leur taux."
+        submit: "Enregistrer ce taux"
+    auto:
+        title: "Reprendre le mode automatique"
+        help: "Va chercher le taux du service tout de suite et le met en vigueur, à la place d'un éventuel taux manuel."
+        submit: "Reprendre l'automatique"
+    history:
+        title: "Historique"
+        none: "Aucun taux enregistré."
+        date: "Date"
+        rate: "Taux"
+        source: "Origine"
+        by: "Par"
+        note: "Motif"
+    attribution: "Taux fournis par"
+commissions:
+    page_title: "Commissions — Administration"
+    back: "Retour au tableau de bord"
+    title: "Taux de commission"
+    subtitle: "Pourcentage prélevé par GoBuy sur les ventes de chaque rayon. Un seul taux par rayon, le même pour tous les fournisseurs : il n'y a ni loyer ni formule payante."
+    note: "Les nouveaux taux s'affichent tout de suite sur la page « Devenir partenaire » (simulateur) et dans l'Espace Fournisseur. Les reversements ne sont pas encore calculés automatiquement : aucun montant déjà versé n'est modifié."
+    original: "Taux d'origine (%rate% %), jamais modifié"
+    updated: "Modifié par %who% le %date%"
+    help: "Un nombre de 0 à %max% (2 décimales au plus). La virgule est acceptée : 7,5."
+    password: "Votre mot de passe (confirmation)"
+    submit: "Enregistrer les taux"
+    saved: "Taux enregistrés."
+    history:
+        title: "Dernières modifications"
+        none: "Aucune modification pour le moment."
+documents:
+    title: "Pièces justificatives"
+    kind:
+        identity: "Pièce d'identité valide"
+        tax: "Justificatif NIF / STAT"
+    none: "Non fournie"
+    kb: "Ko"

@@ -104,6 +104,8 @@ class BlacklistEntry
         $this->reason = $reason;
         $this->createdBy = $by;
         $this->createdAt = $now;
-        $this->expiresAt = $expiresAt;
+        // Un nouvel ajout ne RACCOURCIT jamais une interdiction : on garde l'échéance la plus lointaine (« définitive » l'emporte).
+        // Pour la réduire, il faut supprimer l'entrée puis la recréer.
+        $this->expiresAt = (null === $this->expiresAt || null === $expiresAt) ? null : max($this->expiresAt, $expiresAt);
     }
 }

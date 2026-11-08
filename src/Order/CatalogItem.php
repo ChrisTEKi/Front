@@ -21,6 +21,13 @@ final class CatalogItem
         public readonly ?Uuid $supplierId = null,
         /** false = produit retiré de la vente ou en rupture : la commande est refusée. */
         public readonly bool $available = true,
+        /**
+         * Prix SPÉCIFIQUES fixés par le vendeur pour d'autres devises (clés « EUR », « USD » ; unités mineures : centimes).
+         * Une devise absente de la liste est convertie depuis le prix en Ariary au taux du moment.
+         *
+         * @var array<string, int>
+         */
+        public readonly array $priceOverrides = [],
     ) {
     }
 }

@@ -6,6 +6,7 @@ use App\Audit\AuditAction;
 use App\Audit\AuditLogger;
 use App\Entity\Order;
 use App\Entity\User;
+use App\Moderation\BlacklistService;
 use App\Notification\SecurityNotifier;
 use App\Repository\OrderRepository;
 use App\Repository\UserRepository;
@@ -26,7 +27,7 @@ use Psr\Log\LoggerInterface;
  *   2. le JOURNAL D'AUDIT est épuré : e-mail, IP et navigateur effacés des lignes du client (et des tentatives de connexion
  *      anonymes faites avec son e-mail), ainsi que les rares métadonnées personnelles. Les lignes elles-mêmes restent
  *      (« une commande a été passée », « un export a eu lieu ») : la traçabilité de la sécurité n'est pas perdue ;
- *   3. le compte est SUPPRIMÉ. La base fait le reste : adresses, comptes Mobile Money, identités Google/Apple et codes
+ *   3. le compte est SUPPRIMÉ (un compte BANNI laisse d'abord son e-mail et son téléphone sur la liste noire, définitivement). La base fait le reste : adresses, comptes Mobile Money, identités Google/Apple et codes
  *      à usage unique sont supprimés en cascade (clés étrangères « ON DELETE CASCADE »). Pour un FOURNISSEUR : son dossier, ses
  *      contestations et pièces jointes, TOUS ses produits disparaissent aussi ; les commandes passées gardent leurs lignes (nom,
  *      prix, quantité) mais sans lien vers lui (« ON DELETE SET NULL ») ;
@@ -54,6 +55,7 @@ final class AccountPurger
         private readonly OrderRepository $orders,
         private readonly AuditLogger $audit,
         private readonly SecurityNotifier $notifier,
+        private readonly BlacklistService $blacklist,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -154,6 +156,13 @@ final class AccountPurger
 
             // 2) Journal d'audit.
             $this->scrubAuditLog($user);
+
+            // Un compte BANNI puis supprimé ne libère pas son e-mail ni son téléphone : on les garde sur la liste noire (sinon la
+            // personne pourrait se réinscrire avec). Les autres comptes (suppression demandée par le titulaire, suppression
+            // décidée par l'équipe sans bannissement) libèrent leurs identifiants comme avant.
+            if (null !== $user->getBannedAt()) {
+                $this->blacklist->keepBannedIdentity($user);
+            }
 
             // 3) Le compte. Adresses, Mobile Money, identités sociales et codes sont supprimés en cascade par la base.
             $this->em->remove($user);

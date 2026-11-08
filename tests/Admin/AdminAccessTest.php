@@ -83,8 +83,9 @@ final class AdminAccessTest extends AppTestCase
         self::assertStringContainsString('Mahajanga', $html);
         self::assertStringContainsString('Beauté &amp; Cosmétique', $html);
         self::assertStringContainsString('Beauté, Jouets', $html);
-        self::assertStringContainsString('Dépôt de plainte', $html);
-        self::assertStringContainsString('Pro (49 000 Ar/mois)', $html);
+        // Les réponses d'anciens dossiers sur la formule Pro / la casse / les pièces de solidarité ne sont plus affichées (ces questions n'existent plus).
+        self::assertStringNotContainsString('Dépôt de plainte', $html);
+        self::assertStringNotContainsString('49 000 Ar/mois', $html);
         // Le texte libre du candidat est échappé : jamais de balise exécutable.
         self::assertStringNotContainsString('<img src=x', $html);
         self::assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $html);

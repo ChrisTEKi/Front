@@ -8,3 +8,12 @@
 {% if can['blacklist.manage'] %}
     <a href="{{ path('app_admin_blacklist') }}" class="{{ linkClass }}">{{ 'tabs.blacklist'|trans }}</a>
 {% endif %}
+{% if can['currency.manage'] %}
+    <a href="{{ path('app_admin_currencies') }}" class="{{ linkClass }}">{{ 'tabs.currencies'|trans }}</a>
+{% endif %}
+{% if can['commissions.manage'] %}
+    <a href="{{ path('app_admin_commissions') }}" class="{{ linkClass }}">{{ 'tabs.commissions'|trans }}</a>
+{% endif %}
+{% if can['recruitment.view'] %}
+    <a href="{{ path('app_admin_recruitment') }}" class="{{ linkClass }}">{{ 'tabs.recruitment'|trans }}</a>
+{% endif %}

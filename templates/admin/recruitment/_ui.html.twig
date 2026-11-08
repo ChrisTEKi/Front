@@ -1,0 +1,31 @@
+{# Éléments communs aux écrans de recrutement de l'administration : pastille d'état, barre d'onglets, pagination.
+   Textes : translations/recruitment.<langue>.yaml (FR / EN / ES). #}
+{% trans_default_domain 'recruitment' %}
+
+{% macro badge(kind, value) %}
+    {% set tones = {
+        offer: {draft: 'bg-slate-100 text-slate-700', open: 'bg-emerald-100 text-emerald-800', closed: 'bg-rose-100 text-rose-800'},
+        application: {new: 'bg-sky-100 text-sky-800', reviewing: 'bg-amber-100 text-amber-800', interview: 'bg-indigo-100 text-indigo-800', refused: 'bg-rose-100 text-rose-800', hired: 'bg-emerald-100 text-emerald-800'},
+        interview: {scheduled: 'bg-indigo-100 text-indigo-800', cancelled: 'bg-slate-100 text-slate-600', done: 'bg-emerald-100 text-emerald-800'},
+    } %}
+    <span data-status="{{ value }}" class="inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold {{ tones[kind][value]|default('bg-slate-100 text-slate-700') }}">{{ ('status.' ~ kind ~ '.' ~ value)|trans({}, 'recruitment') }}</span>
+{% endmacro %}
+
+{% macro tabs(active, can) %}
+    <nav class="flex flex-wrap gap-2 text-xs font-semibold" aria-label="{{ 'admin.title'|trans({}, 'recruitment') }}">
+        {% for key, route in {offers: 'app_admin_recruitment', planning: 'app_admin_recruitment_planning'} %}
+            <a href="{{ path(route) }}" {% if key == active %}aria-current="page"{% endif %} class="rounded-xl px-3 py-1.5 {{ key == active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">{{ ('admin.tab.' ~ key)|trans({}, 'recruitment') }}</a>
+        {% endfor %}
+    </nav>
+{% endmacro %}
+
+{# Pages précédente / suivante en conservant les filtres de l'adresse. `route` + `params` : les paramètres sans « page ». #}
+{% macro paging(paging, route, params) %}
+    {% if paging.pages > 1 %}
+        <nav class="flex items-center justify-between gap-3 pt-3 text-xs" aria-label="pagination">
+            {% if paging.page > 1 %}<a href="{{ path(route, params|merge({page: paging.page - 1})) }}" rel="prev" class="rounded-xl border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50">← {{ 'paging.prev'|trans({}, 'recruitment') }}</a>{% else %}<span></span>{% endif %}
+            <span class="text-slate-500">{{ 'paging.page'|trans({'%page%': paging.page, '%pages%': paging.pages, '%total%': paging.total}, 'recruitment') }}</span>
+            {% if paging.page < paging.pages %}<a href="{{ path(route, params|merge({page: paging.page + 1})) }}" rel="next" class="rounded-xl border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50">{{ 'paging.next'|trans({}, 'recruitment') }} →</a>{% else %}<span></span>{% endif %}
+        </nav>
+    {% endif %}
+{% endmacro %}

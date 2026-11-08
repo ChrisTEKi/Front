@@ -42,6 +42,10 @@ final class AuditAction
     public const ADMIN_UPDATED = 'admin.updated';
     public const ADMIN_SUSPENDED = 'admin.suspended';
     public const ADMIN_REACTIVATED = 'admin.reactivated';
+    public const RATE_MANUAL = 'admin.rate.manual';                   // taux de change fixé à la main
+    public const RATE_AUTO_RESUMED = 'admin.rate.auto';               // retour au taux automatique
+    public const COMMISSION_CHANGED = 'admin.commission.changed';     // taux de commission d'un ou plusieurs rayons modifié(s)
+    public const RATE_REJECTED = 'rate.rejected';                     // taux automatique refusé (écart anormal)
     public const ADMIN_BULK_STATUS = 'admin.bulk_status';             // suspension / réactivation de plusieurs administrateurs d'un coup
     public const ADMIN_ROLE_SAVED = 'admin.role.saved';
     public const SUPER_ADMIN_CREATED = 'admin.super_admin.created';
@@ -49,6 +53,8 @@ final class AuditAction
     public const USER_REACTIVATED = 'admin.user.reactivated';
     public const SUPPLIER_APPROVED = 'admin.supplier.approved';
     public const SUPPLIER_REJECTED = 'admin.supplier.rejected';
+    public const SUPPLIER_SUSPENDED = 'admin.supplier.suspended';
+    public const SUPPLIER_DOCUMENT_VIEWED = 'admin.supplier.document_viewed';   // pièce d'identité / NIF-STAT d'un fournisseur ouverte par un administrateur
     public const ACCESS_DENIED = 'admin.access.denied';
     public const STEP_UP_FAILED = 'auth.step_up.failed';   // mot de passe de confirmation faux (admin ou client)
 
@@ -81,6 +87,23 @@ final class AuditAction
     public const BLACKLIST_HIT = 'security.blacklist.hit';             // une inscription a été refusée par la liste noire
     public const DELETION_SCHEDULED_BY_ADMIN = 'admin.account.deletion_scheduled';
     public const DELETION_CANCELLED_BY_ADMIN = 'admin.account.deletion_cancelled';
+
+    // ---- Recrutement : offres, candidatures, entretiens. Les détails ne contiennent JAMAIS le nom, l'e-mail ni le téléphone d'un candidat. ----
+    public const JOB_OFFER_SAVED = 'admin.job_offer.saved';            // offre créée ou modifiée
+    public const JOB_OFFER_PUBLISHED = 'admin.job_offer.published';
+    public const JOB_OFFER_CLOSED = 'admin.job_offer.closed';
+    public const JOB_OFFER_DELETED = 'admin.job_offer.deleted';
+    public const JOB_APPLICATION_RECEIVED = 'job.application.received'; // dépôt par un visiteur (pas d'administrateur)
+    public const JOB_DOCUMENT_VIEWED = 'admin.job_application.document_viewed';
+    public const JOB_APPLICATION_REVIEWED = 'admin.job_application.reviewing';
+    public const JOB_APPLICATION_REFUSED = 'admin.job_application.refused';
+    public const JOB_APPLICATION_HIRED = 'admin.job_application.hired';
+    public const JOB_APPLICATION_DELETED = 'admin.job_application.deleted';
+    public const JOB_APPLICATIONS_PURGED = 'job.applications.purged';   // effacement automatique à l'issue de la durée de conservation
+    public const JOB_INTERVIEW_SCHEDULED = 'admin.job_interview.scheduled';
+    public const JOB_INTERVIEW_UPDATED = 'admin.job_interview.updated';
+    public const JOB_INTERVIEW_CANCELLED = 'admin.job_interview.cancelled';
+    public const JOB_INTERVIEW_DONE = 'admin.job_interview.done';
 
     public const EXPORT = 'export.csv';
 

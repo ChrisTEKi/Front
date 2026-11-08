@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ app.request.locale|default('fr') }}">
+<html lang="{{ app.request.locale|default('fr') }}" data-currency="{{ display_currency() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,8 +9,38 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22black%22/><text x=%2216%22 y=%2272%22 font-size=%2260%22 font-weight=%22900%22 fill=%22%2306C167%22>G</text><text x=%2258%22 y=%2272%22 font-size=%2244%22 font-weight=%22900%22 fill=%22white%22>B</text></svg>">
     {# Dictionnaire des textes du JavaScript (domaine « js »), dans la langue de la requête : lu par assets/i18n.js. Option 271 = JSON_HEX_TAG|HEX_AMP|HEX_APOS|HEX_QUOT|UNESCAPED_UNICODE : aucun texte ne peut fermer la balise script. #}
     <script type="application/json" id="gb-i18n">{{ js_dictionary()|json_encode(271)|raw }}</script>
+    {# Devise d'affichage et taux (Ariary pour 1 unité) : lus par assets/money.js pour afficher le panier dans la devise choisie. Affichage seulement : le serveur recalcule chaque commande. #}
+    <script type="application/json" id="gb-currency">{{ {current: display_currency(), rates: currency_rates()}|json_encode(271)|raw }}</script>
     {% block stylesheets %}{% endblock %}
     {% block importmap %}{{ importmap('app') }}{% endblock %}
+    {% if app.request.pathInfo starts with '/admin' %}
+        {# Garde-fou de l'administration : si les scripts ne se sont pas chargés (fichiers JavaScript introuvables, ancien cache…), un formulaire
+           [data-admin-form] serait envoyé « à l'ancienne » par le navigateur (page d'erreur 405, mot de passe perdu). On l'empêche et on
+           explique. `data-gb-bound` est posé par assets/admin-account.js sur chaque formulaire qu'il prend en charge. #}
+        <script>
+            (function () {
+                var message = {{ 'scripts.not_ready'|trans|json_encode(15)|raw }};
+                document.addEventListener('submit', function (event) {
+                    var form = event.target;
+                    if (form && form.matches && form.matches('[data-admin-form]') && !form.hasAttribute('data-gb-bound')) {
+                        event.preventDefault();
+                        window.alert(message);
+                    }
+                }, true);
+                window.addEventListener('load', function () {
+                    window.setTimeout(function () {
+                        if (!document.querySelector('[data-admin-form]:not([data-gb-bound])')) { return; }
+                        var bar = document.createElement('div');
+                        bar.setAttribute('role', 'alert');
+                        bar.setAttribute('data-scripts-warning', '');
+                        bar.style.cssText = 'position:sticky;top:0;z-index:9999;background:#b91c1c;color:#fff;padding:10px 16px;font:600 13px/1.4 sans-serif;text-align:center';
+                        bar.textContent = message;
+                        document.body.insertBefore(bar, document.body.firstChild);
+                    }, 2500);
+                });
+            })();
+        </script>
+    {% endif %}
 </head>
 <body data-delivery-fee="{{ delivery_fee(1) }}" class="flex min-h-screen w-full flex-col bg-white font-sans text-gobuy-black antialiased selection:bg-gobuy-green selection:text-white">
     {# Icônes réutilisées par le JavaScript (panier) : il les copie au lieu de dessiner des symboles à la main. #}
@@ -31,7 +61,8 @@
     {{ include('partials/_cart_drawer.html.twig') }}
     {# La page /connexion affiche déjà le formulaire : pas de seconde copie (cachée) dans une fenêtre. #}
     {% block auth_modal %}{{ include('partials/_auth_modal.html.twig') }}{% endblock %}
-    {{ include('partials/_onboarding_modal.html.twig') }}
+    {# La fenêtre de bienvenue ne s'ouvre pas dans l'espace administrateur : elle masquerait la page et bloquerait les clics. #}
+    {% if not (app.request.pathInfo starts with '/admin') %}{{ include('partials/_onboarding_modal.html.twig') }}{% endif %}
     {{ include('partials/_how_it_works_modal.html.twig') }}
     {{ include('partials/_company_info_modal.html.twig') }}
     {{ include('partials/_feedback_drawer.html.twig') }}

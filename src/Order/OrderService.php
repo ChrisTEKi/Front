@@ -5,9 +5,11 @@ namespace App\Order;
 use App\Account\AddressBook;
 use App\Audit\AuditAction;
 use App\Audit\AuditLogger;
+use App\Currency\ExchangeRates;
 use App\Entity\Order;
 use App\Entity\OrderItem;
 use App\Entity\User;
+use App\Enum\Currency;
 use App\Enum\OrderStatus;
 use App\Enum\PaymentMethod;
 use App\Http\DeferredWork;
@@ -35,6 +37,13 @@ use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
  *   8. E-mail de confirmation : envoyé après la réponse (kernel.terminate) ; s'il échoue, la commande reste valable et
  *                               la commande `app:orders:send-confirmations` le renverra.
  *
+ * DEVISES : le client peut commander en Ariary, en euro ou en dollar. La devise est revalidée ici (elle doit avoir un taux en
+ * vigueur). Chaque ligne est vendue au prix que le vendeur a fixé pour cette devise, sinon au prix converti au taux du moment ;
+ * ces montants, ainsi que le taux, sont figés dans la commande. Le paiement, lui, se fait TOUJOURS en Ariary (Mobile Money
+ * n'existe qu'en Ariary) : le montant en Ariary de la commande est l'équivalent au même taux (ou le prix en Ariary quand le
+ * vendeur n'a pas fixé de prix dans la devise). Si le client a vu un total différent de celui calculé ici (taux ou prix
+ * changé entre-temps), la commande est refusée (« price_changed ») pour qu'il revoie le nouveau prix : jamais de surprise.
+ *
  * ÉTAT DU PAIEMENT : aucune passerelle de paiement (MVola, Orange Money, Airtel Money, carte) n'est encore raccordée.
  * La commande est donc créée avec payment_status = « pending » ; c'est la passerelle (ou un admin financier) qui la passera
  * à « paid ». Voir README, section « Ce qui reste à raccorder ».
@@ -50,6 +59,7 @@ final class OrderService
         private readonly AddressBook $addressBook,
         private readonly UserRepository $users,
         private readonly CatalogInterface $catalog,
+        private readonly ExchangeRates $rates,
         private readonly DeliveryFeePolicy $deliveryFees,
         private readonly OrderNumberGenerator $numbers,
         private readonly MobileMoneyNumberValidator $mobileMoneyValidator,
@@ -90,8 +100,17 @@ final class OrderService
             throw new OrderRefusedException('phone_not_verified');
         }
 
-        // 4) Panier relu côté serveur.
-        [$lines, $subtotal] = $this->priceLines($request->items);
+        // 4) Devise, puis panier relu côté serveur (au prix de la devise choisie).
+        $currency = $this->currencyOf($request);
+        [$lines, $subtotal, $subtotalCharged] = $this->priceLines($request->items, $currency);
+        $fee = $this->deliveryFees->feeFor($subtotal);
+        // Frais annoncés dans la devise du client = frais en Ariary convertis (même arrondi que la boutique).
+        $feeCharged = Currency::BASE === $currency ? $fee : ($this->rates->fromMga($fee, $currency) ?? throw new OrderRefusedException('currency_unavailable'));
+        // Le client commande au prix qu'il a vu, sinon il le revoit (voir l'en-tête de la classe).
+        if (null !== $request->quotedTotal && $request->quotedTotal !== $subtotalCharged + $feeCharged) {
+            throw new OrderRefusedException('price_changed');
+        }
+        $rateText = Currency::BASE === $currency ? null : $this->rates->rateTextFor($currency);
 
         // 5) Paiement.
         $method = $request->paymentMethod();
@@ -133,11 +152,10 @@ final class OrderService
         }
 
         $now = $this->clock->now();
-        $fee = $this->deliveryFees->feeFor($subtotal);
 
         // 7) Enregistrement atomique. Le verrou « advisory » PostgreSQL (libéré à la fin de la transaction) fait attendre une
         //    requête jumelle portant le même jeton ; elle verra alors la commande déjà créée au lieu d'en créer une seconde.
-        $placement = $this->em->wrapInTransaction(function () use ($client, $request, $lines, $subtotal, $fee, $method, $installments, $momoAccount, $address, $locale, $now): OrderPlacement {
+        $placement = $this->em->wrapInTransaction(function () use ($client, $request, $lines, $subtotal, $subtotalCharged, $fee, $feeCharged, $currency, $rateText, $method, $installments, $momoAccount, $address, $locale, $now): OrderPlacement {
             if ('' !== $request->idempotencyKey) {
                 $this->em->getConnection()->executeStatement('SELECT pg_advisory_xact_lock(hashtext(:k))', ['k' => $client->getId()->toRfc4122().'|'.$request->idempotencyKey]);
                 $existing = $this->orders->findOneBy(['client' => $client, 'idempotencyKey' => $request->idempotencyKey]);
@@ -150,13 +168,20 @@ final class OrderService
             if ('' !== $request->idempotencyKey) {
                 $order->setIdempotencyKey($request->idempotencyKey);
             }
+            if (null !== $rateText) {
+                $order->setCharged($currency, $rateText, $subtotalCharged, $feeCharged);
+            }
             if (null !== $momoAccount) {
                 $order->setMobileMoneyPayment($momoAccount->getCarrier(), $momoAccount->getMsisdn());
                 $momoAccount->markUsed($now);
             }
             foreach ($lines as $line) {
                 $supplier = null !== $line['item']->supplierId ? $this->users->find($line['item']->supplierId) : null;
-                $order->addItem(new OrderItem($order, $line['item']->ref, $line['item']->name, $line['item']->unitPrice, $line['quantity'], $supplier));
+                $orderItem = new OrderItem($order, $line['item']->ref, $line['item']->name, $line['unitMga'], $line['quantity'], $supplier);
+                if (null !== $rateText) {
+                    $orderItem->setChargedUnitPrice($line['unitCharged']);
+                }
+                $order->addItem($orderItem);
             }
             // Premier événement du suivi de colis : « Commande confirmée ».
             $order->advanceTo(OrderStatus::Confirmed, null, null, $now);
@@ -173,6 +198,8 @@ final class OrderService
         $this->audit->record(AuditAction::ORDER_PLACED, $client, 'order', $placement->order->getId()->toRfc4122(), [
             'number' => $placement->order->getOrderNumber(),
             'total' => $placement->order->getTotal(),
+            'currency' => $currency->value,
+            'totalCharged' => $placement->order->getChargedTotal(),
             'method' => $method->value,
             'installments' => $installments,
         ]);
@@ -245,14 +272,38 @@ final class OrderService
     }
 
     /**
-     * Relit chaque ligne du panier dans le catalogue du serveur et calcule le sous-total.
+     * Devise de la commande : celle demandée par le navigateur, à condition qu'elle ait un taux en vigueur.
+     *
+     * @throws OrderRefusedException « invalid_currency » (code inconnu) ou « currency_unavailable » (pas de taux)
+     */
+    private function currencyOf(PlaceOrderRequest $request): Currency
+    {
+        $currency = Currency::tryFrom($request->currency);
+        if (null === $currency) {
+            throw new OrderRefusedException('invalid_currency');
+        }
+        if (!$this->rates->isAvailable($currency)) {
+            throw new OrderRefusedException('currency_unavailable');
+        }
+
+        return $currency;
+    }
+
+    /**
+     * Relit chaque ligne du panier dans le catalogue du serveur et calcule les sous-totaux.
      * Les doublons (même produit deux fois) sont additionnés.
+     *
+     * Pour chaque ligne :
+     *   - `unitCharged` : prix unitaire annoncé au client, dans SA devise (prix du vendeur pour cette devise, sinon converti) ;
+     *   - `unitMga`     : prix unitaire en Ariary, celui qui est débité (l'équivalent du prix du vendeur au taux du moment, ou
+     *                     le prix en Ariary du catalogue quand le vendeur n'a pas fixé de prix dans la devise).
+     * En Ariary, les deux sont identiques.
      *
      * @param list<array{ref: string, quantity: int}> $items
      *
-     * @return array{0: list<array{item: CatalogItem, quantity: int}>, 1: int}
+     * @return array{0: list<array{item: CatalogItem, quantity: int, unitMga: int, unitCharged: int}>, 1: int, 2: int} lignes, sous-total en Ariary, sous-total dans la devise
      */
-    private function priceLines(array $items): array
+    private function priceLines(array $items, Currency $currency): array
     {
         if ([] === $items) {
             throw new OrderRefusedException('empty_cart');
@@ -271,6 +322,7 @@ final class OrderService
 
         $lines = [];
         $subtotal = 0;
+        $subtotalCharged = 0;
         foreach ($quantities as $ref => $quantity) {
             $item = $this->catalog->find((string) $ref);
             if (null === $item) {
@@ -282,10 +334,22 @@ final class OrderService
             if ($quantity > self::MAX_QUANTITY) {
                 throw new OrderRefusedException('invalid_quantity');
             }
-            $lines[] = ['item' => $item, 'quantity' => $quantity];
-            $subtotal += $item->unitPrice * $quantity;
+
+            $unitMga = $item->unitPrice;
+            $unitCharged = $item->unitPrice;
+            if (Currency::BASE !== $currency) {
+                $unitCharged = $this->rates->priceIn($item->unitPrice, $item->priceOverrides, $currency) ?? throw new OrderRefusedException('currency_unavailable');
+                $specific = $item->priceOverrides[$currency->value] ?? null;
+                if (\is_int($specific) && $specific > 0) {
+                    $unitMga = $this->rates->toMga($specific, $currency) ?? throw new OrderRefusedException('currency_unavailable');
+                }
+            }
+
+            $lines[] = ['item' => $item, 'quantity' => $quantity, 'unitMga' => $unitMga, 'unitCharged' => $unitCharged];
+            $subtotal += $unitMga * $quantity;
+            $subtotalCharged += $unitCharged * $quantity;
         }
 
-        return [$lines, $subtotal];
+        return [$lines, $subtotal, $subtotalCharged];
     }
 }

@@ -39,7 +39,7 @@
         <div class="space-y-5 p-5">
             <div class="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs">
                 <div><p class="font-bold text-slate-800">#{{ order.orderNumber }}</p><p class="text-[11px] text-slate-400">{{ order.createdAt|format_date('short', '', tz) }} • {{ 'tracking.items_count'|trans({'%count%': order.itemCount}) }}</p></div>
-                <div class="text-right"><span class="text-xs font-extrabold text-slate-900">{{ order.total|format_number }} Ar</span>
+                <div class="text-right"><span class="text-xs font-extrabold text-slate-900">{{ money(order.totalCharged, order.currency) }}</span>
                     <p class="text-[10px] font-medium text-slate-700">{{ order.paymentLabel }}</p>
                     <p class="text-[10px] text-slate-400">{{ order.paymentStatusLabel }}</p></div>
             </div>
@@ -89,7 +89,7 @@
                 {% for item in order.items %}
                     <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-2.5 text-xs">
                         <div class="min-w-0"><p class="line-clamp-2 font-semibold text-slate-800">{{ item.name }}</p><p class="text-[11px] text-slate-400">{{ 'tracking.qty'|trans({'%qty%': item.quantity}) }}</p></div>
-                        <div class="shrink-0 text-right font-bold text-slate-800">{{ item.lineTotal|format_number }} Ar</div>
+                        <div class="shrink-0 text-right font-bold text-slate-800">{{ money(item.lineTotalCharged, order.currency) }}</div>
                     </div>
                 {% endfor %}
             </div>
@@ -104,9 +104,12 @@
             {% endif %}
 
             <div class="space-y-1.5 border-t border-slate-100 pt-3 text-xs">
-                <div class="flex justify-between text-slate-500"><span>{{ 'tracking.subtotal'|trans }}</span><span class="font-mono">{{ order.subtotal|format_number }} Ar</span></div>
-                <div class="flex justify-between text-slate-500"><span>{{ 'tracking.shipping'|trans }}</span><span class="font-mono">{{ order.deliveryFee|format_number }} Ar</span></div>
-                <div class="flex justify-between text-sm font-black text-slate-950"><span>{{ 'cart.total'|trans }}</span><span class="font-mono">{{ order.total|format_number }} Ar</span></div>
+                <div class="flex justify-between text-slate-500"><span>{{ 'tracking.subtotal'|trans }}</span><span class="font-mono">{{ money(order.subtotalCharged, order.currency) }}</span></div>
+                <div class="flex justify-between text-slate-500"><span>{{ 'tracking.shipping'|trans }}</span><span class="font-mono">{{ money(order.deliveryFeeCharged, order.currency) }}</span></div>
+                <div class="flex justify-between text-sm font-black text-slate-950"><span>{{ 'cart.total'|trans }}</span><span class="font-mono">{{ money(order.totalCharged, order.currency) }}</span></div>
+                {% if order.foreign %}
+                    <p class="rounded-xl bg-slate-50 p-2.5 text-[11px] leading-relaxed text-slate-500" data-order-settlement>{{ 'tracking.settlement'|trans({'%amount%': money(order.total, 'MGA'), '%rate%': exchange_rate(order.exchangeRate), '%symbol%': currency_symbol(order.currency)}) }}</p>
+                {% endif %}
             </div>
         </div>
     </div>

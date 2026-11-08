@@ -48,6 +48,14 @@ services:
     App\Order\CatalogInterface:
         alias: App\Catalog\DoctrineCatalog
 
+    # Taux de change : récupérés automatiquement (voir App\Currency\OpenErApiProvider et la commande app:rates:refresh).
+    # Pour un autre fournisseur, écrivez une classe qui implémente App\Currency\ExchangeRateProvider et changez l'alias.
+    App\Currency\ExchangeRateProvider:
+        alias: App\Currency\OpenErApiProvider
+    App\Currency\OpenErApiProvider:
+        arguments:
+            $urlTemplate: '%env(EXCHANGE_RATE_API_URL)%'
+
 # --- Tests : les codes OTP ne partent pas vers de vrais e-mails/SMS, ils sont gardés en mémoire pour être relus par les tests.
 when@test:
     services:
@@ -71,6 +79,15 @@ when@test:
             autowire: true
             public: true
         App\Catalog\ProductService:
+            autowire: true
+            public: true
+        # Faux service de taux de change : aucun appel réseau, taux choisis par le test (voir tests/Support/FakeExchangeRateProvider.php).
+        App\Tests\Support\FakeExchangeRateProvider:
+            public: true
+        App\Currency\ExchangeRateProvider:
+            alias: App\Tests\Support\FakeExchangeRateProvider
+            public: true
+        App\Currency\ExchangeRates:
             autowire: true
             public: true
         # Faux Google/Apple : aucun appel réseau, jetons signés avec une clé de test (voir tests/Support/FakeOidcProvider.php).

@@ -19,6 +19,9 @@ tabs:
     audit: "Audit log"
     products: "Products"
     blacklist: "Blacklist"
+    currencies: "Currencies"
+    recruitment: "Recruitment"
+    commissions: "Commissions"
 overview:
     clients: "Registered customers"
     suppliers_active: "Active suppliers"
@@ -45,11 +48,11 @@ applications:
 payouts:
     sales_total: "Total vendor sales"
     commissions: "GoBuy commissions"
-    rents: "Pro shop rents"
     net_pending: "Net amount pending payout"
     title: "Twice-monthly payouts table"
-    subtitle: "Payouts made after deducting commissions and shop rents."
+    subtitle: "Payouts made after commissions are deducted."
     none: "No payouts to display yet."
+    edit_rates: "Change the commission rates"
 approval:
     title: "Supplier applications to be approved by the administrator"
     subtitle: "Every supplier must have a verified e-mail and phone number, then be approved by an administrator before accessing the vendor area."
@@ -110,6 +113,7 @@ orders:
         payment: "Payment"
         status: "Status"
         date: "Date"
+    charged_title: "Amount shown to the customer in %currency%; the Ariary amount is the one debited."
 order_status:
     confirmed: "Order confirmed"
     preparing: "Being prepared"
@@ -181,6 +185,14 @@ perm:
         manage: "Manage the blacklist"
     accounts:
         delete: "Permanently delete an account (immediate or scheduled)"
+    currency:
+        manage: "Manage exchange rates"
+    recruitment:
+        view: "View job offers, candidates, their CVs and the interview schedule"
+        manage: "Create, edit, publish, close and delete job offers"
+        decide: "Refuse or select candidates, schedule interviews, erase a candidate"
+    commissions:
+        manage: "View and change the commission rates per department"
 audit:
     title: "Audit log"
     subtitle: "A trace of every sign-in, decision and export. No password or code is ever recorded."
@@ -305,9 +317,16 @@ error:
     too_soon: "A message has just been sent. Wait %seconds% s before trying again."
     delivery_failed: "The e-mail could not be sent. Try again in a few moments."
     not_activated: "This account is not activated yet: use \"Resend invitation\"."
-    account_not_active: "Only an active account can be reset: reactivate it first."
+    account_not_active: "Only an active account can be the target of this action: reactivate it first."
     bulk_empty: "Select at least one administrator."
     bulk_too_many: "A bulk action is limited to %max% administrators at a time."
+    invalid_rate: "Invalid rate: enter a positive number (6 decimals at most), for example 5012.50."
+    invalid_days: "Invalid duration: between 1 and 365 days."
+    invalid_currency: "Unknown currency or one without a rate (the Ariary is the base currency)."
+    rate_provider_down: "The rate service is not answering. Try again later or set a rate by hand."
+    rate_missing: "The service did not provide a rate for this currency."
+    invalid_commission_rate: "Invalid rate: each rate is a number from 0 to %max% (2 decimals at most), for example 7.5."
+    commission_no_change: "No rate has changed."
 application:
     show: "View the detailed application"
     none: "No detail (plain sign-up, without the “Become a partner” wizard)."
@@ -327,3 +346,72 @@ bulk:
         bulk_invited: "invitation not accepted yet"
         bulk_already_suspended: "already suspended"
         bulk_already_active: "already active"
+currencies:
+    page_title: "Currencies — GoBuy administration"
+    back: "Back to dashboard"
+    title: "Currencies and exchange rates"
+    subtitle: "The euro and dollar rates against the Ariary are updated automatically by a scheduled task. You can force a rate by hand (for example if the service is down) and then resume automatic mode."
+    settlement_note: "Orders are settled in Ariary. A customer who picks another currency sees the price the seller set in that currency, otherwise the Ariary price converted at today's rate; the rate used is saved in each order. Until a currency has a rate, it is not offered to customers."
+    refresh: "Update now"
+    refreshed: "Rates updated."
+    saved: "Rate saved."
+    name:
+        EUR: "Euro"
+        USD: "US dollar"
+    no_rate: "No rate for %code%: this currency is not offered to customers. Click “Update now” or enter a rate."
+    since: "since"
+    until: "valid until %date%"
+    until_released: "until automatic mode is resumed"
+    source:
+        auto: "Automatic"
+        manual: "Manual"
+    badge:
+        manual: "Manual rate"
+        auto: "Automatic"
+        none: "No rate"
+        stale: "Outdated"
+    stale_help: "This automatic rate is more than 3 days old: the rate service may no longer be answering. Check the “app:rates:refresh” scheduled task or set a rate by hand."
+    locked_help: "A manual rate is in force: the automatic update does not change it."
+    password: "Your password"
+    manual:
+        title: "Set a rate by hand"
+        rate: "Ariary for 1 %symbol%"
+        days: "Duration in days (optional)"
+        note: "Reason (optional)"
+        help: "Without a duration, the rate stays in force until automatic mode is resumed. It applies immediately to new carts and orders; orders already placed keep their rate."
+        submit: "Save this rate"
+    auto:
+        title: "Resume automatic mode"
+        help: "Fetches the service's rate right now and puts it in force, replacing any manual rate."
+        submit: "Resume automatic"
+    history:
+        title: "History"
+        none: "No rate recorded."
+        date: "Date"
+        rate: "Rate"
+        source: "Source"
+        by: "By"
+        note: "Reason"
+    attribution: "Rates provided by"
+commissions:
+    page_title: "Commissions — Administration"
+    back: "Back to the dashboard"
+    title: "Commission rates"
+    subtitle: "Percentage GoBuy takes on the sales of each department. One rate per department, the same for every supplier: there is no rent and no paid plan."
+    note: "New rates show up immediately on the “Become a partner” page (simulator) and in the Supplier Area. Payouts are not computed automatically yet: no amount already paid is changed."
+    original: "Original rate (%rate%%), never changed"
+    updated: "Changed by %who% on %date%"
+    help: "A number from 0 to %max% (2 decimals at most). A comma is accepted: 7,5."
+    password: "Your password (confirmation)"
+    submit: "Save the rates"
+    saved: "Rates saved."
+    history:
+        title: "Latest changes"
+        none: "No change yet."
+documents:
+    title: "Supporting documents"
+    kind:
+        identity: "Valid identity document"
+        tax: "NIF / STAT proof"
+    none: "Not provided"
+    kb: "KB"

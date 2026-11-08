@@ -55,6 +55,10 @@ error:
     account_banned: "Ce compte a été clos définitivement par GoBuy. Contactez le support GoBuy si vous pensez à une erreur."
     registration_blocked: "Inscription impossible. Contactez le support GoBuy si vous pensez à une erreur."
     account_closing: "La suppression de ce compte a été décidée par GoBuy : il est fermé. Contactez le support GoBuy si vous pensez à une erreur."
+    doc_required: "Ce document est obligatoire."
+    doc_too_large: "Ce fichier dépasse %mb% Mo."
+    doc_type: "Format non accepté : PDF, JPEG ou PNG uniquement."
+    doc_invalid: "Ce fichier n'a pas pu être lu : choisissez-le à nouveau."
 forgot:
     sent: "Si un compte existe avec cette adresse, un code vient de lui être envoyé."
 reset:

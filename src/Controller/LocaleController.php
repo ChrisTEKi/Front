@@ -2,9 +2,9 @@
 
 namespace App\Controller;
 
-use App\Auth\LoginRedirector;
 use App\EventSubscriber\LocaleSubscriber;
 use App\Entity\User;
+use App\Http\SameSiteReferer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -23,7 +23,7 @@ final class LocaleController extends AbstractController
     public function switch(string $locale, Request $request, EntityManagerInterface $em): RedirectResponse
     {
         // Retour à la page d'où vient la personne (en-tête Referer), seulement si c'est une page de CE site.
-        $back = $this->backTo($request);
+        $back = SameSiteReferer::pathFrom($request);
         $response = new RedirectResponse($back ?? $this->generateUrl('app_home'));
 
         $request->getSession()->set(LocaleSubscriber::SESSION_KEY, $locale);
@@ -40,20 +40,5 @@ final class LocaleController extends AbstractController
         }
 
         return $response;
-    }
-
-    /** Chemin (+ requête) du Referer s'il pointe vers ce site, sinon null (le contrôleur renvoie alors à l'accueil). */
-    private function backTo(Request $request): ?string
-    {
-        $referer = (string) $request->headers->get('Referer', '');
-        $parts = parse_url($referer);
-        if (false !== $parts && isset($parts['host']) && $parts['host'] === $request->getHost()) {
-            $path = ($parts['path'] ?? '/').(isset($parts['query']) ? '?'.$parts['query'] : '');
-            if (LoginRedirector::isSafePath($path) || str_starts_with($path, '/connexion')) {
-                return $path;
-            }
-        }
-
-        return null;
     }
 }

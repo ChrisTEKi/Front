@@ -3,7 +3,7 @@
 namespace App\Auth;
 
 /**
- * Réponses détaillées de l'assistant « Devenir partenaire » (4 étapes) — colonne JSONB `supplier_profiles.application`.
+ * Réponses détaillées de l'assistant « Devenir partenaire » (4 étapes : identité, activité, logistique, pièces justificatives) — colonne JSONB `supplier_profiles.application`.
  *
  * POURQUOI UNE CLASSE DÉDIÉE ?
  *   Les réponses arrivent du navigateur : on ne leur fait JAMAIS confiance. `sanitize()` est la SEULE porte d'entrée :
@@ -19,12 +19,10 @@ final class SupplierApplication
     /** Rayons principaux (mêmes identifiants que le simulateur de commissions de la page). */
     public const CATEGORIES = ['cat-alim', 'cat-elec', 'cat-enfants', 'cat-electromenager', 'cat-maison', 'cat-sport', 'cat-mode', 'cat-beaute'];
     public const ACTIVITY_TYPES = ['individual', 'company'];
-    public const PLANS = ['standard', 'pro'];
     public const PRODUCT_TYPES = ['electronics', 'fashion', 'grocery', 'home', 'beauty', 'sport', 'toys'];
     public const SKU_RANGES = ['1-10', '11-50', '51-200', '200+'];
     public const PREP_TIMES = ['under_2h', 'same_day', '24_48h'];
     public const SALES_POINTS = ['shop', 'warehouse', 'online_only', 'market'];
-    public const PROOFS = ['photos', 'police_report', 'assessment'];
 
     /** Textes libres : clé => longueur maximale (en caractères). */
     private const TEXT_LIMITS = [
@@ -40,7 +38,6 @@ final class SupplierApplication
     private const CHOICES = [
         'activityType' => self::ACTIVITY_TYPES,
         'mainCategory' => self::CATEGORIES,
-        'plan' => self::PLANS,
         'skuRange' => self::SKU_RANGES,
         'prepTime' => self::PREP_TIMES,
     ];
@@ -49,11 +46,10 @@ final class SupplierApplication
     private const MULTI_CHOICES = [
         'productTypes' => self::PRODUCT_TYPES,
         'salesPoints' => self::SALES_POINTS,
-        'proofs' => self::PROOFS,
     ];
 
     /** Oui / non. */
-    private const FLAGS = ['ownDelivery', 'damage'];
+    private const FLAGS = ['ownDelivery'];
 
     /**
      * Nettoie les réponses brutes du navigateur.

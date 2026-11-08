@@ -58,18 +58,18 @@
         </div>
 
         <div class="flex items-center justify-between border-t border-neutral-100 pt-1 text-[11px] text-neutral-500">
-            <span class="flex items-center gap-1">{{ ux_icon('tabler:bike', { class: 'h-3 w-3 text-gobuy-green' }) }}<span class="text-neutral-600">{{ 'product.delivery'|trans({'%fee%': delivery_fee(1)|format_number}) }}</span></span>
+            <span class="flex items-center gap-1">{{ ux_icon('tabler:bike', { class: 'h-3 w-3 text-gobuy-green' }) }}<span class="text-neutral-600">{{ 'product.delivery'|trans({'%fee%': money(from_mga(delivery_fee(1)))}) }}</span></span>
             <span class="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-gobuy-green">{{ 'product.free_with_pass'|trans }}</span>
         </div>
 
         <div class="flex items-center justify-between gap-2 border-t border-neutral-100 pt-2">
             <div>
-                <div class="text-base font-black leading-none tracking-tight text-black sm:text-lg">{{ product.price|format_number }} <span class="text-xs font-bold">Ar</span></div>
+                <div class="text-base font-black leading-none tracking-tight text-black sm:text-lg" data-product-price-label>{{ money(price_in(product)) }}</div>
                 {% if product.originalPrice is defined and product.originalPrice %}
-                    <div class="mt-0.5 font-mono text-[10px] text-neutral-400 line-through">{{ product.originalPrice|format_number }} Ar</div>
+                    <div class="mt-0.5 font-mono text-[10px] text-neutral-400 line-through">{{ money(from_mga(product.originalPrice)) }}</div>
                 {% endif %}
             </div>
-            <button type="button" data-add-to-cart="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-image="{{ product.images|first|default('') }}" data-product-supplier="{{ product.supplierName }}" title="{{ 'product.add_cart'|trans }}" aria-label="{{ 'product.add'|trans }}"
+            <button type="button" data-add-to-cart="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-prices="{{ product_prices(product)|json_encode|e('html_attr') }}" data-product-overrides="{{ product_overrides(product)|json_encode|e('html_attr') }}" data-product-image="{{ product.images|first|default('') }}" data-product-supplier="{{ product.supplierName }}" title="{{ 'product.add_cart'|trans }}" aria-label="{{ 'product.add'|trans }}"
                     class="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black text-white shadow-xs transition-all duration-150 hover:bg-gobuy-green active:scale-90 sm:h-9 sm:w-9">
                 {{ ux_icon('tabler:plus', { class: 'h-4 w-4 sm:h-5 sm:w-5' }) }}
             </button>

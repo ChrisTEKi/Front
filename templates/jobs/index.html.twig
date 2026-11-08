@@ -1,0 +1,44 @@
+{# « Rejoindre GoBuy » (/emplois) : liste PUBLIQUE des offres ouvertes. Aucun compte n'est nécessaire pour postuler.
+   Seules les offres « ouvertes » dont la date limite n'est pas dépassée arrivent ici (JobOfferRepository::findPublic).
+   Textes : translations/recruitment.<langue>.yaml (FR / EN / ES). Les offres sont écrites dans UNE langue par l'équipe : leur texte n'est pas traduit. #}
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'recruitment' %}
+{% block title %}{{ 'jobs.page_title'|trans }}{% endblock %}
+
+{% block body %}
+<div data-jobs-list class="mx-auto max-w-4xl space-y-6 p-4 pb-20 sm:p-8">
+
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8">
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800">{{ ux_icon('tabler:briefcase', {class: 'h-3.5 w-3.5'}) }}{{ 'jobs.badge'|trans }}</span>
+        <h1 class="mt-3 text-2xl font-black text-slate-950 sm:text-3xl">{{ 'jobs.title'|trans }}</h1>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">{{ 'jobs.subtitle'|trans }}</p>
+    </div>
+
+    {% if offers is empty %}
+        <div data-jobs-empty class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+            {{ ux_icon('tabler:info-circle', {class: 'mt-0.5 h-4 w-4 shrink-0 text-slate-400'}) }}
+            <p>{{ 'jobs.empty'|trans }}</p>
+        </div>
+    {% else %}
+        <ul class="space-y-3">
+            {% for offer in offers %}
+                <li>
+                    <a href="{{ path('app_job', {id: offer.id.toRfc4122}) }}" data-job-offer="{{ offer.id.toRfc4122 }}" class="block space-y-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:border-black">
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                            <h2 class="text-base font-bold text-slate-950">{{ offer.title }}</h2>
+                            <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700">{{ ('contract.' ~ offer.contractType.value)|trans }}</span>
+                        </div>
+                        <p class="line-clamp-2 whitespace-pre-line text-xs leading-relaxed text-slate-600">{{ offer.description }}</p>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+                            {% if offer.location %}<span class="inline-flex items-center gap-1">{{ ux_icon('tabler:map-pin', {class: 'h-3.5 w-3.5'}) }}{{ offer.location }}</span>{% endif %}
+                            {% if offer.department %}<span class="inline-flex items-center gap-1">{{ ux_icon('tabler:building', {class: 'h-3.5 w-3.5'}) }}{{ offer.department }}</span>{% endif %}
+                            {% if offer.closingDate %}<span class="inline-flex items-center gap-1">{{ ux_icon('tabler:calendar-event', {class: 'h-3.5 w-3.5'}) }}{{ 'jobs.closing_on'|trans({'%date%': offer.closingDate|format_date('long', locale: app.request.locale, timezone: offer.closingDate.getTimezone().getName())}) }}</span>{% endif %}
+                            <span class="ml-auto inline-flex items-center gap-1 font-bold text-slate-900">{{ 'jobs.see_offer'|trans }}{{ ux_icon('tabler:arrow-right', {class: 'h-3.5 w-3.5'}) }}</span>
+                        </div>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>
+{% endblock %}

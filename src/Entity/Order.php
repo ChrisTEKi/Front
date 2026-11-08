@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\Currency;
 use App\Enum\MobileMoneyCarrier;
 use App\Enum\OrderStatus;
 use App\Enum\PaymentMethod;
@@ -23,7 +24,11 @@ use Symfony\Component\Uid\Uuid;
  *  - Les informations du client (nom, e-mail, téléphone) et l'adresse de livraison sont COPIÉES dans la
  *    commande (« snapshot ») : la commande reste exacte même si le client modifie ensuite son profil,
  *    et reste lisible comptablement après la suppression de son compte (où ces copies sont anonymisées).
- *  - Les montants sont en Ariary entiers (l'Ariary n'a pas de centimes en pratique).
+ *  - Les montants `subtotal`, `delivery_fee`, `total` sont en Ariary entiers (l'Ariary n'a pas de centimes en pratique) : c'est
+ *    ce qui est DÉBITÉ (Mobile Money en Ariary uniquement) et la base de la comptabilité, des remboursements et des versements.
+ *  - Si le client a commandé dans une autre devise (euro, dollar), la commande garde en plus la devise, le TAUX appliqué à ce
+ *    moment-là et les montants FIGÉS dans cette devise (`*_charged`) : le prix annoncé au client ne bouge plus ensuite,
+ *    même si le taux change. Pour une commande en Ariary ces colonnes restent vides (les montants sont ceux en Ariary).
  */
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: 'orders', options: ['comment' => 'Commandes des clients. Contient une copie figée des coordonnées client + adresse de livraison (anonymisée à la suppression du compte).'])]
@@ -75,6 +80,24 @@ class Order
     /** Montant total à payer = subtotal + delivery_fee. */
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'Montant total en Ariary = subtotal + delivery_fee'])]
     private int $total;
+
+    /** Devise dans laquelle le client a passé la commande (MGA par défaut). */
+    #[ORM\Column(type: Types::STRING, length: 3, enumType: Currency::class, options: ['default' => 'MGA', 'comment' => 'Devise de la commande ; les montants subtotal/delivery_fee/total restent en Ariary'])]
+    private Currency $currency = Currency::MGA;
+
+    /** Taux appliqué (Ariary pour 1 unité de la devise) au moment de la commande ; NULL pour une commande en Ariary. */
+    #[ORM\Column(name: 'exchange_rate', type: Types::DECIMAL, precision: 18, scale: 6, nullable: true, options: ['comment' => 'Ariary pour 1 unité de la devise, figé à la commande'])]
+    private ?string $exchangeRate = null;
+
+    /** Total des articles dans la devise de la commande (unités mineures) ; NULL pour une commande en Ariary. */
+    #[ORM\Column(name: 'subtotal_charged', type: Types::INTEGER, nullable: true)]
+    private ?int $subtotalCharged = null;
+
+    #[ORM\Column(name: 'delivery_fee_charged', type: Types::INTEGER, nullable: true)]
+    private ?int $deliveryFeeCharged = null;
+
+    #[ORM\Column(name: 'total_charged', type: Types::INTEGER, nullable: true)]
+    private ?int $totalCharged = null;
 
     #[ORM\Column(name: 'payment_method', type: Types::STRING, length: 20, enumType: PaymentMethod::class)]
     private PaymentMethod $paymentMethod;
@@ -229,6 +252,56 @@ class Order
     public function getTotal(): int
     {
         return $this->total;
+    }
+
+    /**
+     * Enregistre la devise de la commande, le taux appliqué et les montants figés dans cette devise (unités mineures).
+     * Sans effet pour l'Ariary. À appeler à la création, avant l'enregistrement.
+     */
+    public function setCharged(Currency $currency, string $exchangeRate, int $subtotal, int $deliveryFee): void
+    {
+        if (Currency::BASE === $currency) {
+            return;
+        }
+        $this->currency = $currency;
+        $this->exchangeRate = $exchangeRate;
+        $this->subtotalCharged = $subtotal;
+        $this->deliveryFeeCharged = $deliveryFee;
+        $this->totalCharged = $subtotal + $deliveryFee;
+    }
+
+    public function getCurrency(): Currency
+    {
+        return $this->currency;
+    }
+
+    /** Commande passée dans une autre devise que l'Ariary ? */
+    public function isForeignCurrency(): bool
+    {
+        return Currency::BASE !== $this->currency && null !== $this->totalCharged;
+    }
+
+    /** Taux figé (Ariary pour 1 unité), ou NULL pour une commande en Ariary. */
+    public function getExchangeRate(): ?string
+    {
+        return $this->exchangeRate;
+    }
+
+    /** Total des articles dans la devise de la commande (en Ariary si la commande est en Ariary). */
+    public function getChargedSubtotal(): int
+    {
+        return $this->subtotalCharged ?? $this->subtotal;
+    }
+
+    public function getChargedDeliveryFee(): int
+    {
+        return $this->deliveryFeeCharged ?? $this->deliveryFee;
+    }
+
+    /** Total annoncé au client, dans la devise de la commande (en Ariary si la commande est en Ariary). */
+    public function getChargedTotal(): int
+    {
+        return $this->totalCharged ?? $this->total;
     }
 
     public function getPaymentMethod(): PaymentMethod

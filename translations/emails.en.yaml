@@ -122,6 +122,7 @@ order_confirmation:
     payment_pending: "Your payment is being processed: you will be notified as soon as it is confirmed."
     button: "Track my order"
     help: "Need help? Contact us from your GoBuy account, Help section."
+    settlement: "Payment is made in Ariary: %amount% will be debited (1 %symbol% = %rate% Ar, rate fixed on the day of the order)."
 moderation:
     contact: "A question? Reply to this e-mail or contact GoBuy support."
     product_removed:
@@ -184,3 +185,38 @@ moderation:
         subject: "GoBuy: your account deletion is cancelled"
         title: "Deletion cancelled"
         body: "The GoBuy team has cancelled the scheduled deletion of your account. It gets back the status it had before the decision."
+    supplier_suspended:
+        subject: "GoBuy: your shop is suspended"
+        title: "Shop suspended"
+        body: "The file of “%company%” has been suspended by the GoBuy team: your products are no longer visible in the shop.\nReason: %detail%\nYou can contest this decision from your supplier area."
+job:
+    application_received:
+        subject: "We have received your application — %offer%"
+        title: "Application received"
+        body: "Thank you for your interest in GoBuy. We have received your application for the role “%offer%”. Our team is reviewing it and will get back to you, whatever the outcome. There is no need to send your file again."
+    application_refused:
+        subject: "Reply to %name%'s application — %offer%"
+        title: "Reply to your application"
+        body: "Thank you for applying for the role “%offer%” and for the time you put into your application.\n\nAfter careful review, we are unable to take the application of %name% any further for this role. This decision is no reflection on your qualities: we encourage you to look at our future openings on GoBuy.\n\nWe wish you every success in your search."
+    interview_scheduled_phone:
+        subject: "Phone interview — %offer%"
+        title: "Your phone interview"
+        body: "We would like to speak with you by phone about the role “%offer%”.\n\nDate: %date%\nTime: %time% (Madagascar time, UTC+3)\nExpected duration: %duration% minutes\n\nWe will call you on %phone%. Please make yourself available and keep your phone within reach."
+    interview_scheduled_in_person:
+        subject: "Interview — %offer%"
+        title: "Your interview"
+        body: "We would like to meet you about the role “%offer%”.\n\nDate: %date%\nTime: %time% (Madagascar time, UTC+3)\nExpected duration: %duration% minutes\nPlace: %place%\n\nPlease arrive a few minutes early."
+    interview_updated_phone:
+        subject: "Phone interview changed — %offer%"
+        title: "Your interview has been changed"
+        body: "The details of your phone interview for the role “%offer%” have changed. This message replaces the previous one.\n\nDate: %date%\nTime: %time% (Madagascar time, UTC+3)\nExpected duration: %duration% minutes\n\nWe will call you on %phone%. Please make yourself available and keep your phone within reach."
+    interview_updated_in_person:
+        subject: "Interview changed — %offer%"
+        title: "Your interview has been changed"
+        body: "The details of your interview for the role “%offer%” have changed. This message replaces the previous one.\n\nDate: %date%\nTime: %time% (Madagascar time, UTC+3)\nExpected duration: %duration% minutes\nPlace: %place%\n\nPlease arrive a few minutes early."
+    interview_cancelled:
+        subject: "Interview cancelled — %offer%"
+        title: "Interview cancelled"
+        body: "We have to cancel the interview planned for %date% at %time% (Madagascar time, UTC+3) for the role “%offer%”. We will get back to you to agree on a new date."
+    note_label: "Message from the team:"
+    contact: "If you have any question, contact GoBuy support through our website."

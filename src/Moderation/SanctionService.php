@@ -16,7 +16,9 @@ use Psr\Clock\ClockInterface;
  *  - BANNIR (définitif) : clôture immédiate — connexion refusée et sessions ouvertes invalidées à la requête suivante (le statut
  *    change, voir User::isEqualTo). Options : retirer ou supprimer tout le catalogue, rembourser les acheteurs lésés, inscrire
  *    les identifiants sur la liste noire. Le compte reste en base : son e-mail et son téléphone restent occupés (aucune
- *    réinscription avec). SEUL le Super Admin peut lever un bannissement.
+ *    réinscription avec). Une suppression en attente est annulée (elle est notée dans le journal) ; et si le compte est
+ *    supprimé malgré tout plus tard (décision de l'équipe), son e-mail et son téléphone passent sur la liste noire (AccountPurger).
+ *    SEUL le Super Admin peut lever un bannissement.
  *  - GELER les fonds (conservatoire) : un fournisseur ne vend plus (ses produits quittent la boutique) et ne reçoit aucun
  *    versement (PayoutGuard) ; un client ne peut plus commander. Le compte reste connectable (il peut s'expliquer). Réversible.
  *
@@ -53,6 +55,9 @@ final class SanctionService
             throw new ModerationException('not_a_supplier');
         }
 
+        // Le bannissement l'emporte sur une suppression en attente (la sienne ou celle décidée par l'équipe) : le compte reste en base
+        // pour garder son e-mail et son téléphone occupés. On le note dans le journal pour que l'annulation ne soit pas silencieuse.
+        $cancelledDeletion = $target->isPendingDeletion();
         $target->ban($admin, $reason, $this->clock->now());
         $this->em->flush();
 
@@ -81,6 +86,7 @@ final class SanctionService
             'refund' => $options->refund,
             'refunded_orders' => $refund['orders'] ?? 0,
             'blacklist' => $listed,
+            'deletion_cancelled' => $cancelledDeletion,
         ]);
         $this->notifier->notify($target, 'account_banned', ['%detail%' => $reason]);
 

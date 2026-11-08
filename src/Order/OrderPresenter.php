@@ -33,6 +33,9 @@ final class OrderPresenter
             'orderNumber' => $order->getOrderNumber(),
             'createdAt' => $order->getCreatedAt(),
             'total' => $order->getTotal(),
+            // Total annoncé au client, dans la devise de sa commande (identique à « total » pour une commande en Ariary).
+            'currency' => $order->getCurrency()->value,
+            'totalCharged' => $order->getChargedTotal(),
             'itemCount' => array_sum(array_map(static fn ($i): int => $i->getQuantity(), $order->getItems()->toArray())),
             'status' => $order->getStatus()->value,
             'statusLabel' => $this->translator->trans('status.'.$order->getStatus()->value, [], 'orders'),
@@ -50,6 +53,10 @@ final class OrderPresenter
         return $this->summary($order) + [
             'subtotal' => $order->getSubtotal(),
             'deliveryFee' => $order->getDeliveryFee(),
+            'foreign' => $order->isForeignCurrency(),
+            'exchangeRate' => $order->getExchangeRate(),
+            'subtotalCharged' => $order->getChargedSubtotal(),
+            'deliveryFeeCharged' => $order->getChargedDeliveryFee(),
             // « installments » = paiement en plusieurs fois ; sinon la valeur de l'enum.
             'paymentMethod' => $order->getInstallmentsCount() > 1 ? 'installments' : $order->getPaymentMethod()->value,
             'paymentStatus' => $order->getPaymentStatus()->value,
@@ -67,6 +74,7 @@ final class OrderPresenter
                 'quantity' => $i->getQuantity(),
                 'unitPrice' => $i->getUnitPrice(),
                 'lineTotal' => $i->getLineTotal(),
+                'lineTotalCharged' => $i->getChargedLineTotal(),
             ], $order->getItems()->toArray()),
             'trackingSteps' => $this->trackingSteps($order),
         ];

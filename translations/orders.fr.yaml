@@ -17,6 +17,9 @@ error:
     invalid_courier: "Nom ou téléphone du livreur invalide."
     not_found: "Aucune commande trouvée avec cette référence."
     funds_frozen: "Vos paiements sont gelés par l'équipe GoBuy : vous ne pouvez pas commander pour le moment. Contactez le support."
+    invalid_currency: "Devise inconnue : choisissez l'Ariary, l'euro ou le dollar."
+    currency_unavailable: "Cette devise n'est pas disponible pour le moment (taux de change indisponible). Choisissez l'Ariary ou réessayez plus tard."
+    price_changed: "Le prix a changé depuis l'affichage de votre panier (taux de change ou tarif du vendeur). Le récapitulatif vient d'être mis à jour : vérifiez le nouveau total, puis confirmez à nouveau."
 status:
     confirmed: "Commande confirmée"
     preparing: "En préparation"

@@ -119,7 +119,7 @@ final class SupplierAppealService
             return $appeal;
         });
         if (\is_string($result)) {
-            throw new ModerationException($result);
+            throw new ModerationException($result, 'appeal_limit' === $result ? ['%count%' => self::MAX_PER_DECISION] : []);
         }
 
         $profile = $this->profiles->findOneByUser($supplier);

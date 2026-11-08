@@ -1,0 +1,43 @@
+{# Formulaire d'une offre d'emploi (création et modification). Envoyé par assets/admin-account.js ([data-admin-form]) à l'API
+   /admin/api/recrutement/offres… ; le serveur contrôle tout (droit « recruitment.manage », longueurs, date limite).
+   Variables : offer (ou null), contracts, offerLimits, endpoint, done, submit, prefix (identifiants uniques des champs). #}
+{% trans_default_domain 'recruitment' %}
+{% set inputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs' %}
+{% set labelClass = 'mb-1 block text-[11px] font-semibold text-slate-600' %}
+<form data-admin-form method="post" data-endpoint="{{ endpoint }}" data-done="{{ done }}" class="space-y-3" novalidate>
+    <div>
+        <label class="{{ labelClass }}" for="{{ prefix }}-title">{{ 'offer.field.title'|trans }}</label>
+        <input id="{{ prefix }}-title" name="title" required maxlength="{{ offerLimits.titleMax }}" value="{{ offer ? offer.title : '' }}" class="{{ inputClass }}">
+    </div>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+            <label class="{{ labelClass }}" for="{{ prefix }}-contract">{{ 'offer.field.contract'|trans }}</label>
+            <select id="{{ prefix }}-contract" name="contract" required class="{{ inputClass }}">
+                {% for c in contracts %}<option value="{{ c.value }}" {{ offer and offer.contractType == c ? 'selected' }}>{{ ('contract.' ~ c.value)|trans }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="{{ labelClass }}" for="{{ prefix }}-department">{{ 'offer.field.department'|trans }}</label>
+            <input id="{{ prefix }}-department" name="department" maxlength="80" value="{{ offer ? offer.department : '' }}" class="{{ inputClass }}">
+        </div>
+        <div>
+            <label class="{{ labelClass }}" for="{{ prefix }}-location">{{ 'offer.field.location'|trans }}</label>
+            <input id="{{ prefix }}-location" name="location" maxlength="120" value="{{ offer ? offer.location : '' }}" class="{{ inputClass }}">
+        </div>
+    </div>
+    <div>
+        <label class="{{ labelClass }}" for="{{ prefix }}-description">{{ 'offer.field.description'|trans }}</label>
+        <textarea id="{{ prefix }}-description" name="description" rows="6" required minlength="{{ offerLimits.descriptionMin }}" maxlength="{{ offerLimits.descriptionMax }}" class="{{ inputClass }}">{{ offer ? offer.description : '' }}</textarea>
+    </div>
+    <div>
+        <label class="{{ labelClass }}" for="{{ prefix }}-profile">{{ 'offer.field.profile'|trans }}</label>
+        <textarea id="{{ prefix }}-profile" name="profile" rows="4" maxlength="{{ offerLimits.profileMax }}" class="{{ inputClass }}">{{ offer ? offer.profile : '' }}</textarea>
+    </div>
+    <div class="max-w-xs">
+        <label class="{{ labelClass }}" for="{{ prefix }}-closing">{{ 'offer.field.closing'|trans }}</label>
+        <input id="{{ prefix }}-closing" type="date" name="closingDate" value="{{ offer and offer.closingDate ? offer.closingDate|date('Y-m-d', false) : '' }}" class="{{ inputClass }}">
+        <p class="mt-1 text-[11px] text-slate-500">{{ 'offer.field.closing_help'|trans }}</p>
+    </div>
+    <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+    <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-black">{{ submit }}</button>
+</form>

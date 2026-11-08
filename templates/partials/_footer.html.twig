@@ -51,7 +51,7 @@
                             <span class="rounded-full bg-gobuy-green px-2 py-0.5 text-[10px] font-black text-white">0 Ar</span>
                         </a>
                     </li>
-                    <li><button type="button" data-open-modal="company-info" data-info-section="recruitment" class="text-left hover:text-black hover:underline">{{ 'footer.couriers'|trans }}</button></li>
+                    <li><a href="{{ path('app_jobs') }}" class="hover:text-black hover:underline">{{ 'footer.jobs'|trans }}</a></li>
                     <li><a href="{{ path('app_auth') }}?mode=register_supplier" class="hover:text-black hover:underline">{{ 'footer.pro_account'|trans }}</a></li>
                     <li><button type="button" data-open-modal="company-info" data-info-section="promotions" class="text-left font-bold text-gobuy-green hover:underline">{{ 'footer.first_order'|trans }}</button></li>
                     <li><button type="button" data-open-modal="company-info" data-info-section="promotions" class="text-left hover:text-black hover:underline">{{ 'footer.gift_pass'|trans }}</button></li>
@@ -113,10 +113,32 @@
                     </div>
                 </div>
 
-                {# Devise : tous les prix sont en Ariary (aucun taux de change n'est géré) : on l'affiche, sans faux choix. #}
-                <span title="{{ 'footer.currency_note'|trans }}" class="flex items-center gap-2 rounded-full border border-neutral-300 px-3.5 py-2 text-xs font-bold text-neutral-800">
-                    <span>🇲🇬</span><span>{{ 'footer.currency'|trans }}</span>
-                </span>
+                {# Devise d'affichage : un vrai choix dès qu'une devise étrangère a un taux en vigueur (voir l'écran « Devises » de l'administration) ;
+                   sinon, seule l'Ariary est proposée et on l'affiche simplement. Les commandes sont réglées en Ariary. #}
+                {% set currencies = currency_options() %}
+                {% set flags = {MGA: '🇲🇬', EUR: '🇪🇺', USD: '🇺🇸'} %}
+                {% if currencies|length > 1 %}
+                    <div class="relative">
+                        <button type="button" data-dropdown-toggle="currency-menu" aria-expanded="false" aria-label="{{ 'footer.currency_label'|trans }}" title="{{ 'footer.currency_note_multi'|trans }}"
+                                class="flex items-center gap-2 rounded-full border border-neutral-300 px-3.5 py-2 text-xs font-bold text-neutral-800 transition-colors hover:border-black">
+                            <span>{{ flags[display_currency()] }}</span><span data-currency-label>{{ ('footer.currency_name.' ~ display_currency())|trans }}</span>
+                            {{ ux_icon('tabler:chevron-down', { class: 'h-3.5 w-3.5 text-neutral-500' }) }}
+                        </button>
+                        <div id="currency-menu" class="hidden absolute bottom-full right-0 z-50 mb-2 w-56 rounded-2xl border border-neutral-200 bg-white py-1.5 shadow-xl">
+                            {% for code in currencies %}
+                                <a href="{{ path('app_currency_switch', {code: code}) }}" {% if code == display_currency() %}aria-current="true"{% endif %}
+                                   class="flex w-full items-center justify-between px-4 py-2 text-left text-xs hover:bg-neutral-50 {{ code == display_currency() ? 'font-bold text-black' : 'text-neutral-700' }}">
+                                    <span class="flex items-center gap-2"><span>{{ flags[code] }}</span><span>{{ ('footer.currency_name.' ~ code)|trans }}</span></span>
+                                    {% if code == display_currency() %}{{ ux_icon('tabler:check', { class: 'h-3.5 w-3.5 text-gobuy-green' }) }}{% endif %}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <span title="{{ 'footer.currency_note'|trans }}" class="flex items-center gap-2 rounded-full border border-neutral-300 px-3.5 py-2 text-xs font-bold text-neutral-800">
+                        <span>🇲🇬</span><span>{{ 'footer.currency'|trans }}</span>
+                    </span>
+                {% endif %}
             </div>
         </div>
 
@@ -133,7 +155,7 @@
             </div>
 
             <div class="flex flex-col items-center justify-between gap-4 border-t border-neutral-100 pt-4 text-[11px] text-neutral-400 sm:flex-row">
-                <p class="text-center sm:text-left">{{ 'footer.recaptcha'|trans }}</p>
+                <p class="text-center sm:text-left">{{ 'footer.recaptcha'|trans }}{% if currencies|length > 1 %} · {{ 'footer.rates_credit'|trans }} <a href="https://www.exchangerate-api.com" rel="noopener noreferrer" class="underline hover:text-neutral-600">exchangerate-api.com</a>{% endif %}</p>
 
                 <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                     <div title="MVola Telma Madagascar" class="flex h-6 select-none items-center gap-1 rounded-md bg-mvola px-2 text-white shadow-2xs">

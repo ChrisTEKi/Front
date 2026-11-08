@@ -2,6 +2,7 @@
 
 namespace App\Tests\Ui;
 
+use App\Entity\CommissionRate;
 use App\Enum\AccountType;
 use App\Tests\Support\AppTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -143,7 +144,7 @@ final class PagesRenderTest extends AppTestCase
             self::assertStringNotContainsString($other, $text, 'Un texte d\'une autre langue est affiché en '.$locale);
         }
         if ('fr' !== $locale) {
-            // Aucun reste de français dans les sections de la page (FAQ, simulateur, formulaire, solidarité).
+            // Aucun reste de français dans les sections de la page (FAQ, simulateur, formulaire).
             foreach (['Reconstruisons Ensemble', 'Questions fréquemment posées', 'Calculez vos revenus', 'Envoyer mon dossier', 'Rayon principal'] as $french) {
                 self::assertStringNotContainsString($french, $text, $french.' ('.$locale.')');
             }
@@ -166,6 +167,84 @@ final class PagesRenderTest extends AppTestCase
         self::assertSame('new-password', $crawler->filter('[name="password"]')->attr('autocomplete'));
         // Plus d'écran « Dossier envoyé » factice : la suite passe par la vérification e-mail / téléphone.
         self::assertCount(0, $crawler->filter('[data-vendor-view="success"]'));
+    }
+
+    public function testVendorPageHasNoProPlanRentNorSolidarityProgram(): void
+    {
+        foreach (['fr', 'en', 'es'] as $locale) {
+            $this->open('/devenir-partenaire', $locale);
+            $html = $this->visibleHtml();
+            foreach (['solidar', 'Reconstruisons', 'Boutique Pro', 'data-pro-rent', 'data-plan', 'name="plan"', 'name="damage"', 'name="proofs'] as $gone) {
+                self::assertStringNotContainsStringIgnoringCase($gone, $html, $gone.' ('.$locale.')');
+            }
+            self::assertDoesNotMatchRegularExpression('/\b49[\s\x{00A0}\x{202F},.]?000\b/u', $html, 'plus de loyer mensuel ('.$locale.')');
+        }
+    }
+
+    public function testVendorSimulatorUsesTheAdminCommissionRates(): void
+    {
+        // Le simulateur lit le barème en base (modifiable par l'administration) : une seule carte, un taux par rayon, sans loyer ni formule.
+        $crawler = $this->client->request('GET', '/devenir-partenaire');
+        $buttons = $crawler->filter('[data-simulator] [data-sim-category]');
+        self::assertCount(8, $buttons);
+        $rates = [];
+        foreach ($buttons as $button) {
+            $rates[] = (string) $button->getAttribute('data-rate');
+        }
+        self::assertSame(['4', '5', '6', '6', '7', '7', '8', '8'], $rates);
+        self::assertCount(1, $crawler->filter('[data-sim-rate]'));
+        self::assertCount(1, $crawler->filter('[data-sim-net]'));
+
+        $admin = $this->createAdminUser('pdg-sim@example.com', 'pdg');
+        $this->em()->persist(new CommissionRate('cat-mode', '9.50', new \DateTimeImmutable(), $this->reload($admin)));
+        $this->em()->flush();
+        $this->em()->clear();
+        $this->newBrowser();
+
+        $crawler = $this->client->request('GET', '/devenir-partenaire');
+        $rates = [];
+        foreach ($crawler->filter('[data-simulator] [data-sim-category]') as $button) {
+            $rates[] = (string) $button->getAttribute('data-rate');
+        }
+        self::assertSame(['4', '5', '6', '6', '7', '7', '9.5', '8'], $rates, 'Le taux enregistré par l\'administration remplace celui d\'origine pour « Mode » seulement.');
+    }
+
+    public function testVendorWizardAsksForTheSupportingDocuments(): void
+    {
+        $crawler = $this->client->request('GET', '/devenir-partenaire');
+
+        // 4 étapes ; la dernière demande la pièce d'identité (toujours) et le NIF/STAT (société), en fichier.
+        self::assertCount(4, $crawler->filter('[data-vendor-step]'));
+        $identity = $crawler->filter('[data-vendor-step="4"] input[type="file"][name="identityDocument"]');
+        self::assertCount(1, $identity);
+        self::assertNotNull($identity->attr('required'));
+        self::assertCount(1, $crawler->filter('[data-vendor-step="4"] input[type="file"][name="taxDocument"][data-tax-document]'));
+        self::assertCount(1, $crawler->filter('[data-vendor-form] [data-field-error="identityDocument"]'));
+        self::assertCount(1, $crawler->filter('[data-vendor-form] [data-field-error="taxDocument"]'));
+        self::assertStringContainsString('NIF', $crawler->filter('[data-vendor-step="4"]')->text());
+    }
+
+    public function testQuickSupplierFormOnTheLoginPageAsksForDocuments(): void
+    {
+        $crawler = $this->client->request('GET', '/connexion?mode=register_supplier');
+
+        self::assertCount(1, $crawler->filter('input[type="file"][name="identityDocument"][required]'));
+        self::assertCount(1, $crawler->filter('input[type="file"][name="taxDocument"]'));
+        self::assertNull($crawler->filter('input[name="taxDocument"]')->attr('required'), 'Le NIF/STAT est facultatif dans le formulaire rapide.');
+    }
+
+    public function testHomeAndFooterNoLongerMentionGroceriesMealsOrCouriers(): void
+    {
+        foreach (['fr', 'en', 'es'] as $locale) {
+            $this->open('/', $locale);
+            $html = $this->visibleHtml();
+            self::assertStringNotContainsStringIgnoringCase('Inscrivez-vous pour livrer', $html, $locale);
+            self::assertStringNotContainsStringIgnoringCase('sign up to deliver', $html, $locale);
+            self::assertStringNotContainsStringIgnoringCase('regístrate para repartir', $html, $locale);
+            self::assertStringNotContainsStringIgnoringCase('solidar', $html, $locale);
+            self::assertStringNotContainsString('Courses &amp; Repas', $html, $locale);
+            self::assertStringNotContainsString('Courses et repas', $html, $locale);
+        }
     }
 
     public function testNoInventedSupportNumberIsPublished(): void

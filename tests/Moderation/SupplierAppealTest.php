@@ -305,6 +305,8 @@ final class SupplierAppealTest extends AppTestCase
         $r = $this->appeal(self::MESSAGE.' (essai 4)');
         self::assertSame(409, $this->httpStatus());
         self::assertSame('appeal_limit', $r['error']);
+        self::assertStringContainsString('3', $r['message']);
+        self::assertStringNotContainsString('%count%', $r['message'], 'Le nombre limite est substitué dans le message.');
         self::assertCount(3, $this->appeals());
     }
 

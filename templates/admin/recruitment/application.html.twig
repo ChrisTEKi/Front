@@ -1,0 +1,170 @@
+{# Fiche d'un candidat (/admin/recrutement/candidats/{id}) : coordonnées, message, CV et lettre de motivation (téléchargement tracé),
+   décisions (refuser avec e-mail automatique au nom du candidat, retenir, effacer) et entretiens (téléphone ou sur place).
+   Les formulaires [data-admin-form] et boutons [data-account-post] sont gérés par assets/admin-account.js ; le serveur décide de tout
+   (droits « recruitment.view / decide », mot de passe pour effacer, validité des dates). Les heures sont celles de MADAGASCAR.
+   Textes : translations/recruitment.<langue>.yaml (FR / EN / ES). #}
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'recruitment' %}
+{% import 'admin/recruitment/_ui.html.twig' as ui %}
+{% block title %}{{ a.fullName }} — {{ 'admin.page_title'|trans }}{% endblock %}
+
+{% block body %}
+{% set inputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs' %}
+{% set labelClass = 'mb-1 block text-[11px] font-semibold text-slate-600' %}
+{% set id = a.id.toRfc4122 %}
+{% set decide = can['recruitment.decide'] %}
+{% set final = a.status.value in ['refused', 'hired'] %}
+{% set locale = app.request.locale %}
+
+<div data-admin-account data-recruitment-application="{{ id }}" class="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+    <div class="space-y-3 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs">
+        <a href="{{ path('app_admin_recruitment_offer', {id: a.offer.id.toRfc4122}) }}" class="text-[11px] font-semibold text-slate-500 hover:text-black">← {{ 'app.back'|trans({'%offer%': a.offer.title}) }}</a>
+        <div class="flex flex-wrap items-start justify-between gap-2">
+            <h1 class="text-xl font-bold text-slate-900">{{ a.fullName }}</h1>
+            {{ ui.badge('application', a.status.value) }}
+        </div>
+        <p class="text-[11px] text-slate-500">{{ 'app.applied_on'|trans({'%date%': a.createdAt|format_datetime('long', 'short', locale: locale)}) }}</p>
+        {{ ui.tabs('offers', can) }}
+    </div>
+
+    <p data-account-notice role="status" class="hidden rounded-2xl border p-3 text-xs"></p>
+
+    <section class="grid grid-cols-1 gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs sm:grid-cols-2">
+        <div class="space-y-1 text-xs">
+            <h2 class="text-sm font-bold text-slate-900">{{ 'app.contact'|trans }}</h2>
+            <p><span class="text-slate-500">{{ 'app.email'|trans }} :</span> <a href="mailto:{{ a.email }}" class="font-semibold text-slate-900 underline underline-offset-2">{{ a.email }}</a></p>
+            <p><span class="text-slate-500">{{ 'app.phone'|trans }} :</span> <a href="tel:{{ a.phone }}" class="font-semibold text-slate-900">{{ a.phone }}</a></p>
+            <p><span class="text-slate-500">{{ 'app.offer'|trans }} :</span> {{ a.offer.title }}</p>
+        </div>
+        <div class="space-y-1 text-xs">
+            <h2 class="text-sm font-bold text-slate-900">{{ 'app.message'|trans }}</h2>
+            {% if a.message %}<p class="whitespace-pre-line text-slate-700">{{ a.message }}</p>{% else %}<p class="text-slate-400">{{ 'app.no_message'|trans }}</p>{% endif %}
+        </div>
+    </section>
+
+    <section class="space-y-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <h2 class="text-sm font-bold text-slate-900">{{ 'app.documents'|trans }}</h2>
+        <ul class="space-y-2 text-xs">
+            {% for kind in ['cv', 'cover_letter'] %}
+                {% set doc = null %}
+                {% for d in a.documents %}{% if d.kind.value == kind %}{% set doc = d %}{% endif %}{% endfor %}
+                <li data-document-kind="{{ kind }}" class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <span class="flex items-center gap-2 font-semibold text-slate-800">{{ ux_icon('tabler:file-text', {class: 'h-4 w-4 text-slate-400'}) }}{{ ('app.kind.' ~ kind)|trans }}</span>
+                    {% if doc %}
+                        <span class="text-[11px] text-slate-500">{{ doc.fileName }} · {{ (doc.size / 1024)|round }} {{ 'app.kb'|trans }}</span>
+                        <a href="{{ path('app_admin_recruitment_document', {id: doc.id.toRfc4122}) }}" data-document-download class="rounded-xl bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-black">{{ 'app.download'|trans }}</a>
+                    {% else %}
+                        <span class="text-[11px] text-slate-400">{{ 'app.no_document'|trans }}</span>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        <p class="text-[11px] text-slate-500">{{ 'app.documents_note'|trans }}</p>
+    </section>
+
+    {# ---------------- Décision ---------------- #}
+    <section class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <h2 class="text-sm font-bold text-slate-900">{{ 'decision.title'|trans }}</h2>
+        {% if a.status.value == 'refused' %}
+            <p data-decision-final class="rounded-xl bg-rose-50 p-3 text-xs text-rose-900">{{ 'decision.refused_on'|trans({'%date%': a.decidedAt ? a.decidedAt|format_datetime('medium', 'short', locale: locale) : '—', '%admin%': a.decidedBy ? a.decidedBy.fullName : '—'}) }}{% if a.refusalNote %}<span class="mt-1 block whitespace-pre-line text-rose-800">« {{ a.refusalNote }} »</span>{% endif %}</p>
+        {% elseif a.status.value == 'hired' %}
+            <p data-decision-final class="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-900">{{ 'decision.hired_on'|trans({'%date%': a.decidedAt ? a.decidedAt|format_datetime('medium', 'short', locale: locale) : '—', '%admin%': a.decidedBy ? a.decidedBy.fullName : '—'}) }}</p>
+        {% endif %}
+
+        {% if decide and not final %}
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <form data-admin-form method="post" data-endpoint="{{ path('admin_api_job_application_status', {id: id}) }}" data-confirm="{{ 'decision.refuse_confirm'|trans({'%name%': a.fullName}) }}" data-done="{{ 'decision.refused'|trans }}" class="space-y-3 rounded-2xl border border-rose-200 bg-rose-50/40 p-4" novalidate>
+                    <input type="hidden" name="action" value="refuse">
+                    <h3 class="text-xs font-bold text-rose-800">{{ 'decision.refuse'|trans }}</h3>
+                    <p class="text-[11px] text-rose-900">{{ 'decision.refuse_help'|trans({'%name%': a.fullName, '%email%': a.email}) }}</p>
+                    <div>
+                        <label class="{{ labelClass }}" for="refuse-note">{{ 'decision.note'|trans }}</label>
+                        <textarea id="refuse-note" name="note" rows="3" maxlength="{{ limits.noteMax }}" class="{{ inputClass }}"></textarea>
+                        <p class="mt-1 text-[11px] text-slate-500">{{ 'decision.note_help'|trans({'%max%': limits.noteMax}) }}</p>
+                    </div>
+                    <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                    <button type="submit" class="rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-700">{{ 'decision.refuse_submit'|trans }}</button>
+                </form>
+
+                <div class="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4">
+                    <h3 class="text-xs font-bold text-emerald-800">{{ 'decision.hire'|trans }}</h3>
+                    <p class="text-[11px] text-emerald-900">{{ 'decision.hire_help'|trans }}</p>
+                    <button type="button" data-account-post="{{ path('admin_api_job_application_status', {id: id}) }}" data-payload='{"action":"hire"}' data-confirm="{{ 'decision.hire_confirm'|trans({'%name%': a.fullName}) }}" class="rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-700">{{ 'decision.hire_submit'|trans }}</button>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+
+    {# ---------------- Entretiens ---------------- #}
+    <section class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div>
+            <h2 class="text-sm font-bold text-slate-900">{{ 'interview.title'|trans }}</h2>
+            <p class="text-[11px] text-slate-500">{{ 'interview.tz_note'|trans({'%zone%': zone}) }}</p>
+        </div>
+
+        {% if interviews is empty %}
+            <p data-no-interviews class="text-xs text-slate-400">{{ 'interview.none'|trans }}</p>
+        {% endif %}
+        <ul class="space-y-3">
+            {% for row in interviews %}
+                {% set i = row.entity %}
+                <li data-interview="{{ i.id.toRfc4122 }}" data-interview-status="{{ i.status.value }}" class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <p class="font-bold text-slate-900">{{ i.scheduledAt|format_datetime('full', 'short', locale: locale, timezone: zone) }} <span class="font-normal text-slate-500">· {{ 'interview.duration'|trans({'%minutes%': i.durationMinutes}) }}</span></p>
+                        <div class="flex gap-2">{{ ui.badge('interview', i.status.value) }}<span class="inline-flex rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-700 ring-1 ring-slate-200">{{ ('mode.' ~ i.mode.value)|trans }}</span></div>
+                    </div>
+                    <p class="text-slate-600">
+                        {% if i.mode.value == 'phone' %}{{ 'interview.call'|trans({'%phone%': a.phone}) }}{% else %}{{ 'interview.place'|trans({'%place%': i.location}) }}{% endif %}
+                    </p>
+                    {% if i.note %}<p class="whitespace-pre-line text-slate-500">{{ i.note }}</p>{% endif %}
+
+                    {% if decide and i.scheduled and not final %}
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" data-account-post="{{ path('admin_api_job_interview_update', {id: i.id.toRfc4122}) }}" data-payload='{"action":"done"}' class="rounded-xl bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-700">{{ 'interview.done'|trans }}</button>
+                            <button type="button" data-account-post="{{ path('admin_api_job_interview_update', {id: i.id.toRfc4122}) }}" data-payload='{"action":"cancel"}' data-confirm="{{ 'interview.cancel_confirm'|trans({'%name%': a.fullName}) }}" class="rounded-xl border border-rose-300 px-3 py-1.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ 'interview.cancel'|trans }}</button>
+                        </div>
+                        <details>
+                            <summary class="cursor-pointer text-[11px] font-semibold text-slate-700">{{ 'interview.edit'|trans }}</summary>
+                            <form data-admin-form method="post" data-endpoint="{{ path('admin_api_job_interview_update', {id: i.id.toRfc4122}) }}" data-done="{{ 'interview.updated'|trans }}" class="mt-3 space-y-3" novalidate>
+                                <input type="hidden" name="action" value="update">
+                                {{ include('admin/recruitment/_interview_fields.html.twig', {prefix: 'edit-' ~ loop.index, mode: i.mode.value, at: row.input, duration: i.durationMinutes, location: i.location, note: i.note}) }}
+                                <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                                <button type="submit" class="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-black">{{ 'interview.save'|trans }}</button>
+                            </form>
+                        </details>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+
+        {% if decide and not final %}
+            <form data-admin-form method="post" data-endpoint="{{ path('admin_api_job_interview_create', {id: id}) }}" data-done="{{ 'interview.created'|trans }}" class="space-y-3 rounded-2xl border border-slate-200 p-4" novalidate>
+                <h3 class="text-xs font-bold text-slate-900">{{ 'interview.schedule'|trans }}</h3>
+                {{ include('admin/recruitment/_interview_fields.html.twig', {prefix: 'new', mode: 'phone', at: '', duration: limits.defaultMinutes, location: '', note: ''}) }}
+                <p class="text-[11px] text-slate-500">{{ 'interview.email_help'|trans({'%name%': a.fullName}) }}</p>
+                <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+                <button type="submit" class="rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700">{{ 'interview.submit'|trans }}</button>
+            </form>
+        {% elseif final %}
+            <p class="text-[11px] text-slate-500">{{ 'interview.final_note'|trans }}</p>
+        {% endif %}
+    </section>
+
+    {% if decide %}
+        <section class="space-y-2 rounded-3xl border border-rose-200 bg-white p-6 shadow-xs">
+            <form data-admin-form method="post" data-endpoint="{{ path('admin_api_job_application_delete', {id: id}) }}" data-done="{{ 'delete.done'|trans }}" data-confirm="{{ 'delete.confirm'|trans({'%name%': a.fullName}) }}" class="space-y-2" novalidate>
+                <h2 class="text-sm font-bold text-rose-800">{{ 'delete.title'|trans }}</h2>
+                <p class="text-[11px] text-slate-500">{{ 'delete.help'|trans }}</p>
+                <div class="flex flex-wrap items-end gap-2">
+                    <div class="min-w-48 flex-1">
+                        <label class="{{ labelClass }}" for="application-delete-pw">{{ 'confirm.password'|trans }}</label>
+                        <input id="application-delete-pw" type="password" name="password" autocomplete="current-password" required class="{{ inputClass }}">
+                    </div>
+                    <button type="submit" class="rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-700">{{ 'delete.submit'|trans }}</button>
+                </div>
+                <p data-form-message role="alert" class="hidden rounded-xl px-3 py-2 text-xs font-semibold"></p>
+            </form>
+        </section>
+    {% endif %}
+</div>
+{% endblock %}

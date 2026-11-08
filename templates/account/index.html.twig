@@ -151,7 +151,7 @@
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2"><span class="font-bold text-slate-900">#{{ order.orderNumber }}</span>
                                 <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">{{ order.statusLabel }}</span></div>
-                            <p class="mt-0.5 text-[11px] text-slate-500">{{ 'account.orders.line'|trans({'%count%': order.itemCount, '%total%': order.total|format_number}) }} • {{ order.createdAt|format_date('medium', '', 'Indian/Antananarivo') }}</p>
+                            <p class="mt-0.5 text-[11px] text-slate-500">{{ 'account.orders.line'|trans({'%count%': order.itemCount, '%total%': money(order.totalCharged, order.currency)}) }} • {{ order.createdAt|format_date('medium', '', 'Indian/Antananarivo') }}</p>
                         </div>
                         {{ ux_icon('tabler:chevron-right', { class: 'h-4 w-4 text-slate-400' }) }}
                     </a>

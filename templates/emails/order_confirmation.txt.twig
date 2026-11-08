@@ -6,13 +6,14 @@
 {{ 'order_confirmation.intro'|trans({'%order%': order.orderNumber}, 'emails') }}
 
 {% for item in order.items %}
-- {{ item.productName }} x {{ item.quantity }} : {{ item.lineTotal|number_format(0, ',', ' ') }} Ar
+- {{ item.productName }} x {{ item.quantity }} : {{ money(item.chargedLineTotal, order.currency.value, order.locale) }}
 {% endfor %}
 
-{{ 'order_confirmation.subtotal'|trans({}, 'emails') }} : {{ order.subtotal|number_format(0, ',', ' ') }} Ar
-{{ 'order_confirmation.delivery'|trans({}, 'emails') }} : {{ order.deliveryFee|number_format(0, ',', ' ') }} Ar
-{{ 'order_confirmation.total'|trans({}, 'emails') }} : {{ order.total|number_format(0, ',', ' ') }} Ar
-
+{{ 'order_confirmation.subtotal'|trans({}, 'emails') }} : {{ money(order.chargedSubtotal, order.currency.value, order.locale) }}
+{{ 'order_confirmation.delivery'|trans({}, 'emails') }} : {{ money(order.chargedDeliveryFee, order.currency.value, order.locale) }}
+{{ 'order_confirmation.total'|trans({}, 'emails') }} : {{ money(order.chargedTotal, order.currency.value, order.locale) }}
+{% if order.foreignCurrency %}{{ 'order_confirmation.settlement'|trans({'%amount%': money(order.total, 'MGA', order.locale), '%rate%': exchange_rate(order.exchangeRate, order.locale), '%symbol%': currency_symbol(order.currency.value)}, 'emails') }}
+{% endif %}
 {{ 'order_confirmation.address'|trans({}, 'emails') }} :
 {{ order.shippingAddress.fullName }}
 {{ order.shippingAddress.street }}

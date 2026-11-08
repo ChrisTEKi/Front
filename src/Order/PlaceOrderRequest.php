@@ -9,8 +9,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * Données envoyées par la page de commande, avec leurs règles de validation.
  *
- * Aucun prix ni aucun total n'est lu ici : seuls les identifiants de produits et les quantités viennent du navigateur.
- * Les prix sont relus côté serveur (CatalogInterface).
+ * Aucun prix ni aucun total n'est lu ici : seuls les identifiants de produits, les quantités et la devise choisie viennent du
+ * navigateur. Les prix sont relus côté serveur (CatalogInterface). Le seul montant envoyé, `quotedTotal`, sert à vérifier que
+ * le client commande bien au prix qu'il a vu : il n'est JAMAIS utilisé pour calculer quoi que ce soit.
  */
 final class PlaceOrderRequest
 {
@@ -63,6 +64,15 @@ final class PlaceOrderRequest
     /** Numéro Mobile Money saisi (format libre) quand le paiement passe par Mobile Money. */
     public string $mobileMoneyNumber = '';
 
+    /** Devise dans laquelle le client voit et commande (« MGA », « EUR », « USD ») ; revalidée côté serveur. */
+    public string $currency = 'MGA';
+
+    /**
+     * Total que le navigateur a affiché au client (unités mineures de la devise), si connu. S'il ne correspond plus au total
+     * calculé par le serveur (taux ou prix changé entre-temps), la commande est refusée pour que le client revoie le nouveau prix.
+     */
+    public ?int $quotedTotal = null;
+
     /** Jeton anti-doublon généré par le navigateur pour cette tentative. */
     #[Assert\Length(max: 64, maxMessage: 'field.too_long')]
     #[Assert\Regex(pattern: '/^[A-Za-z0-9_-]*$/', message: 'field.required')]
@@ -71,7 +81,7 @@ final class PlaceOrderRequest
     /**
      * @param array<string, mixed> $data Contenu JSON de la requête :
      *                                   {items:[{ref,quantity}], address:{fullName,phone,street,city,postalCode,courierNote,save,makeDefault},
-     *                                    payment:{method,installments,channel,mobileMoneyNumber}, idempotencyKey}
+     *                                    payment:{method,installments,channel,mobileMoneyNumber}, currency, quotedTotal, idempotencyKey}
      */
     public static function fromArray(array $data): self
     {
@@ -109,6 +119,10 @@ final class PlaceOrderRequest
         $dto->installments = \is_int($installments) ? $installments : (\is_string($installments) && ctype_digit($installments) ? (int) $installments : 0);
         $dto->channel = '' !== self::str($payment, 'channel') ? self::str($payment, 'channel') : 'mobile_money';
         $dto->mobileMoneyNumber = self::str($payment, 'mobileMoneyNumber');
+
+        $dto->currency = '' !== self::str($data, 'currency') ? strtoupper(self::str($data, 'currency')) : 'MGA';
+        $quoted = $data['quotedTotal'] ?? null;
+        $dto->quotedTotal = \is_int($quoted) && $quoted > 0 ? $quoted : null;
 
         $dto->idempotencyKey = self::str($data, 'idempotencyKey');
 

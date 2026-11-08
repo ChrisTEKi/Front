@@ -1,6 +1,7 @@
 import { goTo, postJson } from './api.js';
-import { cartCount, cartSubtotal, clearCart, deliveryFee, readCart } from './cart.js';
+import { cartCount, cartSubtotalIn, clearCart, deliveryFee, readCart, syncCartPrices } from './cart.js';
 import { formatAr, formatNumber, formatShortDate, t } from './i18n.js';
+import { cartCurrency, formatMoney, formatRate, fromMga, lineMga, rateOf, symbolOf } from './money.js';
 import { showToast } from './ui.js';
 
 /**
@@ -66,9 +67,21 @@ export function initCheckout() {
 
     const lines = () => readCart();
     const hasItems = () => lines().length > 0;
-    const getSubtotal = () => (hasItems() ? cartSubtotal() : Number(previewInput?.value || 0));
-    const getShipping = () => (hasItems() ? deliveryFee() : 0);
+    /** Devise du récapitulatif : celle du panier (si chaque ligne peut y être exprimée), sinon l'Ariary. */
+    const currency = () => (hasItems() ? cartCurrency(lines()) : 'MGA');
+    const getSubtotal = () => (hasItems() ? cartSubtotalIn(currency(), lines()) : Number(previewInput?.value || 0));
+    const getShipping = () => {
+        if (!hasItems()) return 0;
+        const fee = deliveryFee();
+
+        return currency() === 'MGA' ? fee : (fromMga(fee, currency()) ?? fee);
+    };
     const getTotal = () => getSubtotal() + getShipping();
+    /**
+     * Équivalent en ARIARY de la commande : le règlement (Mobile Money, échéances) se fait toujours en Ariary. Estimation
+     * d'affichage au taux de la page ; le serveur calcule le montant exact au taux du moment.
+     */
+    const getTotalMga = () => (hasItems() ? lines().reduce((sum, l) => sum + lineMga(l, currency()) * l.quantity, 0) + deliveryFee() : getTotal());
 
     // ------------------------------------------------------------------ Étapes
 
@@ -261,46 +274,54 @@ export function initCheckout() {
 
     function refreshSummary() {
         const cart = lines();
+        const cur = currency();
         const subtotal = getSubtotal();
         const shipping = getShipping();
         const total = getTotal();
+        const totalMga = getTotalMga(); // débité en Ariary : base de l'échéancier
 
         root.querySelector('[data-empty-cart]')?.classList.toggle('hidden', cart.length > 0);
         root.querySelectorAll('[data-sum-items-label]').forEach((el) => { el.textContent = t('checkout.items', { count: formatNumber(cartCount(cart)) }); });
-        root.querySelectorAll('[data-sum-subtotal]').forEach((el) => { el.textContent = formatNumber(subtotal); });
-        root.querySelectorAll('[data-sum-shipping]').forEach((el) => { el.textContent = formatNumber(shipping); });
-        root.querySelectorAll('[data-sum-total]').forEach((el) => { el.textContent = formatNumber(total); });
+        root.querySelectorAll('[data-sum-subtotal]').forEach((el) => { el.textContent = formatMoney(subtotal, cur); });
+        root.querySelectorAll('[data-sum-shipping]').forEach((el) => { el.textContent = formatMoney(shipping, cur); });
+        root.querySelectorAll('[data-sum-total]').forEach((el) => { el.textContent = formatMoney(total, cur); });
         [3, 4].forEach((n) => {
-            root.querySelectorAll('[data-inst-monthly="' + n + '"]').forEach((el) => { el.textContent = formatNumber(total / n); });
+            root.querySelectorAll('[data-inst-monthly="' + n + '"]').forEach((el) => { el.textContent = formatNumber(totalMga / n); });
+        });
+        // Commande dans une autre devise : on rappelle que le règlement se fait en Ariary, avec le taux utilisé.
+        root.querySelectorAll('[data-settlement-note]').forEach((el) => {
+            const foreign = cur !== 'MGA' && hasItems();
+            el.classList.toggle('hidden', !foreign);
+            el.textContent = foreign ? t('checkout.settlement', { amount: formatAr(totalMga), symbol: symbolOf(cur), rate: formatRate(rateOf(cur)) }) : '';
         });
 
         // Échéancier : mêmes règles que le serveur (1re échéance aujourd'hui, puis une par mois ; la dernière absorbe l'arrondi).
         const scheduleEl = root.querySelector('[data-schedule]');
         if (scheduleEl) {
-            const base = Math.floor(total / installments);
+            const base = Math.floor(totalMga / installments);
             const rows = [];
             for (let i = 1; i <= installments; i += 1) {
                 const due = new Date();
                 due.setMonth(due.getMonth() + (i - 1));
-                const amount = base + (i === installments ? total - base * installments : 0);
+                const amount = base + (i === installments ? totalMga - base * installments : 0);
                 rows.push(scheduleRow(i, i === 1 ? t('checkout.today') : t('checkout.nth_debit', { n: i }), formatShortDate(due), amount));
             }
             scheduleEl.replaceChildren(...rows);
-            root.querySelectorAll('[data-total-text]').forEach((el) => { el.textContent = formatNumber(total); });
+            root.querySelectorAll('[data-total-text]').forEach((el) => { el.textContent = formatNumber(totalMga); });
             root.querySelectorAll('[data-schedule-title]').forEach((el) => { el.textContent = t('checkout.schedule_title', { count: installments }); });
         }
 
         const recap = root.querySelector('[data-installment-recap]');
         const confirmLabel = root.querySelector('[data-confirm-label]');
         if (paymentMethod === 'installments') {
-            const first = Math.floor(total / installments);
+            const first = Math.floor(totalMga / installments);
             recap?.classList.remove('hidden');
             root.querySelectorAll('[data-first-payment]').forEach((el) => { el.textContent = formatAr(first); });
             root.querySelectorAll('[data-remaining]').forEach((el) => { el.textContent = (installments - 1) + ' x ' + formatAr(first); });
             if (confirmLabel) confirmLabel.textContent = t('checkout.pay_today', { amount: formatAr(first) });
         } else {
             recap?.classList.add('hidden');
-            if (confirmLabel) confirmLabel.textContent = paymentMethod === 'cash_on_delivery' ? t('checkout.confirm') : t('checkout.pay_amount', { amount: formatAr(total) });
+            if (confirmLabel) confirmLabel.textContent = paymentMethod === 'cash_on_delivery' ? t('checkout.confirm') : t('checkout.pay_amount', { amount: formatMoney(total, cur) });
         }
         const confirmBtn = root.querySelector('[data-confirm-order]');
         if (confirmBtn) confirmBtn.disabled = cart.length === 0 || placing;
@@ -513,6 +534,9 @@ export function initCheckout() {
                 method: paymentMethod, installments: paymentMethod === 'installments' ? installments : 1,
                 channel, mobileMoneyNumber: momo ?? '',
             },
+            // Devise et total VUS par le client : le serveur recalcule tout et refuse si le prix a changé entre-temps.
+            currency: currency(),
+            quotedTotal: getTotal(),
             idempotencyKey,
         });
         setPlacing(false);
@@ -524,6 +548,8 @@ export function initCheckout() {
 
             return;
         }
+        // Prix ou taux modifié depuis l'affichage : on relit les prix du serveur, le récapitulatif montre le nouveau total.
+        if (result.body?.error === 'price_changed') await syncCartPrices(ep.prices);
         show(notice, errorText(result));
         // Le serveur peut contester une vérification (compte modifié entre-temps) : on redemande proprement.
         if (result.body?.error === 'phone_not_verified') { phoneVerified = false; await ensurePhoneVerified(); }
@@ -534,4 +560,6 @@ export function initCheckout() {
     selectPayment('installments');
     setInstallments(3);
     refreshSummary();
+    // Le panier vient du navigateur : à l'ouverture de la commande on relit les prix actuels (tarif du vendeur, taux de change).
+    syncCartPrices(ep.prices);
 }

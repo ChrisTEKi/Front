@@ -17,6 +17,9 @@ error:
     invalid_courier: "Invalid courier name or phone number."
     not_found: "No order found with this reference."
     funds_frozen: "Your payments are frozen by the GoBuy team: you cannot order for now. Contact support."
+    invalid_currency: "Unknown currency: choose Ariary, euro or dollar."
+    currency_unavailable: "This currency is not available right now (exchange rate unavailable). Choose Ariary or try again later."
+    price_changed: "The price changed since your cart was displayed (exchange rate or seller price). The summary has just been updated: check the new total, then confirm again."
 status:
     confirmed: "Order confirmed"
     preparing: "Being prepared"

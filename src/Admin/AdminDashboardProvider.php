@@ -20,6 +20,7 @@ use App\Repository\AuditLogRepository;
 use App\Repository\OrderItemRepository;
 use App\Repository\OrderRepository;
 use App\Repository\SupplierAppealRepository;
+use App\Repository\SupplierDocumentRepository;
 use App\Repository\SupplierProfileRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
@@ -56,6 +57,7 @@ final class AdminDashboardProvider
         private readonly AuditLogRepository $auditLogs,
         private readonly OrderPresenter $orderPresenter,
         private readonly SupplierAppealRepository $appeals,
+        private readonly SupplierDocumentRepository $supplierDocuments,
     ) {
     }
 
@@ -90,8 +92,15 @@ final class AdminDashboardProvider
             $sales = $can[Permission::FinanceView->value] ? $this->orderItems->salesTotalsBySupplier() : [];
             // Contestations en attente par fournisseur : la ligne du fournisseur est signalée pour que l'équipe les voie.
             $appeals = $this->appeals->openCountsBySupplier();
-            $data['pendingSuppliers'] = array_map(fn (SupplierProfile $p): array => $this->supplierRow($p, $sales, $appeals), $this->suppliers->findByStatus(SupplierStatus::Pending));
-            $data['supplierApplications'] = array_map(fn (SupplierProfile $p): array => $this->supplierRow($p, $sales, $appeals), $this->suppliers->findRecent(self::SUPPLIERS_LIMIT));
+            $pending = $this->suppliers->findByStatus(SupplierStatus::Pending);
+            $recent = $this->suppliers->findRecent(self::SUPPLIERS_LIMIT);
+            // Pièces justificatives (identité, NIF / STAT) : une seule requête pour toutes les lignes affichées, sans lire les fichiers.
+            // Réservé au droit de valider les fournisseurs : sans lui, même les noms des fichiers (souvent celui de la personne) restent cachés.
+            $documents = $can[Permission::SuppliersApprove->value]
+                ? $this->supplierDocuments->summariesFor(array_values(array_unique(array_map(static fn (SupplierProfile $p): string => $p->getUser()->getId()->toRfc4122(), [...$pending, ...$recent]))))
+                : [];
+            $data['pendingSuppliers'] = array_map(fn (SupplierProfile $p): array => $this->supplierRow($p, $sales, $appeals, $documents), $pending);
+            $data['supplierApplications'] = array_map(fn (SupplierProfile $p): array => $this->supplierRow($p, $sales, $appeals, $documents), $recent);
         }
 
         // ---- Finance : total des ventes (somme réelle des lignes de commande non annulées) ----
@@ -152,10 +161,11 @@ final class AdminDashboardProvider
     /**
      * @param array<string, int> $sales   ventes cumulées par fournisseur (vide si pas de droit finance)
      * @param array<string, int> $appeals contestations ouvertes par fournisseur
+     * @param array<string, array<string, array{id: string, name: string, type: string, size: int}>> $documents pièces justificatives par fournisseur puis par nature
      *
      * @return array<string, mixed>
      */
-    private function supplierRow(SupplierProfile $profile, array $sales, array $appeals = []): array
+    private function supplierRow(SupplierProfile $profile, array $sales, array $appeals = [], array $documents = []): array
     {
         $user = $profile->getUser();
 
@@ -175,6 +185,8 @@ final class AdminDashboardProvider
             'submittedAt' => $profile->getSubmittedAt(),
             'rejectionReason' => $profile->getRejectionReason(),
             'openAppeals' => $appeals[$user->getId()->toRfc4122()] ?? 0,
+            // Pièces déposées à l'inscription, par nature (identity, tax) : {id, name, type, size}. Vide pour un ancien dossier.
+            'documents' => $documents[$user->getId()->toRfc4122()] ?? [],
             'sales' => $sales[$user->getId()->toRfc4122()] ?? null,
             // Un dossier ne peut être approuvé que si e-mail ET téléphone sont vérifiés (règle appliquée aussi par le service).
             'approvable' => $user->isEmailVerified() && $user->isPhoneVerified(),

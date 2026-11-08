@@ -38,6 +38,17 @@ enum Permission: string
     case BlacklistManage = 'blacklist.manage';   // liste noire (e-mail, téléphone, nom, raison sociale, IP)
     case AccountsDelete = 'accounts.delete';     // suppression définitive d'un compte, immédiate ou programmée
 
+    // ---- Devises (taux de change) ----
+    case CurrencyManage = 'currency.manage';     // voir les taux, fixer un taux à la main, reprendre l'automatique, actualiser
+
+    // ---- Commissions (taux par rayon) ----
+    case CommissionsManage = 'commissions.manage';   // voir et modifier les taux de commission par rayon
+
+    // ---- Recrutement (offres d'emploi, candidats, entretiens) ----
+    case RecruitmentView = 'recruitment.view';       // voir les offres, les candidats, lire leurs CV / lettres et le planning des entretiens
+    case RecruitmentManage = 'recruitment.manage';   // créer, modifier, publier, clôturer ou supprimer une offre
+    case RecruitmentDecide = 'recruitment.decide';   // refuser (e-mail au candidat), retenir, fixer / annuler un entretien, effacer un candidat
+
     // ---- Commandes ----
     case OrdersView = 'orders.view';
     case OrdersUpdateTracking = 'orders.update_tracking';

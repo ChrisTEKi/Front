@@ -95,7 +95,7 @@
                 {% else %}
                     <ul class="divide-y divide-slate-100 text-xs">
                         {% for o in d.orders|slice(0, 5) %}
-                            <li class="flex items-center justify-between gap-3 py-2.5"><span class="font-mono font-semibold text-slate-900">{{ o.orderNumber }}</span><span class="truncate text-slate-500">{{ o.customerName }}</span><span class="font-mono text-slate-700">{{ o.total|format_number }} Ar</span>{{ ui.badge(o.statusLabel, 'indigo') }}</li>
+                            <li class="flex items-center justify-between gap-3 py-2.5"><span class="font-mono font-semibold text-slate-900">{{ o.orderNumber }}</span><span class="truncate text-slate-500">{{ o.customerName }}</span><span class="font-mono text-slate-700">{{ o.total|format_number }} Ar{% if o.currency != 'MGA' %} <span class="text-slate-400" title="{{ 'orders.charged_title'|trans({'%currency%': o.currency}) }}">({{ money(o.totalCharged, o.currency) }})</span>{% endif %}</span>{{ ui.badge(o.statusLabel, 'indigo') }}</li>
                         {% endfor %}
                     </ul>
                 {% endif %}
@@ -118,25 +118,24 @@
                 <div class="overflow-x-auto">
                     <table class="w-full border-collapse text-left text-xs">
                         <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
-                            <th class="px-3 py-2.5">{{ 'applications.col.company'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.manager'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.contact'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.status'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.date'|trans }}</th>{% if can['suppliers.approve'] %}<th class="px-3 py-2.5"></th>{% endif %}
+                            <th class="px-3 py-2.5">{{ 'applications.col.company'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.manager'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.contact'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.status'|trans }}</th><th class="px-3 py-2.5">{{ 'applications.col.date'|trans }}</th><th class="px-3 py-2.5"></th>
                         </tr></thead>
                         <tbody class="divide-y divide-slate-100">
                             {% for s in d.supplierApplications %}
                                 <tr>
-                                    <td class="px-3 py-2.5 font-semibold text-slate-900">{{ s.companyName }}<details class="font-normal"><summary class="cursor-pointer text-[11px] font-semibold text-emerald-700 marker:content-none">{{ 'application.show'|trans }}</summary>{{ include('admin/_supplier_application.html.twig', {s: s}) }}</details></td>
+                                    <td class="px-3 py-2.5 font-semibold text-slate-900">{{ s.companyName }}<details class="font-normal"><summary class="cursor-pointer text-[11px] font-semibold text-emerald-700 marker:content-none">{{ 'application.show'|trans }}</summary>{{ include('admin/_supplier_documents.html.twig', {id: s.id, documents: s.documents, canRead: can['suppliers.approve']}) }}{{ include('admin/_supplier_application.html.twig', {s: s}) }}</details></td>
                                     <td class="px-3 py-2.5 text-slate-600">{{ s.managerName }}</td>
                                     <td class="px-3 py-2.5 text-slate-600"><div class="flex items-center gap-1">{{ ui.tick(s.emailVerified, 'verified.email'|trans) }}<span>{{ s.email }}</span></div><div class="flex items-center gap-1">{{ ui.tick(s.phoneVerified, 'verified.phone'|trans) }}<span>{{ s.phone|default('—') }}</span></div></td>
                                     <td class="px-3 py-2.5">{{ ui.badge(('supplier_status.' ~ s.status)|trans, s.status == 'approved' ? 'green' : (s.status == 'pending' ? 'amber' : 'red')) }}{% if s.openAppeals > 0 %} <a href="{{ path('app_admin_account', {id: s.id}) }}" class="mt-1 inline-flex">{{ ui.badge('applications.appeal_open'|trans, 'amber') }}</a>{% endif %}</td>
                                     <td class="px-3 py-2.5 text-slate-500">{{ s.submittedAt|format_date('medium', locale: app.request.locale) }}</td>
-                                    {% if can['suppliers.approve'] %}
                                         <td class="px-3 py-2.5 text-right"><a href="{{ path('app_admin_account', {id: s.id}) }}" class="mr-1 inline-flex rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">{{ 'applications.account'|trans }}</a>
-                                            {% if s.status == 'approved' %}
+                                            {% if can['suppliers.approve'] %}{% if s.status == 'approved' %}
                                                 <button type="button" data-supplier-decision="suspend" data-id="{{ s.id }}" data-company="{{ s.companyName }}" class="rounded-lg border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ 'supplier.suspend'|trans }}</button>
                                             {% elseif s.status in ['suspended', 'rejected'] and s.approvable %}
                                                 <button type="button" data-supplier-decision="approve" data-id="{{ s.id }}" class="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50">{{ s.status == 'rejected' ? 'supplier.revalidate'|trans : 'supplier.reapprove'|trans }}</button>
                                             {% endif %}
-                                        </td>
-                                    {% endif %}
+                                        {% endif %}
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -150,12 +149,14 @@
     {# ======================= REVERSEMENTS ======================= #}
     {% if can['finance.view'] %}
     <div data-admin-panel="vendor_payouts" class="hidden space-y-6">
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">{{ 'payouts.sales_total'|trans }}</span><div class="font-mono text-lg font-black text-slate-900">{{ d.salesTotal|format_number }} Ar</div></div>
             <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">{{ 'payouts.commissions'|trans }}</span><div class="font-mono text-lg font-black text-emerald-600">—</div></div>
-            <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">{{ 'payouts.rents'|trans }}</span><div class="font-mono text-lg font-black text-indigo-600">—</div></div>
             <div class="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"><span class="text-[11px] font-medium text-slate-500">{{ 'payouts.net_pending'|trans }}</span><div class="font-mono text-lg font-black text-rose-600">—</div></div>
         </div>
+        {% if can['commissions.manage'] %}
+            <a href="{{ path('app_admin_commissions') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50">{{ ux_icon('tabler:percentage', {class: 'h-3.5 w-3.5 text-emerald-600'}) }}{{ 'payouts.edit_rates'|trans }}</a>
+        {% endif %}
         <div class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
             <div><h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">{{ ux_icon('tabler:currency-dollar', {class: 'h-4 w-4 text-emerald-600'}) }}{{ 'payouts.title'|trans }}</h3>
                 <p class="text-xs text-slate-500">{{ 'payouts.subtitle'|trans }}</p></div>
@@ -189,7 +190,7 @@
                                 <span class="flex items-center gap-1">{{ ui.tick(s.emailVerified, 'verified.email'|trans) }}{{ s.email }}</span>
                                 <span class="flex items-center gap-1">{{ ui.tick(s.phoneVerified, 'verified.phone'|trans) }}{{ s.phone|default('—') }}</span>
                             </div>
-                            <details class="group"><summary class="cursor-pointer text-[11px] font-semibold text-emerald-700 marker:content-none">{{ 'application.show'|trans }}</summary>{{ include('admin/_supplier_application.html.twig', {s: s}) }}</details>
+                            <details class="group"><summary class="cursor-pointer text-[11px] font-semibold text-emerald-700 marker:content-none">{{ 'application.show'|trans }}</summary>{{ include('admin/_supplier_documents.html.twig', {id: s.id, documents: s.documents, canRead: can['suppliers.approve']}) }}{{ include('admin/_supplier_application.html.twig', {s: s}) }}</details>
                             {% if can['suppliers.approve'] %}
                                 <div class="flex flex-wrap items-center gap-2">
                                     <button type="button" data-supplier-decision="approve" data-id="{{ s.id }}" {% if not s.approvable %}disabled title="{{ 'approval.not_verified'|trans }}"{% endif %} class="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">{{ ux_icon('tabler:check', {class: 'h-3.5 w-3.5'}) }}{{ 'approval.approve'|trans }}</button>
@@ -227,7 +228,7 @@
         <div class="overflow-x-auto">
             <table class="w-full border-collapse text-left text-xs">
                 <thead><tr class="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
-                    <th class="px-3 py-2.5">{{ 'users.col.user'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.role'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.email_verified'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.phone'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.twofa'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.date'|trans }}</th>{% if can['users.suspend'] and ul.type != 'admin' %}<th class="px-3 py-2.5"></th>{% endif %}
+                    <th class="px-3 py-2.5">{{ 'users.col.user'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.role'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.email_verified'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.phone'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.twofa'|trans }}</th><th class="px-3 py-2.5">{{ 'users.col.date'|trans }}</th>{% if ul.type != 'admin' %}<th class="px-3 py-2.5"></th>{% endif %}
                 </tr></thead>
                 <tbody class="divide-y divide-slate-100">
                     {% for u in ul.rows %}
@@ -238,13 +239,14 @@
                             <td class="px-3 py-2.5"><div class="flex items-center gap-1">{{ ui.tick(u.phoneVerified, 'verified.phone'|trans) }}<span class="text-slate-600">{{ u.phone|default('—') }}</span></div></td>
                             <td class="px-3 py-2.5">{{ u.twoFactor ? 'users.on'|trans : 'users.off'|trans }}</td>
                             <td class="px-3 py-2.5 text-slate-500">{{ u.createdAt|format_date('medium', locale: app.request.locale) }}</td>
-                            {% if can['users.suspend'] and ul.type != 'admin' %}
+                            {% if ul.type != 'admin' %}
                                 <td class="px-3 py-2.5 text-right"><a href="{{ path('app_admin_account', {id: u.id}) }}" class="mr-1 inline-flex rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">{{ 'applications.account'|trans }}</a>
-                                    {% if u.status == 'active' %}
+                                    {% if can['users.suspend'] %}{% if u.status == 'active' %}
                                         <button type="button" data-user-status="suspend" data-id="{{ u.id }}" data-confirm="{{ 'users.confirm_suspend'|trans({'%name%': u.name}) }}" class="rounded-lg border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">{{ 'users.suspend'|trans }}</button>
                                     {% elseif u.status == 'suspended' %}
                                         <button type="button" data-user-status="reactivate" data-id="{{ u.id }}" class="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50">{{ 'users.reactivate'|trans }}</button>
                                     {% endif %}
+                                {% endif %}
                                 </td>
                             {% endif %}
                         </tr>
@@ -278,7 +280,7 @@
                         <tr>
                             <td class="px-3 py-2.5 font-mono font-semibold text-slate-900">{{ o.orderNumber }}</td>
                             <td class="px-3 py-2.5 text-slate-600">{{ o.customerName|default('—') }}</td>
-                            <td class="px-3 py-2.5 font-mono text-slate-700">{{ o.total|format_number }} Ar</td>
+                            <td class="px-3 py-2.5 font-mono text-slate-700">{{ o.total|format_number }} Ar{% if o.currency != 'MGA' %} <span class="text-slate-400" title="{{ 'orders.charged_title'|trans({'%currency%': o.currency}) }}">({{ money(o.totalCharged, o.currency) }})</span>{% endif %}</td>
                             <td class="px-3 py-2.5 text-slate-600">{{ o.paymentLabel }}</td>
                             <td class="px-3 py-2.5">{{ ui.badge(o.statusLabel, o.status == 'delivered' ? 'green' : (o.status == 'cancelled' ? 'red' : 'indigo')) }}{% if o.courierName %}<div class="mt-0.5 text-[10px] text-slate-400">{{ o.courierName }}</div>{% endif %}</td>
                             <td class="px-3 py-2.5 text-slate-500">{{ o.createdAt|format_datetime('short', 'short', locale: app.request.locale) }}</td>

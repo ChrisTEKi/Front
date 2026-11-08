@@ -117,7 +117,9 @@ final class SupplierReviewService
         $profile->suspend($admin, $reason, $this->clock->now());
         $this->em->flush();
         $supplier = $profile->getUser();
-        $this->audit->record(AuditAction::SUPPLIER_REJECTED, $admin, 'user', $supplier->getId()->toRfc4122(), ['company' => $profile->getCompanyName(), 'reason' => $reason, 'operation' => 'suspended']);
+        $this->audit->record(AuditAction::SUPPLIER_SUSPENDED, $admin, 'user', $supplier->getId()->toRfc4122(), ['company' => $profile->getCompanyName(), 'reason' => $reason]);
+        // Le fournisseur est prévenu (comme pour un refus) : sa boutique n'est plus visible, il peut contester la décision.
+        $this->moderationNotifier->notify($supplier, 'supplier_suspended', ['%company%' => $profile->getCompanyName(), '%detail%' => $reason]);
     }
 
     /** Un motif est obligatoire (5 à 500 caractères) : il est montré au fournisseur et conservé dans le journal. */

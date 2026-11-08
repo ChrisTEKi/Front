@@ -27,7 +27,8 @@ const ENDPOINTS = {
 
 export function initAccount() {
     document.querySelectorAll('[data-account]').forEach(setupNavigation);
-    document.querySelectorAll('[data-account-form]').forEach(setupForm);
+    // Seuls les formulaires NOMMÉS du compte client (data-account-form="password"…) : jamais ceux d'une autre page.
+    document.querySelectorAll('[data-account-form]:not([data-account-form=""])').forEach(setupForm);
     document.querySelectorAll('[data-send-code]').forEach(setupSendCode);
 }
 

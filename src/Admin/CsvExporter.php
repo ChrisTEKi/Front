@@ -182,7 +182,7 @@ final class CsvExporter
     /** @return \Generator<int, list<string|int|null>> */
     private function orderLines(): \Generator
     {
-        yield ['N° commande', 'Date', 'Client', 'E-mail client', 'Téléphone client', 'Articles', 'Sous-total (Ar)', 'Livraison (Ar)', 'Total (Ar)', 'Moyen de paiement', 'Échéances', 'Opérateur Mobile Money', 'Numéro Mobile Money', 'Statut du paiement', 'Statut de la commande', 'Ville de livraison'];
+        yield ['N° commande', 'Date', 'Client', 'E-mail client', 'Téléphone client', 'Articles', 'Sous-total (Ar)', 'Livraison (Ar)', 'Total (Ar)', 'Moyen de paiement', 'Échéances', 'Opérateur Mobile Money', 'Numéro Mobile Money', 'Statut du paiement', 'Statut de la commande', 'Ville de livraison', 'Devise de la commande', 'Total dans la devise (centimes ; Ar entiers)', 'Taux appliqué (Ar pour 1 unité)'];
         foreach ($this->orders->iterateAll() as $order) {
             \assert($order instanceof Order);
             yield [
@@ -202,6 +202,9 @@ final class CsvExporter
                 $order->getPaymentStatus()->value,
                 $order->getStatus()->value,
                 $order->getShippingAddress()['city'] ?? null,
+                $order->getCurrency()->value,
+                $order->getChargedTotal(),
+                $order->getExchangeRate(),
             ];
             $this->em->detach($order);
         }

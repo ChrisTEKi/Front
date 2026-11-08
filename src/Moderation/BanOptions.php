@@ -26,10 +26,23 @@ final class BanOptions
     ) {
     }
 
+    /**
+     * Contrôle TOUTES les options AVANT de prononcer le bannissement : un choix invalide (durée de liste noire hors limites…) ne
+     * doit pas laisser un bannissement à moitié appliqué.
+     *
+     * @throws ModerationException « invalid_option », « invalid_days »
+     */
     public function validate(): void
     {
         if (!\in_array($this->catalog, self::CATALOG, true) || !\in_array($this->refund, self::REFUND, true)) {
             throw new ModerationException('invalid_option');
+        }
+        if ([] !== $this->blacklist && null !== $this->blacklistDays) {
+            // La même durée vaut pour tous les identifiants cochés ; une adresse IP est plafonnée plus bas (voir BlacklistService).
+            $max = \in_array(BlacklistKind::Ip, $this->blacklist, true) ? BlacklistService::MAX_IP_DAYS : BlacklistService::MAX_DAYS;
+            if ($this->blacklistDays < 1 || $this->blacklistDays > $max) {
+                throw new ModerationException('invalid_days', ['%max%' => $max]);
+            }
         }
     }
 }

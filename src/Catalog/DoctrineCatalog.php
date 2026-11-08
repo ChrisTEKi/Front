@@ -38,6 +38,7 @@ final class DoctrineCatalog implements CatalogInterface
             $product->getPriceMga(),
             $product->getOwner()?->getId(),
             null !== $this->products->findSellable($ref),
+            $product->getPriceOverrides(),
         );
     }
 }

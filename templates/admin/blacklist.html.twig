@@ -1,5 +1,5 @@
 {# Liste noire (/admin/liste-noire) : e-mails, téléphones, noms, raisons sociales et adresses IP interdits d'inscription.
-   Les formulaires [data-account-form] sont envoyés par assets/admin-account.js à l'API /admin/api/liste-noire ; le serveur décide de tout
+   Les formulaires [data-admin-form] sont envoyés par assets/admin-account.js à l'API /admin/api/liste-noire ; le serveur décide de tout
    (droit « blacklist.manage », mot de passe de confirmation, normalisation et règles métier). Textes : translations/sanctions.<langue>.yaml. #}
 {% extends 'base.html.twig' %}
 {% trans_default_domain 'sanctions' %}
@@ -18,7 +18,7 @@
 
     <p data-account-notice role="status" class="hidden rounded-2xl border p-3 text-xs"></p>
 
-    <form data-account-form data-endpoint="{{ path('admin_api_blacklist_add') }}" data-done="{{ 'sanction.done'|trans }}" class="space-y-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs" novalidate>
+    <form data-admin-form method="post" data-endpoint="{{ path('admin_api_blacklist_add') }}" data-done="{{ 'sanction.done'|trans }}" class="space-y-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs" novalidate>
         <h2 class="text-sm font-bold text-slate-900">{{ 'blacklist.add'|trans }}</h2>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
             <div>
@@ -65,7 +65,7 @@
                                 <td class="max-w-xs truncate px-3 py-2 text-slate-500" title="{{ e.reason }}">{{ e.reason }}</td>
                                 <td class="whitespace-nowrap px-3 py-2 text-slate-500">{{ e.expiresAt ? e.expiresAt|format_date('medium', locale: app.request.locale) : 'blacklist.forever'|trans }}</td>
                                 <td class="px-3 py-2 text-right">
-                                    <form data-account-form data-endpoint="{{ path('admin_api_blacklist_remove', {id: e.id}) }}" data-done="{{ 'sanction.done'|trans }}" data-confirm="{{ 'blacklist.confirm_remove'|trans }}" class="flex flex-wrap items-center justify-end gap-2" novalidate>
+                                    <form data-admin-form method="post" data-endpoint="{{ path('admin_api_blacklist_remove', {id: e.id}) }}" data-done="{{ 'sanction.done'|trans }}" data-confirm="{{ 'blacklist.confirm_remove'|trans }}" class="flex flex-wrap items-center justify-end gap-2" novalidate>
                                         <input type="password" name="password" autocomplete="current-password" required placeholder="{{ 'sanction.password_short'|trans }}" aria-label="{{ 'sanction.password'|trans }}" class="w-32 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px]">
                                         <button type="submit" class="rounded-lg border border-slate-300 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100">{{ 'blacklist.remove'|trans }}</button>
                                         <p data-form-message role="alert" class="hidden w-full rounded-xl px-3 py-1 text-left text-[11px] font-semibold"></p>

@@ -1,0 +1,81 @@
+{# Planning des entretiens (/admin/recrutement/planning) : TOUS les candidats ayant un entretien, classés par DATE DE CANDIDATURE
+   (du plus ancien au plus récent par défaut), avec la date et l'heure de chaque entretien (heure de Madagascar).
+   Filtres : à venir / tous, offre ; tri : croissant / décroissant ; pages. Lecture seule : les actions sont sur la fiche du candidat.
+   Textes : translations/recruitment.<langue>.yaml (FR / EN / ES). #}
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'recruitment' %}
+{% import 'admin/recruitment/_ui.html.twig' as ui %}
+{% block title %}{{ 'planning.page_title'|trans }}{% endblock %}
+
+{% block body %}
+{% set locale = app.request.locale %}
+{% set params = {scope: scope, order: order}|merge(offer ? {offer: offer.id.toRfc4122} : {}) %}
+<div data-recruitment-planning class="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+    <div class="space-y-3 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs">
+        <a href="{{ path('app_admin_dashboard') }}" class="text-[11px] font-semibold text-slate-500 hover:text-black">← {{ 'admin.back'|trans }}</a>
+        <h1 class="text-xl font-bold text-slate-900">{{ 'planning.title'|trans }}</h1>
+        <p class="max-w-2xl text-xs text-slate-500">{{ 'planning.subtitle'|trans({'%zone%': zone}) }}</p>
+        {{ ui.tabs('planning', can) }}
+    </div>
+
+    <form method="get" action="{{ path('app_admin_recruitment_planning') }}" class="flex flex-wrap items-end gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-xs">
+        <div>
+            <label class="mb-1 block text-[11px] font-semibold text-slate-600" for="plan-scope">{{ 'planning.filter.scope'|trans }}</label>
+            <select id="plan-scope" name="scope" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                <option value="upcoming" {{ scope == 'upcoming' ? 'selected' }}>{{ 'planning.scope.upcoming'|trans }}</option>
+                <option value="all" {{ scope == 'all' ? 'selected' }}>{{ 'planning.scope.all'|trans }}</option>
+            </select>
+        </div>
+        <div>
+            <label class="mb-1 block text-[11px] font-semibold text-slate-600" for="plan-offer">{{ 'planning.filter.offer'|trans }}</label>
+            <select id="plan-offer" name="offer" class="max-w-64 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                <option value="">{{ 'planning.offer_all'|trans }}</option>
+                {% for o in offerChoices %}<option value="{{ o.id.toRfc4122 }}" {{ offer and offer.id == o.id ? 'selected' }}>{{ o.title }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="mb-1 block text-[11px] font-semibold text-slate-600" for="plan-order">{{ 'planning.filter.order'|trans }}</label>
+            <select id="plan-order" name="order" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                <option value="asc" {{ order == 'asc' ? 'selected' }}>{{ 'planning.order.asc'|trans }}</option>
+                <option value="desc" {{ order == 'desc' ? 'selected' }}>{{ 'planning.order.desc'|trans }}</option>
+            </select>
+        </div>
+        <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-black">{{ 'planning.apply'|trans }}</button>
+    </form>
+
+    <section class="space-y-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+        <h2 class="text-sm font-bold text-slate-900">{{ 'planning.count'|trans({'%count%': total}) }}</h2>
+        {% if items is empty %}
+            <p data-no-interviews class="text-xs text-slate-400">{{ 'planning.none'|trans }}</p>
+        {% else %}
+            <ol class="space-y-3">
+                {% for a in items %}
+                    <li data-planning-candidate="{{ a.id.toRfc4122 }}" class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs">
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                                <a href="{{ path('app_admin_recruitment_application', {id: a.id.toRfc4122}) }}" class="text-sm font-bold text-slate-900 underline-offset-2 hover:underline">{{ a.fullName }}</a>
+                                <p class="text-[11px] text-slate-500">{{ a.offer.title }} · {{ a.phone }} · {{ a.email }}</p>
+                            </div>
+                            <div class="text-right">
+                                {{ ui.badge('application', a.status.value) }}
+                                <p data-applied-at class="mt-1 text-[11px] text-slate-500">{{ 'planning.applied_on'|trans({'%date%': a.createdAt|format_datetime('medium', 'short', locale: locale)}) }}</p>
+                            </div>
+                        </div>
+                        <ul class="space-y-1">
+                            {% for i in a.interviews.toArray|sort((x, y) => x.scheduledAt <=> y.scheduledAt) %}
+                                <li data-planning-interview="{{ i.status.value }}" class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-white px-3 py-2 ring-1 ring-slate-200">
+                                    <span class="font-semibold text-slate-900">{{ i.scheduledAt|format_datetime('full', 'short', locale: locale, timezone: zone) }}</span>
+                                    <span class="text-slate-500">{{ 'interview.duration'|trans({'%minutes%': i.durationMinutes}) }}</span>
+                                    <span class="text-slate-600">{{ ('mode.' ~ i.mode.value)|trans }}{% if i.mode.value == 'in_person' and i.location %} — {{ i.location }}{% endif %}</span>
+                                    <span class="ml-auto">{{ ui.badge('interview', i.status.value) }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ol>
+            {{ ui.paging(paging, 'app_admin_recruitment_planning', params) }}
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

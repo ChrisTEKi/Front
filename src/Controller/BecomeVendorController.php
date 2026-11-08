@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Supplier\CommissionSchedule;
+use App\Supplier\SupplierDocuments;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -18,7 +19,8 @@ final class BecomeVendorController extends AbstractController
     {
         return $this->render('vendor/become.html.twig', [
             'commissionRates' => $commissions->all(),
-            'proRent' => CommissionSchedule::PRO_MONTHLY_RENT,
+            // Taille maximale d'une pièce, rappelée dans l'assistant (le contrôle réel est fait par le serveur).
+            'documentMaxMb' => (int) (SupplierDocuments::MAX_FILE_BYTES / 1048576),
         ]);
     }
 }

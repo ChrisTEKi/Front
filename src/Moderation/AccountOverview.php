@@ -13,6 +13,7 @@ use App\Repository\OrderItemRepository;
 use App\Repository\OrderRepository;
 use App\Repository\ProductRepository;
 use App\Repository\SupplierAppealRepository;
+use App\Repository\SupplierDocumentRepository;
 use App\Repository\SupplierProfileRepository;
 
 /**
@@ -28,6 +29,7 @@ final class AccountOverview
         private readonly OrderRepository $orders,
         private readonly OrderItemRepository $orderItems,
         private readonly AuditLogRepository $audit,
+        private readonly SupplierDocumentRepository $supplierDocuments,
     ) {
     }
 
@@ -77,6 +79,8 @@ final class AccountOverview
                 'reason' => $profile->getRejectionReason(),
                 'reviewedAt' => $profile->getReviewedAt(),
                 'submittedAt' => $profile->getSubmittedAt(),
+                // Pièces déposées à l'inscription (identité, NIF / STAT) : nature => {id, name, type, size} ; vide pour un ancien dossier.
+                'documents' => $this->supplierDocuments->summariesFor([$id])[$id] ?? [],
             ];
             $data['appeals'] = array_map(fn (SupplierAppeal $a): array => [
                 'id' => $a->getId()->toRfc4122(),

@@ -68,13 +68,14 @@ checkout:
         momo_text: "Por su seguridad, comprobamos que este número le pertenece antes de pagar con él: se le enviará un código por SMS."
         momo_label: "Número de Mobile Money a verificar"
         sent: "¡Código SMS enviado al %number%!"
+    settlement: "El pago se realiza en ariary: se cargarán aproximadamente %amount% (1 %symbol% = %rate% Ar). El importe exacto se calcula con el tipo vigente al hacer el pedido."
 vendor:
-    sim:
-        advantage: "Con el plan Pro ganas %amount% más al mes."
     form:
         sending: "Enviando…"
         fix: "Corrige los campos señalados."
         required: "Este campo es obligatorio."
+        doc_too_large: "Este archivo supera %mb% MB: redúcelo (foto de menor calidad, PDF comprimido) y vuelve a elegirlo."
+        doc_type: "Formato no aceptado: elige un PDF o una imagen JPEG o PNG."
 support:
     network: "No se puede contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo."
 contact:
@@ -126,3 +127,5 @@ products:
 appeal:
     sent: "Su impugnación se ha enviado. El equipo de GoBuy la revisará."
     files_too_big: "Demasiados archivos o archivos demasiado pesados: respete los límites indicados."
+job:
+    files_too_big: "Un archivo es demasiado pesado: respeta los tamaños indicados bajo los campos."

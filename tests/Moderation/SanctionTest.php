@@ -461,7 +461,7 @@ final class SanctionTest extends AppTestCase
         self::assertSame(201, $this->httpStatus());
         $this->newBrowser();
 
-        $r = $this->api('POST', '/auth/register/supplier', [
+        $r = $this->registerSupplierApi([
             'fullName' => 'Razafy Marie', 'email' => 'marie@boutique.mg', 'password' => self::PASSWORD, 'phone' => '033 12 345 67',
             'companyName' => 'BOUTIQUE marie', 'companyAddress' => 'Lot 12 Analakely, Antananarivo', 'companyDescription' => 'Vêtements',
         ]);

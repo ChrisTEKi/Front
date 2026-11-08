@@ -35,7 +35,12 @@ peuvent pas créer de doublon. Le même contrôle protège la modification du nu
 **Fournisseur.** Assistant « Devenir partenaire » : e-mail **et** téléphone vérifiés, dossier détaillé enregistré
 (`supplier_profiles.application`, JSONB). Statut `pending` jusqu'à décision d'un administrateur
 (`approved` / `rejected` avec motif / `suspended`). Un fournisseur non approuvé ouvre son espace (il voit son statut et
-le motif) mais **aucun chiffre de vente**.
+le motif) mais **aucun chiffre de vente**. Il n'y a **ni formule « Pro », ni loyer, ni programme de solidarité** : un seul
+taux de commission par rayon, pour tous (§ 6octies).
+
+*Pièces justificatives (§ 6octies).* L'inscription fournisseur (assistant `/devenir-partenaire` **et** formulaire rapide de `/connexion`)
+demande des **fichiers** : une **pièce d'identité valide** (obligatoire) et le **NIF / STAT** (obligatoire pour une société, facultatif pour
+un particulier). La requête est alors `multipart/form-data` : un champ `payload` (le JSON habituel) + `identityDocument` et `taxDocument`.
 
 **Google / Apple.** OpenID Connect avec PKCE, `state` et `nonce` liés à la session. Le compte est créé ou rattaché à
 l'identité (`social_identities`) ; l'e-mail doit être vérifié par le fournisseur d'identité. Apple répond par un POST
@@ -111,7 +116,7 @@ Toutes les routes `POST` JSON exigent l'en-tête `X-CSRF-Token` (jeton de sessio
 |---|---|
 | `GET /auth/state` | Étape courante du parcours (reprise après rechargement) |
 | `POST /auth/login` | Mot de passe |
-| `POST /auth/register/client`, `/auth/register/supplier` | Inscriptions |
+| `POST /auth/register/client`, `/auth/register/supplier` | Inscriptions (fournisseur : `multipart/form-data` avec `payload` + `identityDocument` + `taxDocument`, § 6octies) |
 | `POST /auth/verify`, `/auth/resend`, `/auth/skip` | Saisie / renvoi / passage de l'étape SMS |
 | `POST /auth/restore`, `/auth/cancel` | Restaurer un compte en cours de suppression / abandonner |
 | `POST /auth/forgot`, `/auth/reset` | Mot de passe oublié |
@@ -122,7 +127,11 @@ Toutes les routes `POST` JSON exigent l'en-tête `X-CSRF-Token` (jeton de sessio
 | `GET /compte/api/adresses` · `POST /compte/api/adresses`, `/{id}/{modifier,defaut,supprimer}` | Carnet d'adresses (clients) ; l'identifiant d'une adresse d'un autre compte donne 404 |
 | `GET /fournisseur/produits` · `POST /fournisseur/api/produits`, `/{id}/{modifier,visibilite,supprimer}` | Catalogue du fournisseur (§ 6bis) ; le produit d'un autre vendeur donne 404 |
 | `GET /admin/produits` · `POST /admin/api/produits`, `/{id}/{modifier,retrait,signalement,mise-en-avant,supprimer}`, `/admin/api/fournisseurs/{id}/catalogue` | Modération du catalogue (§ 6bis) |
-| `POST /commande/valider`, `/paiement/telephone/{envoyer,verifier}`, `/paiement/mobile-money/{envoyer,verifier}` | Commande et paiement |
+| `POST /commande/valider`, `/paiement/telephone/{envoyer,verifier}`, `/paiement/mobile-money/{envoyer,verifier}` | Commande et paiement (la commande accepte `currency` et `quotedTotal`, voir § 6sexies) |
+| `GET /devise/{code}` · `GET /panier/prix?refs=` | Choix de la devise d'affichage (cookie) · prix à jour des articles du panier dans toutes les devises (§ 6sexies) |
+| `GET /admin/devises` · `POST /admin/api/devises/{code}/{manuel,automatique}`, `/admin/api/devises/actualiser` | Taux de change (§ 6sexies) |
+| `GET /admin/commissions` · `POST /admin/api/commissions` | Taux de commission par rayon (§ 6octies) |
+| `GET /admin/fournisseurs/{id}/pieces/{identity\|tax}` | Télécharger une pièce d'un fournisseur (droit `suppliers.approve`, § 6octies) |
 | `POST /support/message` | Contact, réclamation, candidature, avis |
 | `POST /admin/api/…` | Administration (§ 6) |
 | `GET /langue/{fr\|en\|es}` | Changement de langue |
@@ -140,11 +149,14 @@ Migrations Doctrine commentées dans `migrations/` (colonnes et tables ont un `C
 | `addresses` | Carnet d'adresses de livraison | `is_default` (**une seule par client** : index unique partiel), `label`, téléphone facultatif ; supprimées en cascade avec le compte |
 | `mobile_money_accounts` | Numéros Mobile Money vérifiés | cascade |
 | `products` | Catalogue (fournisseurs et GoBuy : `owner_id` NULL) | prix de base `price_mga` (entier) ; `price_overrides` JSONB (prix spécifiques EUR/USD en unités mineures) ; statut `active` / `hidden` / `removed` ; retrait, signalement et mise en avant (qui, quand, motif) ; supprimés en cascade avec le compte du fournisseur |
-| `supplier_profiles` | Dossier fournisseur | `application` JSONB, statut, relecteur, motif |
+| `supplier_profiles` | Dossier fournisseur | `application` JSONB (réponses de l'assistant, sans formule ni pièces), statut, relecteur, motif |
+| `supplier_documents` | Pièces d'inscription d'un fournisseur (identité, NIF/STAT) en `bytea` | une pièce par type et par fournisseur ; 2 Mo, PDF / JPG / PNG vérifiés sur le **contenu** ; supprimées en cascade avec le compte |
+| `commission_rates` | Taux de commission par rayon (`DECIMAL(5,2)`) | une ligne par rayon modifié (absente = taux d'origine du code) ; qui et quand |
 | `admin_roles`, `admin_profiles` | Profils de droits et administrateurs | droits ajoutés/retirés par administrateur ; `ON DELETE RESTRICT` sur un profil encore utilisé |
 | `supplier_appeals`, `supplier_appeal_documents` | Contestations d'un refus de dossier et pièces jointes (`bytea`) | 3 contestations au plus par décision ; pièces supprimées en cascade avec le compte |
+| `exchange_rates` | Historique des taux de change (Ariary pour 1 € / 1 $) | une ligne par changement ; source `auto` ou `manual` (+ échéance, note, auteur) ; **jamais de taux inventé** (§ 6sexies) |
 | `blacklist_entries` | Liste noire (e-mail, téléphone, nom, raison sociale, IP) | valeur **normalisée** ; expiration facultative (obligatoire pour une IP) ; quel compte et pourquoi |
-| `orders`, `order_items`, `order_tracking_events` | Commandes | coordonnées figées dans la commande ; anonymisées à la purge ; `confirmation_email_sent_at` ; `refunded_amount` / `refunded_at` (remboursement **enregistré**, voir § 6quater) |
+| `orders`, `order_items`, `order_tracking_events` | Commandes | coordonnées figées dans la commande ; anonymisées à la purge ; `confirmation_email_sent_at` ; `refunded_amount` / `refunded_at` (remboursement **enregistré**, voir § 6quater) ; `currency`, `exchange_rate` et montants **facturés** (`subtotal_charged`, `delivery_fee_charged`, `total_charged`, `unit_price_charged` par ligne) : le règlement reste en Ariary (§ 6sexies) |
 | `audit_logs` | Journal d'audit | sans clé étrangère (survit aux suppressions), détails JSONB sans secret |
 
 Le profil système « Super Admin » et six profils de départ (**Finance, Comptabilité, Support, Modération, PDG, DG**) sont
@@ -179,14 +191,14 @@ créés par les migrations : ce sont des réglages, pas des données de démonst
   choisir son mot de passe.
 - **Droits** (`Permission`) : `users.view/suspend/export`, `suppliers.view/approve/export`, `orders.view/update_tracking`,
   `products.view/manage/flag/feature/remove/delete`, `sanctions.ban/freeze/refund`, `blacklist.manage`, `accounts.delete`,
-  `finance.view/manage`, `audit.view`, `admins.view/manage/export`. Les trois droits `admins.*` ne sont attribuables à
+  `finance.view/manage`, `currency.manage`, `commissions.manage`, `audit.view`, `admins.view/manage/export`. Les trois droits `admins.*` ne sont attribuables à
   personne d'autre que le Super Admin. Contrôle par `#[IsGranted]` sur chaque action.
 - **Droits délégués (PDG, DG).** Le Super Admin peut donner de larges pouvoirs à d'autres administrateurs en leur attribuant un
   profil : **PDG** = tous les droits attribuables (y compris suppression définitive d'un compte et d'un produit) ; **DG** = les
   mêmes, **sauf** `accounts.delete` et `products.delete`. Ce sont des profils modifiables (le Super Admin peut en retirer des droits
   ou en créer d'autres, ou ajuster un administrateur précis). **Créer, modifier, suspendre ou exporter des administrateurs reste
   réservé au Super Admin**, quel que soit le profil. Quand un droit est ajouté à l'application, la migration l'ajoute aussi à PDG
-  (et à DG s'il ne s'agit pas d'une suppression définitive).
+  (et à DG s'il ne s'agit pas d'une suppression définitive). C'est le cas de `currency.manage` (taux de change).
 - **Suspension de plusieurs administrateurs** (Super Admin seul) : cases à cocher dans l'onglet Administrateurs puis
   « Suspendre / Réactiver la sélection » (`POST /admin/api/administrateurs/statut-groupe`, 50 comptes au plus, mot de passe
   demandé **une seule fois**). Chaque compte suit les règles d'une suspension unitaire (sessions coupées immédiatement, une ligne
@@ -243,6 +255,7 @@ du nom et du prix. Ces droits peuvent être donnés à n'importe quel administra
   administrateurs reçoivent un e-mail, lisent le message et les pièces depuis la fiche du compte, puis **revalident** ou
   **maintiennent le refus** avec un motif (le fournisseur est prévenu dans les deux cas).
 - Un compte qui n'est plus **actif** (suspendu, banni, en cours de suppression) ne peut pas contester.
+- **Suspendre un fournisseur approuvé** (`suppliers.approve`, motif obligatoire) retire sa boutique de la vente, **prévient le fournisseur par e-mail** (avec le motif et le rappel qu'il peut contester) et s'inscrit au journal sous l'action propre `admin.supplier.suspended` (et non plus comme un refus).
 
 ## 6quater. Sanctions sur les clients et fournisseurs
 
@@ -251,7 +264,7 @@ suspendre). Chacune demande son droit, un **motif de 5 caractères au moins** et
 
 | Sanction | Droit | Effet |
 |---|---|---|
-| **Bannissement définitif** (clôture immédiate) | `sanctions.ban` | connexion refusée, sessions coupées, compte et pièces **conservés** comme preuve ; l'e-mail et le téléphone restent occupés (pas de réinscription). **Levée réservée au Super Admin.** |
+| **Bannissement définitif** (clôture immédiate) | `sanctions.ban` | connexion refusée, sessions coupées, compte et pièces **conservés** comme preuve ; l'e-mail et le téléphone restent occupés (pas de réinscription). **Levée réservée au Super Admin.** Les options sont **toutes contrôlées avant** de prononcer le bannissement (durée de liste noire hors limites = refus `invalid_days`, rien n'est banni). Un bannissement **remplace** une suppression en attente : la ligne d'audit porte `deletion_cancelled: true` |
 | …avec **retrait / suppression du catalogue** | `products.remove` / `products.delete` | option du bannissement, fournisseur seulement |
 | …avec **remboursement des acheteurs** | `sanctions.refund` | option : commandes **en cours** ou **en cours + livrées** pour un fournisseur ; pour un **client** banni, ses commandes en cours sont annulées et remboursées ; un seul e-mail par acheteur |
 | …avec **liste noire** | `blacklist.manage` | option : e-mail, téléphone, nom, raison sociale, IP |
@@ -269,6 +282,9 @@ ponctuation (3 caractères au moins) ; IP en forme canonique. Une entrée peut a
 **obligatoire** (365 jours au plus, car une IP change de titulaire). Elle bloque l'**inscription** (client, fournisseur, et création de compte
 Google/Apple) avec un message neutre ; elle n'affecte pas les comptes déjà existants (pour eux, c'est le bannissement qui ferme l'accès).
 
+- **Un nouvel ajout ne raccourcit jamais une interdiction** : ajouter à nouveau une valeur déjà listée met à jour le motif et garde l'**échéance la plus lointaine** (« définitive » l'emporte et le reste). Pour réduire une durée, supprimez l'entrée puis recréez-la. Durée maximale : 3 650 jours (365 pour une IP).
+- **Compte banni puis supprimé** (suppression immédiate ou à l'échéance du délai) : son **e-mail et son téléphone sont inscrits d'office sur la liste noire, définitivement**, juste avant l'effacement (sinon la suppression libérerait ces identifiants et la personne se réinscrirait). Un compte supprimé **sans** bannissement libère ses identifiants comme avant.
+
 ## 6quinquies. Suppression définitive d'un compte, avec délai
 
 Droit `accounts.delete` (PDG ou Super Admin ; **pas** le DG). Délais proposés : **immédiat, 24 h, 48 h, 72 h, 7 j, 14 j, 30 j,
@@ -277,6 +293,76 @@ Droit `accounts.delete` (PDG ou Super Admin ; **pas** le DG). Délais proposés 
 d'origine. À l'échéance, `app:accounts:purge` efface le compte (comme pour une demande du client : commandes anonymisées). Tant qu'il reste des
 **commandes en cours** (client ou fournisseur), la purge est **repoussée** au passage suivant : le compte reste fermé. Un fournisseur ne peut **jamais**
 être purgé par la tâche planifiée sans décision de l'équipe : seul le délai choisi par un administrateur le fait.
+
+## 6sexies. Devises et taux de change (Ariary, euro, dollar)
+
+- **Devise de référence : l'Ariary.** Les prix de base sont en Ariary (`products.price_mga`). Un fournisseur, GoBuy ou un administrateur peut en
+  plus fixer un **prix propre à l'euro ou au dollar** (`products.price_overrides`, en centimes) ; sans prix propre, le prix est
+  **converti** au taux du jour. Le client choisit sa devise d'affichage dans le pied de page (`GET /devise/{code}`, cookie `gobuy_currency`
+  d'un an, `HttpOnly`, `SameSite=Lax` ; retour à la page d'origine **seulement si elle appartient au site**). Une devise sans taux n'est **pas proposée**.
+- **Taux automatiques** : `php bin/console app:rates:refresh` (cron toutes les 6 h) interroge `EXCHANGE_RATE_API_URL`
+  (par défaut open.er-api.com, gratuit, sans clé, mis à jour une fois par jour). **Aucun taux n'est inventé** : tant qu'une devise n'a pas de taux
+  (récupéré ou saisi), elle reste masquée. Un taux qui s'écarte de **plus de 30 %** du précédent est **refusé** (action d'audit
+  `rate.rejected`, l'ancien taux reste en vigueur, code de sortie 1). Un taux inchangé n'est réenregistré qu'une fois par jour (preuve que le service répond).
+- **Taux manuel** (`/admin/devises`, droit `currency.manage`, mot de passe redemandé, motif facultatif) : bloque les mises à jour automatiques de cette devise, pour une
+  durée choisie ou jusqu'à ce qu'un administrateur **reprenne l'automatique**. Le bouton « Actualiser » lance une mise à jour immédiate.
+- **Règlement en Ariary.** Le client voit et choisit sa devise, mais la commande reste **réglée en Ariary** : elle enregistre la devise, le taux **figé** au moment de la
+  commande et les montants facturés dans la devise (`*_charged`). Les arrondis ne descendent jamais à 0 pour un montant positif. Les frais de livraison (10 000 Ar fixes) sont
+  convertis au même taux. L'e-mail de confirmation, le suivi, le compte et les exports CSV affichent les deux montants.
+- **Prix de la page = prix facturé.** Le navigateur envoie `quotedTotal` (le total affiché) ; si le serveur calcule autre chose (taux ou prix modifié entre-temps),
+  la commande est **refusée** avec l'erreur `price_changed` et le panier se met à jour avant un nouvel essai (`GET /panier/prix`, public, sans cache).
+- **Limites.** Le service gratuit ne confirme pas l'Ariary de façon contractuelle : surveillez `app:rates:refresh` et saisissez un taux manuel si besoin. L'attribution
+  « Taux de change : exchangerate-api.com » est exigée par le service gratuit (déjà affichée sur l'écran des devises) ; l'article de CGV sur la monnaie de paiement doit être
+  **revalidé juridiquement** (règlement en Ariary).
+
+## 6septies. Recrutement (offres d'emploi, candidats, entretiens)
+
+- **Pages publiques** (sans compte) : `GET /emplois` (offres ouvertes), `GET /emplois/{id}`, `POST /emplois/{id}/candidater` (multipart, jeton CSRF exigé).
+  Une offre n'est visible que si elle est **ouverte** et que sa **date limite** (heure de Madagascar, jour inclus) n'est pas passée ; sinon 404. Les offres sont rédigées dans
+  **une seule langue** par l'équipe (leur texte n'est pas traduit) ; tout le reste de l'interface et **tous les e-mails** le sont (langue du visiteur au dépôt).
+- **Dépôt** : nom, e-mail, téléphone (format international enregistré), message facultatif (2 000 caractères), **CV obligatoire**, lettre facultative. Fichiers PDF / JPEG / PNG,
+  **2 Mo par fichier, 4 Mo au total** ; le **type est lu dans le contenu** (le nom et le type annoncés sont ignorés), le nom d'origine est assaini. Une personne ne postule
+  qu'**une fois par offre** (e-mail comparé sans tenir compte des majuscules, sous verrou : deux envois simultanés ne passent pas tous les deux) ; **8 dépôts par heure et par IP**
+  (429) ; champ-piège `website` (un robot qui le remplit reçoit un faux succès, rien n'est enregistré). PHP limite chaque envoi à `upload_max_filesize` (2 Mo par défaut :
+  suffisant) et `post_max_size` ; un envoi plus gros reçoit un message clair. Le candidat reçoit un **accusé de réception** et l'équipe un avis à `GOBUY_SUPPORT_EMAIL` (sans les pièces).
+  Le visiteur ne reçoit **jamais d'identifiant** de candidature et ne peut ni la relire ni la modifier (il écrit au support).
+- **Droits** (Super Admin : tous ; profils PDG et DG : ajoutés par la migration `Version20261105000100`) :
+  `recruitment.view` (voir offres, candidats, **lire les CV et lettres**, planning), `recruitment.manage` (créer, modifier, publier, clôturer, supprimer une offre),
+  `recruitment.decide` (refuser, retenir, fixer ou annuler un entretien, effacer un candidat). Chaque action vérifie son droit côté serveur ; le mot de passe est redemandé pour
+  **supprimer** une offre ou **effacer** un candidat. Une offre qui a reçu des candidatures ne peut plus être supprimée, seulement **clôturée**.
+- **Pièces** (`GET /admin/recrutement/pieces/{id}`) : servies **en téléchargement** (`Content-Disposition: attachment`, nom reconstruit « cv-nom-du-candidat.pdf »), `nosniff`,
+  `Content-Security-Policy: sandbox`, `no-store`. Chaque lecture est inscrite au journal (`admin.job_application.document_viewed`). Les journaux ne contiennent **aucune donnée
+  personnelle de candidat** (ni nom, ni e-mail, ni téléphone, ni message).
+- **Refus** : e-mail automatique **adressé au nom du candidat** (destinataire « Nom <adresse> », « Bonjour Nom », sujet « Réponse à la candidature de Nom — Poste »), dans la langue de sa
+  candidature, avec une phrase personnelle facultative (500 caractères). Les entretiens encore prévus sont annulés. Décision **définitive** (on ne convoque plus un candidat refusé).
+  « **Retenu** » est un simple repère interne : **aucun e-mail** n'est envoyé. Si un e-mail ne peut pas partir, l'action **réussit quand même** et la réponse porte un avertissement :
+  l'administrateur contacte alors la personne lui-même.
+- **Entretiens** : mode **téléphone** (l'équipe appelle le numéro du candidat) ou **sur place** (lieu obligatoire), date, heure et durée (10 à 240 min) choisis par l'administrateur,
+  **à l'heure de Madagascar** (UTC+3, sans heure d'été), à venir et dans l'année. Deux entretiens du **même** candidat ne peuvent pas se chevaucher (des candidats différents le peuvent).
+  Convocation, modification et annulation **préviennent le candidat par e-mail** ; « effectué » n'envoie rien. Le premier entretien passe la candidature à « entretien ».
+- **Planning** (`/admin/recrutement/planning`) : **tous** les candidats ayant un entretien, **classés par date de candidature** (du plus ancien au plus récent par défaut, ordre
+  inversable), avec la date et l'heure de chaque entretien ; filtres « à venir / tous » et par offre ; pages de 50.
+- **Conservation** : `php bin/console app:recruitment:purge` (cron `30 3 * * *`) efface les candidatures **24 mois après leur dernière activité** (décision, sinon dépôt), avec leurs
+  pièces et entretiens (`--dry-run` pour compter). **Cette durée est un choix par défaut à faire valider par votre conseil juridique** et à indiquer dans votre politique de confidentialité
+  (information des candidats, droit d'effacement : bouton « Effacer ce candidat »).
+
+## 6octies. Commissions et pièces justificatives des fournisseurs
+
+- **Un seul taux par rayon, pour tous.** Il n'y a plus de formule « Pro » ni de loyer mensuel : le simulateur de `/devenir-partenaire` et l'Espace
+  Fournisseur affichent le taux du rayon (`App\Supplier\CommissionSchedule`, seule source de ces chiffres). Les questions de l'assistant sur la formule,
+  la casse et les pièces de solidarité ont disparu ; les anciennes réponses ont été **effacées** des dossiers par la migration (irréversible).
+- **Taux modifiables** (`/admin/commissions`, droit `commissions.manage`, donné par défaut aux profils **PDG** et **DG** — le Super Admin peut
+  l'ajouter à un autre profil) : 0 à **50 %**, 2 décimales au plus (la virgule est acceptée), **mot de passe redemandé**, tout ou rien (un taux
+  invalide refuse l'ensemble). Chaque changement s'inscrit au journal (`admin.commission.changed`, ancien → nouveau taux, auteur, jamais le mot de
+  passe) et la page affiche les 15 derniers. Une ligne absente en base = taux d'origine (alim. 4, électronique 5, enfants et électroménager 6,
+  maison et sport 7, mode et beauté 8). Le barème est **informatif** : le calcul réel des reversements n'est pas branché sur les paiements.
+- **Pièces d'inscription.** Pièce d'identité (toujours) et NIF / STAT (société) : 2 Mo au plus, PDF / JPG / PNG reconnus par le **contenu** du
+  fichier (l'extension et le type annoncé ne comptent pas), nom du fichier nettoyé. Elles sont stockées en base (`supplier_documents`) dans la même
+  transaction que le compte : si l'inscription échoue, rien n'est gardé. Les erreurs (`doc_required`, `doc_too_large`, `doc_type`, `doc_invalid`) reviennent
+  par champ, avec les autres erreurs du formulaire (HTTP 422). Les valeurs PHP par défaut suffisent (`upload_max_filesize` 2 Mo par fichier, `post_max_size` 8 Mo par requête) ; un fichier refusé par PHP lui-même est signalé comme trop gros.
+- **Lecture des pièces** (`GET /admin/fournisseurs/{id}/pieces/{identity|tax}`) : réservée au droit `suppliers.approve` (voir seulement les
+  fournisseurs, `suppliers.view`, ne suffit pas), servie **en téléchargement** (`attachment`, `nosniff`, `no-store`, CSP `sandbox`), et **chaque lecture est journalisée**
+  (`admin.supplier.document_viewed`). Ce sont des données personnelles : à ne conserver que le temps nécessaire à la vérification.
 
 ## 7. Exports CSV
 
@@ -320,6 +406,8 @@ Les clés manquantes sont détectées par les tests (aucune clé brute ne doit s
 |---|---|---|
 | `app:accounts:purge [--dry-run] [--limit=200]` | **toutes les heures** (une fois par nuit suffit pour les clients) | Efface les comptes échus (clients ; fournisseurs seulement si un administrateur l'a décidé) ; sans danger si lancée deux fois. Un délai de 24 h choisi par un administrateur n'est respecté qu'à l'heure près si la tâche tourne toutes les heures |
 | `app:orders:send-confirmations` | toutes les 10 min | Renvoie les e-mails de confirmation restés en attente |
+| `app:recruitment:purge [--dry-run] [--limit=200]` | une fois par nuit (`30 3 * * *`) | Efface les candidatures (CV, lettres, entretiens) 24 mois après leur dernière activité (§ 6septies) ; sans danger si lancée deux fois |
+| `app:rates:refresh` | toutes les 6 h (`0 0,6,12,18 * * *`) | Met à jour les taux EUR et USD contre l'Ariary (§ 6sexies) ; code de sortie 1 si le service est injoignable ou si une valeur est refusée : à surveiller |
 
 ## 11. Limites connues et choix assumés
 
@@ -362,5 +450,8 @@ Les clés manquantes sont détectées par les tests (aucune clé brute ne doit s
   les connaissez. Une IP bloquée peut être partagée (famille, entreprise, opérateur mobile) : d'où l'échéance obligatoire.
 - **Pièces d'une contestation.** PHP limite l'envoi : `upload_max_filesize` ≥ 2 Mo et `post_max_size` ≥ 6 Mo (valeurs de l'application) ;
   en dessous, l'envoi est refusé avant d'atteindre l'application. Les pièces sont dans PostgreSQL et supprimées avec le compte.
+- **Fournisseur effacé et commandes passées.** Les lignes de commande gardent le prix et le nom du produit mais **perdent le lien vers le fournisseur** (et son nom) quand son compte est purgé. Si vous devez retrouver « qui vendait quoi » après une purge, ajoutez un nom de fournisseur figé dans la ligne de commande (non fait).
+- **Remboursements simultanés.** `RefundService` ne verrouille pas les lignes : deux administrateurs qui lancent exactement le même remboursement au même instant pourraient produire deux lignes d'audit et deux e-mails (le montant enregistré reste plafonné au total de la commande et les lignes déjà remboursées sont ignorées).
+- **Formulaires de l'administration (JavaScript).** Un formulaire admin porte `data-admin-form` (géré par `assets/admin-account.js`) et jamais `data-account-form` (réservé au compte client, `assets/account.js`) : deux scripts sur le même attribut videraient le mot de passe avant l'envoi et l'action « ne ferait rien ». `tests/Ui/AdminFormsTest.php` le vérifie.
 - **Un seul Super Admin.** Les pouvoirs étendus se délèguent par profil (PDG, DG), jamais en créant un second Super Admin ;
   l'accès aux administrateurs (création, suspension, export) reste au Super Admin.

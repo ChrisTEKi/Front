@@ -1,0 +1,21 @@
+{# Pièces justificatives d'un fournisseur (pièce d'identité valide, NIF / STAT) déposées à l'inscription.
+   Paramètres : `id` = identifiant du compte fournisseur, `documents` = tableau nature (identity | tax) => {id, name, type, size} (vide pour un ancien dossier),
+   `canRead` = l'administrateur a le droit de valider les fournisseurs (suppliers.approve) : sans lui, le bloc n'est pas affiché.
+   Le lien ouvre GET /admin/fournisseurs/{id}/pieces/{nature} : téléchargement, tracé au journal d'audit. Texte : domaine « admin », clés « documents.* ». #}
+{% trans_default_domain 'admin' %}
+{% if canRead %}
+<div class="mt-2 space-y-1 rounded-xl border border-slate-200 bg-white p-3 text-[11px]" data-supplier-documents>
+    <p class="font-bold text-slate-700">{{ 'documents.title'|trans }}</p>
+    {% for kind in ['identity', 'tax'] %}
+        {% set doc = documents[kind]|default(null) %}
+        <div class="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
+            <span class="font-semibold text-slate-500 sm:w-48 sm:shrink-0">{{ ('documents.kind.' ~ kind)|trans }}</span>
+            {% if doc %}
+                <a href="{{ path('app_admin_supplier_document', {id: id, kind: kind}) }}" class="min-w-0 break-words font-semibold text-emerald-700 hover:underline" data-supplier-document="{{ kind }}">{{ doc.name }} <span class="font-normal text-slate-400">({{ (doc.size / 1024)|round }} {{ 'documents.kb'|trans }})</span></a>
+            {% else %}
+                <span class="text-slate-400">{{ 'documents.none'|trans }}</span>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}

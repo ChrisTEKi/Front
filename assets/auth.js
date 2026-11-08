@@ -1,4 +1,4 @@
-import { getJson, goTo, postJson } from './api.js';
+import { getJson, goTo, postForm, postJson } from './api.js';
 import { t } from './i18n.js';
 
 /**
@@ -162,6 +162,21 @@ function setup(root) {
 
     // ------------------------------------------------------------------ Formulaires
 
+    // Pièces justificatives de l'inscription fournisseur : même contrôle de confort que l'assistant « Devenir partenaire »
+    // (le serveur refuse de toute façon un fichier trop lourd, d'un autre type ou manquant).
+    const DOCUMENT_FIELDS = ['identityDocument', 'taxDocument'];
+    const DOCUMENT_MAX_BYTES = 2 * 1024 * 1024;
+    const DOCUMENT_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+    const badDocument = (form) => {
+        for (const name of DOCUMENT_FIELDS) {
+            const file = form.elements.namedItem(name)?.files?.[0];
+            if (!file) continue;
+            if (file.size > DOCUMENT_MAX_BYTES) return { name, message: t('vendor.form.doc_too_large', { mb: DOCUMENT_MAX_BYTES / 1048576 }) };
+            if (file.type && !DOCUMENT_TYPES.includes(file.type)) return { name, message: t('vendor.form.doc_type') };
+        }
+        return null;
+    };
+
     root.querySelectorAll('[data-auth-form]').forEach((form) => {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -175,7 +190,22 @@ function setup(root) {
                 if (kind === 'login') {
                     handle(await postJson(ep.login, { email: data.email, password: data.password }), { form });
                 } else if (kind === 'register_client' || kind === 'register_supplier') {
-                    const result = await postJson(kind === 'register_client' ? ep.registerClient : ep.registerSupplier, data);
+                    let result;
+                    if (kind === 'register_client') {
+                        result = await postJson(ep.registerClient, data);
+                    } else {
+                        // Inscription fournisseur : requête multipart (le JSON du formulaire dans « payload » + les pièces justificatives).
+                        const bad = badDocument(form);
+                        if (bad) { showFieldErrors(form, { [bad.name]: [bad.message] }); return; }
+                        const { identityDocument, taxDocument, ...fields } = data;
+                        const body = new FormData();
+                        body.append('payload', JSON.stringify(fields));
+                        DOCUMENT_FIELDS.forEach((name) => {
+                            const file = form.elements.namedItem(name)?.files?.[0];
+                            if (file) body.append(name, file);
+                        });
+                        result = await postForm(ep.registerSupplier, body);
+                    }
                     handle(result, { form });
                     form.querySelectorAll('input[type="password"]').forEach((i) => { i.value = ''; });
                 } else if (kind === 'forgot') {

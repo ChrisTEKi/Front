@@ -122,6 +122,7 @@ order_confirmation:
     payment_pending: "Votre paiement est en cours de traitement : vous serez prévenu(e) dès qu'il sera confirmé."
     button: "Suivre ma commande"
     help: "Besoin d'aide ? Répondez depuis votre compte GoBuy, rubrique Aide."
+    settlement: "Le règlement s'effectue en Ariary : %amount% seront débités (1 %symbol% = %rate% Ar, taux figé le jour de la commande)."
 moderation:
     contact: "Une question ? Répondez à cet e-mail ou contactez le support GoBuy."
     product_removed:
@@ -184,3 +185,38 @@ moderation:
         subject: "GoBuy : la suppression de votre compte est annulée"
         title: "Suppression annulée"
         body: "L'équipe GoBuy a annulé la suppression programmée de votre compte. Il retrouve le statut qu'il avait avant la décision."
+    supplier_suspended:
+        subject: "GoBuy : votre boutique est suspendue"
+        title: "Boutique suspendue"
+        body: "Le dossier de « %company% » est suspendu par l'équipe GoBuy : vos produits ne sont plus visibles dans la boutique.\nMotif : %detail%\nVous pouvez contester cette décision depuis votre espace fournisseur."
+job:
+    application_received:
+        subject: "Nous avons bien reçu votre candidature — %offer%"
+        title: "Candidature reçue"
+        body: "Merci de l'intérêt que vous portez à GoBuy. Nous avons bien reçu votre candidature au poste « %offer% ». Notre équipe l'examine et reviendra vers vous, que la réponse soit positive ou non. Inutile de renvoyer votre dossier."
+    application_refused:
+        subject: "Réponse à la candidature de %name% — %offer%"
+        title: "Réponse à votre candidature"
+        body: "Nous vous remercions d'avoir postulé au poste « %offer% » et du temps consacré à votre dossier.\n\nAprès examen attentif, nous ne pouvons pas donner suite à la candidature de %name% pour ce poste. Cette décision ne remet pas en cause vos qualités : nous vous encourageons à consulter nos prochaines offres sur GoBuy.\n\nNous vous souhaitons plein succès dans vos recherches."
+    interview_scheduled_phone:
+        subject: "Entretien téléphonique — %offer%"
+        title: "Votre entretien téléphonique"
+        body: "Nous souhaitons échanger avec vous par téléphone au sujet du poste « %offer% ».\n\nDate : %date%\nHeure : %time% (heure de Madagascar, UTC+3)\nDurée prévue : %duration% minutes\n\nNous vous appellerons au %phone%. Merci de vous rendre disponible et de garder votre téléphone à portée de main."
+    interview_scheduled_in_person:
+        subject: "Entretien — %offer%"
+        title: "Votre entretien"
+        body: "Nous souhaitons vous rencontrer au sujet du poste « %offer% ».\n\nDate : %date%\nHeure : %time% (heure de Madagascar, UTC+3)\nDurée prévue : %duration% minutes\nLieu : %place%\n\nMerci d'arriver quelques minutes à l'avance."
+    interview_updated_phone:
+        subject: "Entretien téléphonique modifié — %offer%"
+        title: "Votre entretien a été modifié"
+        body: "Les informations de votre entretien téléphonique pour le poste « %offer% » ont changé. Ce message remplace le précédent.\n\nDate : %date%\nHeure : %time% (heure de Madagascar, UTC+3)\nDurée prévue : %duration% minutes\n\nNous vous appellerons au %phone%. Merci de vous rendre disponible et de garder votre téléphone à portée de main."
+    interview_updated_in_person:
+        subject: "Entretien modifié — %offer%"
+        title: "Votre entretien a été modifié"
+        body: "Les informations de votre entretien pour le poste « %offer% » ont changé. Ce message remplace le précédent.\n\nDate : %date%\nHeure : %time% (heure de Madagascar, UTC+3)\nDurée prévue : %duration% minutes\nLieu : %place%\n\nMerci d'arriver quelques minutes à l'avance."
+    interview_cancelled:
+        subject: "Entretien annulé — %offer%"
+        title: "Entretien annulé"
+        body: "Nous devons annuler l'entretien prévu le %date% à %time% (heure de Madagascar, UTC+3) pour le poste « %offer% ». Nous reviendrons vers vous pour convenir d'une nouvelle date."
+    note_label: "Message de l'équipe :"
+    contact: "Pour toute question, contactez le support GoBuy depuis notre site."

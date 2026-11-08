@@ -14,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Clock;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
@@ -79,6 +80,46 @@ abstract class AppTestCase extends WebTestCase
         }
         $this->client->request($method, $uri, [], [], $server, 'GET' === $method ? null : json_encode($data, \JSON_THROW_ON_ERROR));
         $this->em()->clear(); // comme une vraie nouvelle requête : rien n'est gardé en mémoire d'une requête à l'autre
+
+        $content = (string) $this->client->getResponse()->getContent();
+
+        return '' === $content ? [] : (array) json_decode($content, true);
+    }
+
+    /** Contenu minimal reconnu comme PDF d'après son CONTENU (et non son nom). */
+    protected const SAMPLE_PDF = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n";
+
+    /** Image PNG de 1 pixel (base 64). */
+    protected const SAMPLE_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+    /** Fichier temporaire envoyé comme par un navigateur. */
+    protected function uploadFile(string $content, string $name = 'piece.pdf', string $mime = 'application/pdf'): UploadedFile
+    {
+        $path = (string) tempnam(sys_get_temp_dir(), 'gbtest');
+        file_put_contents($path, $content);
+
+        return new UploadedFile($path, $name, $mime, null, true);
+    }
+
+    /**
+     * Inscription fournisseur par le formulaire du site : requête « multipart » (JSON du formulaire dans « payload » + pièces).
+     * Sans fichiers précisés, la personne joint sa pièce d'identité (PNG) et son justificatif NIF / STAT (PDF).
+     *
+     * @param array<string, mixed>        $payload champs du formulaire
+     * @param array<string, UploadedFile>|null $files   fichiers par nom de champ (identityDocument, taxDocument)
+     *
+     * @return array<string, mixed> corps JSON de la réponse
+     */
+    protected function registerSupplierApi(array $payload, ?array $files = null, string $ip = '203.0.113.7'): array
+    {
+        $files ??= [
+            'identityDocument' => $this->uploadFile((string) base64_decode(self::SAMPLE_PNG_BASE64), 'cin.png', 'image/png'),
+            'taxDocument' => $this->uploadFile(self::SAMPLE_PDF, 'nif-stat.pdf'),
+        ];
+        $this->client->request('POST', '/auth/register/supplier', ['payload' => json_encode($payload, \JSON_THROW_ON_ERROR)], $files, [
+            'HTTP_ACCEPT' => 'application/json', 'HTTP_X_CSRF_TOKEN' => $this->csrfToken(), 'REMOTE_ADDR' => $ip,
+        ]);
+        $this->em()->clear();
 
         $content = (string) $this->client->getResponse()->getContent();
 

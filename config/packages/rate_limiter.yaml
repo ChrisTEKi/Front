@@ -32,6 +32,12 @@ framework:
             limit: 10
             interval: '1 hour'
 
+        # --- Candidatures aux offres d'emploi : 8 dépôts / heure par adresse IP (chaque dépôt écrit des pièces en base et envoie des e-mails).
+        job_application_ip:
+            policy: fixed_window
+            limit: 8
+            interval: '1 hour'
+
         # --- Codes OTP : envoi (protège le budget SMS/e-mail, empêche le harcèlement) ---
         otp_send_user:               # par utilisateur + finalité : 3 envois / 10 min
             policy: sliding_window
